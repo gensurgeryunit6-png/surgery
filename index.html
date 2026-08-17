@@ -5,24 +5,21 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0b5f8a">
 <title>IGMCRI Surgery OPD Manager</title>
-<link rel="stylesheet" href="styles.css?v=20260817-v5">
+<link rel="stylesheet" href="styles.css?v=20260817-v6">
 </head>
 <body>
 <div id="app"><div class="login card"><h1>IGMCRI Surgery</h1><p class="muted">Loading application…</p></div></div>
-<script src="config.js?v=20260817-v5"></script>
+<script src="config.js?v=20260817-v6"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 window.addEventListener('error',function(e){
   const a=document.getElementById('app');
-  if(a && (!a.querySelector('.top') && !a.querySelector('form'))){
-    a.innerHTML='<div class="login card"><h1>IGMCRI Surgery</h1><p class="muted">Application could not load.</p><p style="color:#b42318">'+String(e.message||'Please refresh the page.')+'</p><button onclick="location.reload()">Reload</button></div>';
+  if(a && !a.querySelector('.top')){
+    a.innerHTML='<div class="login card"><h1>IGMCRI Surgery</h1><p style="color:#b42318">Application could not load.</p><p>'+String(e.message||'Please refresh the page.')+'</p><button onclick="location.reload()">Reload</button></div>';
   }
 });
 </script>
-<script src="app.js?v=20260817-v5"></script>
-<script src="login-override.js?v=20260817-v5"></script>
-<script src="ui-v3.js?v=20260817-v5"></script>
-<script src="ui-v4.js?v=20260817-v5"></script>
-<script src="ui-v4-final.js?v=20260817-v5"></script>
+<script src="app.js?v=20260817-v6"></script>
+<script src="login-override.js?v=20260817-v6"></script>
 </body>
 </html>
