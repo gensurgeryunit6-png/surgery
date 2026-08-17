@@ -1,25 +1,6 @@
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0b5f8a">
-<title>IGMCRI Surgery OPD Manager</title>
-<link rel="stylesheet" href="styles.css?v=20260817-v6">
-</head>
-<body>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b5f8a"><title>IGMCRI Surgery OPD Manager</title><link rel="stylesheet" href="styles.css?v=20260817-v7"></head><body>
 <div id="app"><div class="login card"><h1>IGMCRI Surgery</h1><p class="muted">Loading application…</p></div></div>
-<script src="config.js?v=20260817-v6"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-window.addEventListener('error',function(e){
-  const a=document.getElementById('app');
-  if(a && !a.querySelector('.top')){
-    a.innerHTML='<div class="login card"><h1>IGMCRI Surgery</h1><p style="color:#b42318">Application could not load.</p><p>'+String(e.message||'Please refresh the page.')+'</p><button onclick="location.reload()">Reload</button></div>';
-  }
-});
-</script>
-<script src="app.js?v=20260817-v6"></script>
-<script src="login-override.js?v=20260817-v6"></script>
-</body>
-</html>
+<script src="config.js?v=20260817-v7"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="app.js?v=20260817-v7"></script>
+<script>(function(){function L(){var b=document.querySelector('.login');if(!b||b.dataset.v7)return;b.dataset.v7='1';b.innerHTML='<h1>IGMCRI Surgery</h1><p class="muted">OPD • Waiting Lists • Major OT • Minor OT • Endoscopy</p><form id="v7login"><label>Username</label><input id="v7u" type="text" autocomplete="username" placeholder="Username" required><label>Password</label><input id="v7p" type="password" autocomplete="current-password" placeholder="Password" required><div class="actions"><button type="submit">Sign in</button></div><p class="muted">Username + password login. No email or OTP.</p></form>';document.getElementById('v7login').onsubmit=async function(e){e.preventDefault();var u=document.getElementById('v7u').value.trim().toLowerCase(),p=document.getElementById('v7p').value;if(u!=='admin'){alert('For now, use username: admin');return}var c=window.supabase.createClient(IGMCRI_CONFIG.supabaseUrl,IGMCRI_CONFIG.supabasePublishableKey);var r=await c.auth.signInWithPassword({email:'admin@igmcri.local',password:p});if(r.error)alert(r.error.message);else location.reload()}}}new MutationObserver(L).observe(document.getElementById('app'),{childList:true,subtree:true});setInterval(L,300);L()})();</script>
+<script src="ui-v4.js?v=20260817-v7"></script></body></html>
