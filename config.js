@@ -1,0 +1,1 @@
+window.IGMCRI_CONFIG={supabaseUrl:'https://pnncnljakqrqzocahxhs.supabase.co',supabasePublishableKey:'sb_publishable_cga5rEYY_gFG3KZ2Kpvb9g_ZoHKiYJd'};
