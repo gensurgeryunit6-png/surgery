@@ -6,16 +6,13 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <style>
-body{font-family:Arial,sans-serif;background:#f4f7fa;margin:0;color:#17324d}.wrap{max-width:1100px;margin:auto;padding:20px}.card{background:#fff;border-radius:14px;padding:20px;margin-bottom:16px;box-shadow:0 2px 10px #0001}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.full{grid-column:1/-1}label{font-weight:700;display:block;margin-bottom:5px}input,select,textarea{width:100%;box-sizing:border-box;padding:10px;border:1px solid #c8d2dc;border-radius:8px;font-size:15px}textarea{min-height:100px}button{background:#086b9b;color:white;border:0;padding:11px 18px;border-radius:8px;cursor:pointer;font-weight:700}.secondary{background:#526777}.check{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.check label{font-weight:400}.photo{display:flex;gap:10px;align-items:center;padding:8px;border-bottom:1px solid #eee}.status{padding:10px;background:#eef7fb;border-radius:8px;margin-top:10px}.hidden{display:none}@media(max-width:700px){.grid,.check{grid-template-columns:1fr}}
+body{font-family:Arial,sans-serif;background:#f4f7fa;margin:0;color:#17324d}.wrap{max-width:1100px;margin:auto;padding:20px}.card{background:#fff;border-radius:14px;padding:20px;margin-bottom:16px;box-shadow:0 2px 10px #0001}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.full{grid-column:1/-1}label{font-weight:700;display:block;margin-bottom:5px}input,select,textarea{width:100%;box-sizing:border-box;padding:10px;border:1px solid #c8d2dc;border-radius:8px;font-size:15px}textarea{min-height:100px}button{background:#086b9b;color:white;border:0;padding:11px 18px;border-radius:8px;cursor:pointer;font-weight:700}.secondary{background:#526777}.check{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.check label{font-weight:400}.photo{display:flex;gap:10px;align-items:center;padding:8px;border-bottom:1px solid #eee}.status{padding:10px;background:#eef7fb;border-radius:8px;margin-top:10px}.muted{color:#657786}@media(max-width:700px){.grid,.check{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="wrap">
 <header class="card"><h1>IGMCRI</h1><h2>Upper GI Endoscopy Report</h2><p>Supabase-backed clinical reporting form</p></header>
-<section id="login" class="card">
-<h3>Staff Login</h3><form id="loginForm"><div class="grid"><div><label>Email</label><input id="email" type="email" required placeholder="staff email"></div><div><label>Password</label><input id="password" type="password" required></div></div><br><button>Sign in</button></form><p id="loginMsg"></p>
-</section>
-<main id="app" class="hidden">
+<main id="app">
 <form id="reportForm">
 <section class="card"><h3>1. Patient & Procedure</h3><div class="grid">
 <div><label>Patient Name *</label><input id="patient_name" required></div>
@@ -40,35 +37,33 @@ body{font-family:Arial,sans-serif;background:#f4f7fa;margin:0;color:#17324d}.wra
 <div class="full"><label>Recommendations</label><textarea id="recommendations" placeholder="Follow-up / biopsy review / treatment recommendations"></textarea></div>
 </div></section>
 <section class="card"><h3>4. Endoscopy Photographs</h3><input id="photos" type="file" accept="image/*" multiple><div id="photoList"></div><p class="muted">Photos are stored in the private Supabase Storage bucket and are not printed in the report.</p></section>
-<section class="card"><h3>5. Save & Generate QR</h3><button type="submit">Save Draft & Generate QR</button> <button type="button" id="finalizeBtn" class="secondary">Finalize Report</button><div id="status" class="status hidden"></div><div id="qr" style="margin-top:15px"></div></section>
+<section class="card"><h3>5. Save & Generate QR</h3><button type="submit">Save Draft & Generate QR</button> <button type="button" id="finalizeBtn" class="secondary">Finalize Report</button><div id="status" class="status" hidden></div><div id="qr" style="margin-top:15px"></div></section>
 </form></main>
 </div>
 <script>
 const SUPABASE_URL='https://dtbpchspeirxvojfozld.supabase.co';
 const SUPABASE_KEY='sb_publishable_wy0O6mXoSZR2lDOQRikNpg_kaXvI8nb';
 const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-let currentUser=null, currentReportId=null, currentToken=null;
+let currentReportId=null,currentToken=null;
 const $=id=>document.getElementById(id);
-function msg(t){$('status').textContent=t;$('status').classList.remove('hidden')}
-async function init(){const {data}=await db.auth.getSession();if(data.session){currentUser=data.session.user;await showApp()}else $('login').classList.remove('hidden');}
-async function showApp(){ $('login').classList.add('hidden');$('app').classList.remove('hidden');$('procedure_date').value=new Date().toISOString().slice(0,10); await loadFaculty(); }
-async function loadFaculty(){const {data,error}=await db.from('faculty').select('id,name,designation').eq('active',true).order('name');const s=$('endoscopist_id');if(error){s.innerHTML='<option value="">Unable to load faculty</option>';return}s.innerHTML='<option value="">Select endoscopist</option>'+data.map(f=>`<option value="${f.id}">${escapeHtml(f.name)} — ${escapeHtml(f.designation)}</option>`).join('')}
+function msg(t){$('status').textContent=t;$('status').hidden=false}
 function escapeHtml(x){return String(x??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
-$('loginForm').onsubmit=async e=>{e.preventDefault();const {data,error}=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)$('loginMsg').textContent=error.message;else{currentUser=data.user;await showApp()}};
+async function loadFaculty(){const {data,error}=await db.from('faculty').select('id,name,designation').eq('active',true).order('name');const s=$('endoscopist_id');if(error){s.innerHTML='<option value="">Unable to load faculty</option>';return}s.innerHTML='<option value="">Select endoscopist</option>'+data.map(f=>`<option value="${f.id}">${escapeHtml(f.name)} — ${escapeHtml(f.designation)}</option>`).join('')}
 $('photos').onchange=()=>{$('photoList').innerHTML=[...$('photos').files].map((f,i)=>`<div class="photo">Photo ${i+1}: ${escapeHtml(f.name)} <span>${Math.round(f.size/1024)} KB</span></div>`).join('')};
 function checklist(){return Object.fromEntries([...document.querySelectorAll('#checklist input')].map(x=>[x.value,x.checked]))}
 async function saveReport(status='draft'){
 if(!$('reportForm').reportValidity())return;
 msg('Saving report...');
-const payload={patient_name:$('patient_name').value.trim(),patient_id:$('patient_id').value.trim(),age:$('age').value?Number($('age').value):null,gender:$('gender').value||null,procedure_date:$('procedure_date').value,endoscopist_id:$('endoscopist_id').value,indication:$('indication').value,sedation_type:$('sedation').value,pre_procedure_checklist:checklist(),esophagus:{text:$('esophagus').value},stomach:{text:$('stomach').value},duodenum:{text:$('duodenum').value},interventions:{text:$('interventions').value,complications:$('complications').value},assessment:{impression:$('impression').value,recommendations:$('recommendations').value},report_text:buildReportText(),status,created_by:currentUser.id,updated_by:currentUser.id};
+const payload={patient_name:$('patient_name').value.trim(),patient_id:$('patient_id').value.trim(),age:$('age').value?Number($('age').value):null,gender:$('gender').value||null,procedure_date:$('procedure_date').value,endoscopist_id:$('endoscopist_id').value,indication:$('indication').value,sedation_type:$('sedation').value,pre_procedure_checklist:checklist(),esophagus:{text:$('esophagus').value},stomach:{text:$('stomach').value},duodenum:{text:$('duodenum').value},interventions:{text:$('interventions').value,complications:$('complications').value},assessment:{impression:$('impression').value,recommendations:$('recommendations').value},report_text:buildReportText(),status,updated_by:null};
 let r=currentReportId?await db.from('endoscopy_reports').update(payload).eq('id',currentReportId).select().single():await db.from('endoscopy_reports').insert(payload).select().single();
-if(r.error){msg('Error: '+r.error.message);return} currentReportId=r.data.id;currentToken=r.data.access_token;
+if(r.error){msg('Error: '+r.error.message);return}currentReportId=r.data.id;currentToken=r.data.access_token;
 await uploadPhotos();
-if(status==='final')await db.from('endoscopy_reports').update({finalized_at:new Date().toISOString(),updated_by:currentUser.id}).eq('id',currentReportId);
-$('qr').innerHTML='';new QRCode($('qr'),{text:location.origin+location.pathname.replace('endoscopy.html','endoscopy-viewer.html')+'?token='+currentToken,width:180,height:180});msg(`Report ${r.data.report_no} saved as ${status}. QR code generated.`);
+if(status==='final')await db.from('endoscopy_reports').update({finalized_at:new Date().toISOString()}).eq('id',currentReportId);
+$('qr').innerHTML='';new QRCode($('qr'),{text:location.origin+location.pathname.replace('endoscopy.html','endoscopy-viewer.html')+'?token='+currentToken,width:180,height:180});msg(`Report ${r.data.report_no} saved as ${status}. QR code generated.`)
 }
-async function uploadPhotos(){const files=[...$('photos').files];for(let i=0;i<files.length;i++){const f=files[i];const path=`${currentReportId}/${crypto.randomUUID()}-${f.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;const up=await db.storage.from('endoscopy-photos').upload(path,f,{upsert:false});if(up.error){msg('Photo upload error: '+up.error.message);continue}await db.from('endoscopy_photos').insert({report_id:currentReportId,storage_path:path,caption:'Endoscopy photograph',sequence_no:i+1,created_by:currentUser.id})}}
+async function uploadPhotos(){const files=[...$('photos').files];for(let i=0;i<files.length;i++){const f=files[i];const path=`${currentReportId}/${crypto.randomUUID()}-${f.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;const up=await db.storage.from('endoscopy-photos').upload(path,f,{upsert:false});if(up.error){msg('Photo upload error: '+up.error.message);continue}await db.from('endoscopy_photos').insert({report_id:currentReportId,storage_path:path,caption:'Endoscopy photograph',sequence_no:i+1})}}
 function buildReportText(){return `UPPER GI ENDOSCOPY REPORT\n\nPatient: ${$('patient_name').value}\nPatient ID: ${$('patient_id').value}\nDate: ${$('procedure_date').value}\n\nINDICATION\n${$('indication').value}\n\nESOPHAGUS\n${$('esophagus').value}\n\nSTOMACH\n${$('stomach').value}\n\nDUODENUM\n${$('duodenum').value}\n\nINTERVENTIONS / BIOPSY\n${$('interventions').value}\n\nIMPRESSION\n${$('impression').value}\n\nRECOMMENDATIONS\n${$('recommendations').value}`}
-$('reportForm').onsubmit=e=>{e.preventDefault();saveReport('draft')};$('finalizeBtn').onclick=()=>{if(confirm('Finalize this report?'))saveReport('final')};init();
+$('reportForm').onsubmit=e=>{e.preventDefault();saveReport('draft')};$('finalizeBtn').onclick=()=>{if(confirm('Finalize this report?'))saveReport('final')};
+$('procedure_date').value=new Date().toISOString().slice(0,10);loadFaculty();
 </script>
 </body></html>
