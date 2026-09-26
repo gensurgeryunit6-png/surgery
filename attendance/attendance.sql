@@ -1,7 +1,7 @@
 create table if not exists public.attendance_sessions (
   id uuid primary key default gen_random_uuid(),
   title text not null,
-  unit text not null,
+  batch text not null,
   teacher text not null,
   started_at timestamptz not null default now(),
   ended_at timestamptz,
@@ -14,7 +14,7 @@ create table if not exists public.attendance_registrations (
   session_id uuid not null references public.attendance_sessions(id) on delete cascade,
   name text not null,
   regno text not null,
-  unit text not null,
+  batch text not null,
   face_image_path text,
   marked_at timestamptz not null default now(),
   unique(session_id, regno)
