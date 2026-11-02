@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light" />
+  <title>UG Student Information | IGMCRI General Surgery</title>
+  <style>
+    :root { font-family: Inter, "Segoe UI", Arial, sans-serif; color: #143044; background: #eef6fa; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    header { background: #073750; color: #fff; padding: 23px max(20px, calc((100vw - 1140px)/2)); }
+    .identity { display: flex; gap: 14px; align-items: center; }
+    .seal { width: 51px; height: 51px; border-radius: 14px; background: #12b4cf; display: grid; place-items: center; font-size: 19px; font-weight: 900; color: #073750; }
+    .overline { font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; opacity: .8; }
+    header h1 { margin: 3px 0 0; font-size: clamp(19px,2.5vw,25px); line-height: 1.3; }
+    header p { margin: 4px 0 0; opacity: .84; font-size: 13px; }
+    main { max-width: 1140px; margin: 28px auto 64px; padding: 0 20px; }
+    .hero { display:flex; justify-content:space-between; align-items:flex-start; gap:20px; margin-bottom:22px; }
+    h2 { font-size:clamp(23px,3.5vw,31px); margin:0 0 8px; letter-spacing:-.02em; }
+    .hero p { color:#567080; margin:0; max-width:680px; line-height:1.6; }
+    .tag { background:#d9f5f9; color:#07687f; border:1px solid #a5e4ef; white-space:nowrap; padding:9px 14px; border-radius:100px; font-weight:700; font-size:12px; }
+    form { display:grid; grid-template-columns: 1fr; gap:18px; }
+    section { background:white; border:1px solid #d7e7ef; box-shadow:0 8px 32px rgba(14,64,92,.035); border-radius:18px; padding:26px; }
+    .section-title { display:flex; gap:12px; align-items:center; border-bottom:1px solid #e7f0f4; padding-bottom:18px; margin-bottom:19px; }
+    .number { display:grid; place-items:center; background:#dff4fa; color:#007d97; width:35px; height:35px; flex-shrink:0; border-radius:11px; font-weight:900; }
+    h3 { margin:0; font-size:18px; }
+    .section-title small { display:block; margin-top:4px; color:#68808d; }
+    .fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:17px 20px; }
+    .field.full { grid-column:1/-1; }
+    label.legend, legend { font-size:13px; font-weight:700; color:#244558; margin-bottom:7px; display:block; }
+    input, select, textarea { display:block; width:100%; border:1px solid #cbdfe8; background:#fbfdfe; padding:12px 13px; min-height:44px; border-radius:10px; font:inherit; font-size:14px; color:#17374b; outline:none; }
+    input:focus, select:focus, textarea:focus { border-color:#0aaac8; box-shadow:0 0 0 3px rgba(0,173,207,.13); }
+    textarea { min-height:95px; resize:vertical; line-height:1.55; }
+    .hint { display:block; margin-top:6px; color:#718695; font-size:12px; line-height:1.4; }
+    .req { color:#c84a54; }
+    fieldset { margin:0; border:0; padding:0; min-width:0; }
+    .chips { display:flex; flex-wrap:wrap; gap:9px; }
+    .chip { display:flex; gap:8px; align-items:center; cursor:pointer; border:1px solid #d2e6ed; background:#f7fbfd; padding:9px 12px; border-radius:9px; font-size:13px; }
+    .chip:has(input:checked) { background:#dff6fa; color:#05687c; border-color:#7bcfdd; }
+    .chip input { margin:0; min-height:auto; width:15px; height:15px; accent-color:#008ba7; }
+    .minor-heading { font-size:14px; color:#276077; font-weight:800; margin:2px 0 16px; }
+    .secondary-parent { border-top:1px dashed #ccdfe9; margin-top:20px; padding-top:18px; }
+    .notice { background:#ecf8fa; border:1px solid #c6e8ee; color:#345f70; padding:15px 17px; border-radius:12px; font-size:13px; line-height:1.7; }
+    .accept { display:flex; align-items:flex-start; gap:10px; padding:9px 0; line-height:1.55; font-size:14px; }
+    .accept input { width:17px; height:17px; min-height:auto; margin-top:3px; accent-color:#008ba7; }
+    .actions { display:flex; justify-content:space-between; align-items:center; gap:15px; flex-wrap:wrap; }
+    button { background:#007f9b; color:white; font:inherit; font-weight:800; border:0; border-radius:11px; padding:14px 23px; cursor:pointer; }
+    button:hover { background:#00677e; }
+    button:disabled { cursor:wait; opacity:.65; }
+    .muted { color:#738795; font-size:13px; }
+    .result { display:none; border-radius:12px; padding:15px; line-height:1.6; margin-top:15px; }
+    .result.ok { display:block; background:#e5f7ee; border:1px solid #aee4c8; color:#176144; }
+    .result.error { display:block; background:#fff0f0; border:1px solid #f3c2c2; color:#8a343b; }
+    footer { color:#648090; text-align:center; padding:24px 16px; font-size:12px; }
+    @media (max-width: 660px) { .fields { grid-template-columns:1fr; } section {padding:19px;} .hero { display:block; } .tag { display:inline-block; margin-top:13px;} main {padding:0 13px;} header {padding:19px 16px;} }
+  </style>
+</head>
+<body>
+<header>
+  <div class="identity"><div class="seal" aria-hidden="true">IG</div><div><div class="overline">Indira Gandhi Medical College &amp; Research Institute</div><h1>Department of General Surgery</h1><p>Undergraduate Student Information Collection</p></div></div>
+</header>
+<main>
+  <div class="hero"><div><h2>Student Information Form</h2><p>Please provide accurate details for departmental communication, academic support and understanding student interests. Your submission will be stored securely and will not be viewable by other students.</p></div><span class="tag">Confidential staff records</span></div>
+  <form id="intakeForm">
+    <section>
+      <div class="section-title"><span class="number">01</span><div><h3>Basic details</h3><small>Student identification and contact information</small></div></div>
+      <div class="fields">
+        <div class="field full"><label class="legend" for="student_name">Full name <span class="req">*</span></label><input id="student_name" name="student_name" maxlength="120" minlength="2" autocomplete="name" required placeholder="Name as per college records" /></div>
+        <div class="field"><label class="legend" for="age">Age <span class="req">*</span></label><input type="number" id="age" name="age" min="15" max="70" required placeholder="e.g. 19" /></div>
+        <div class="field"><label class="legend" for="gender">Gender <span class="req">*</span></label><select id="gender" name="gender" required><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option><option>Prefer not to say</option></select></div>
+        <div class="field"><label class="legend" for="date_of_birth">Date of birth</label><input type="date" id="date_of_birth" name="date_of_birth" /></div>
+        <div class="field"><label class="legend" for="register_number">Roll / registration number</label><input id="register_number" name="register_number" maxlength="40" placeholder="If allotted" /></div>
+        <div class="field"><label class="legend" for="admission_year">Year of admission <span class="req">*</span></label><input id="admission_year" name="admission_year" type="number" min="2000" max="2100" required placeholder="e.g. 2026" /></div>
+        <div class="field"><label class="legend" for="year_of_study">Year of study <span class="req">*</span></label><select id="year_of_study" name="year_of_study" required><option value="">Select</option><option>First year</option><option>Second year</option><option>Third year</option><option>Final year</option><option>Internship</option><option>Other</option></select></div>
+        <div class="field"><label class="legend" for="student_mobile">Student mobile number <span class="req">*</span></label><input id="student_mobile" name="student_mobile" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" autocomplete="tel-national" required placeholder="10-digit Indian number" /></div>
+        <div class="field"><label class="legend" for="student_email">Student email <span class="req">*</span></label><input id="student_email" name="student_email" type="email" maxlength="254" autocomplete="email" required placeholder="Preferably Gmail" /></div>
+      </div>
+    </section>
+    <section>
+      <div class="section-title"><span class="number">02</span><div><h3>Parent / guardian contact details</h3><small>For legitimate departmental communication; Gmail preferred</small></div></div>
+      <p class="minor-heading">Primary parent or guardian (required)</p>
+      <div class="fields">
+        <div class="field"><label class="legend" for="primary_parent_name">Name <span class="req">*</span></label><input id="primary_parent_name" name="primary_parent_name" maxlength="120" minlength="2" required /></div>
+        <div class="field"><label class="legend" for="primary_parent_relation">Relationship <span class="req">*</span></label><select id="primary_parent_relation" name="primary_parent_relation" required><option value="">Select</option><option>Father</option><option>Mother</option><option>Guardian</option><option>Other</option></select></div>
+        <div class="field"><label class="legend" for="primary_parent_mobile">Mobile number <span class="req">*</span></label><input id="primary_parent_mobile" name="primary_parent_mobile" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" required placeholder="10-digit Indian number" /></div>
+        <div class="field"><label class="legend" for="primary_parent_email">Gmail / email address <span class="req">*</span></label><input id="primary_parent_email" name="primary_parent_email" type="email" maxlength="254" required placeholder="parent@gmail.com" /><small class="hint">Gmail preferred; another valid email is accepted.</small></div>
+      </div>
+      <div class="secondary-parent">
+        <p class="minor-heading">Second parent or guardian (optional)</p>
+        <div class="fields">
+          <div class="field"><label class="legend" for="secondary_parent_name">Name</label><input id="secondary_parent_name" name="secondary_parent_name" maxlength="120" /></div>
+          <div class="field"><label class="legend" for="secondary_parent_relation">Relationship</label><select id="secondary_parent_relation" name="secondary_parent_relation"><option value="">Select</option><option>Father</option><option>Mother</option><option>Guardian</option><option>Other</option></select></div>
+          <div class="field"><label class="legend" for="secondary_parent_mobile">Mobile number</label><input id="secondary_parent_mobile" name="secondary_parent_mobile" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" placeholder="10-digit Indian number" /></div>
+          <div class="field"><label class="legend" for="secondary_parent_email">Gmail / email address</label><input id="secondary_parent_email" name="secondary_parent_email" type="email" maxlength="254" placeholder="parent@gmail.com" /></div>
+        </div>
+        <small class="hint">If adding a second contact, please complete all four fields.</small>
+      </div>
+    </section>
+    <section>
+      <div class="section-title"><span class="number">03</span><div><h3>Languages, sports and hobbies</h3><small>Help the department learn about your interests</small></div></div>
+      <div class="fields">
+        <fieldset class="field full"><legend>Languages known</legend><div class="chips" id="languages">
+          <label class="chip"><input type="checkbox" value="Tamil" />Tamil</label><label class="chip"><input type="checkbox" value="English" />English</label><label class="chip"><input type="checkbox" value="Hindi" />Hindi</label><label class="chip"><input type="checkbox" value="Malayalam" />Malayalam</label><label class="chip"><input type="checkbox" value="Telugu" />Telugu</label><label class="chip"><input type="checkbox" value="Kannada" />Kannada</label>
+        </div></fieldset>
+        <div class="field"><label class="legend" for="languages_other">Other language(s)</label><input id="languages_other" name="languages_other" maxlength="200" placeholder="Specify if any" /></div>
+        <div class="field"><label class="legend" for="tamil_proficiency">Tamil proficiency <span class="req">*</span></label><select id="tamil_proficiency" name="tamil_proficiency" required><option value="">Select</option><option>Fluent</option><option>Conversational</option><option>Basic</option><option>Learning</option><option>Not yet started</option></select><small class="hint">Learning Tamil is expected for effective patient communication. You can select “Not yet started” honestly.</small></div>
+        <fieldset class="field full"><legend>Sports (select all that apply)</legend><div class="chips" id="sports">
+          <label class="chip"><input type="checkbox" value="Tennis" />Tennis</label><label class="chip"><input type="checkbox" value="Cricket - Batting" />Cricket: Batting</label><label class="chip"><input type="checkbox" value="Cricket - Bowling" />Cricket: Bowling</label><label class="chip"><input type="checkbox" value="Badminton" />Badminton</label><label class="chip"><input type="checkbox" value="Football" />Football</label><label class="chip"><input type="checkbox" value="Volleyball" />Volleyball</label>
+        </div></fieldset>
+        <div class="field full"><label class="legend" for="sports_other">Other sports</label><input id="sports_other" name="sports_other" maxlength="200" placeholder="Specify if any" /></div>
+        <fieldset class="field full"><legend>Hobbies (select all that apply)</legend><div class="chips" id="hobbies">
+          <label class="chip"><input type="checkbox" value="Music" />Music</label><label class="chip"><input type="checkbox" value="Painting" />Painting</label><label class="chip"><input type="checkbox" value="Writing" />Writing</label><label class="chip"><input type="checkbox" value="Arts & crafts" />Arts &amp; crafts</label><label class="chip"><input type="checkbox" value="Reading" />Reading</label><label class="chip"><input type="checkbox" value="Dancing" />Dancing</label><label class="chip"><input type="checkbox" value="Photography" />Photography</label>
+        </div></fieldset>
+        <div class="field full"><label class="legend" for="hobbies_other">Other hobbies</label><input id="hobbies_other" name="hobbies_other" maxlength="200" placeholder="Specify if any" /></div>
+      </div>
+    </section>
+    <section>
+      <div class="section-title"><span class="number">04</span><div><h3>About you and medicine</h3><small>There are no right or wrong answers</small></div></div>
+      <div class="fields">
+        <div class="field full"><label class="legend" for="strengths">What are your strengths? <span class="req">*</span></label><textarea id="strengths" name="strengths" minlength="2" maxlength="2000" required placeholder="For example: good memory, reading, organisation, teamwork..."></textarea></div>
+        <div class="field full"><label class="legend" for="weaknesses">What areas would you like to improve? <span class="req">*</span></label><textarea id="weaknesses" name="weaknesses" minlength="2" maxlength="2000" required placeholder="For example: confidence, speaking before groups, time management..."></textarea></div>
+        <div class="field full"><label class="legend" for="ambitions">What are your ambitions? <span class="req">*</span></label><textarea id="ambitions" name="ambitions" minlength="2" maxlength="2000" required placeholder="For example: surgeon, cardiologist, business leader, public service..."></textarea></div>
+        <div class="field full"><label class="legend" for="medicine_reason">Why did you join medicine? <span class="req">*</span></label><select id="medicine_reason" name="medicine_reason" required><option value="">Select the closest answer</option><option>Always wanted to study medicine</option><option>Encouraged by my parents</option><option>Got admission and chose to join</option><option>Did not get another preferred course</option><option>Other</option></select></div>
+        <div class="field full"><label class="legend" for="medicine_reason_details">Anything else you wish to share?</label><textarea id="medicine_reason_details" name="medicine_reason_details" maxlength="2000" placeholder="Optional — your own reasons or comments"></textarea></div>
+      </div>
+    </section>
+    <section>
+      <div class="section-title"><span class="number">05</span><div><h3>Declaration &amp; submit</h3><small>Please check details before sending</small></div></div>
+      <div class="notice"><strong>Privacy notice:</strong> This information is collected by the Department of General Surgery for student support, academic administration and appropriate parent/guardian communication. It is saved in a restricted Supabase database. Other students cannot view the submitted information. Only separately authorized department staff can retrieve records. Avoid entering unrelated sensitive information in free-text answers.</div>
+      <label class="accept"><input type="checkbox" id="guardian_contact_permission" required /><span>I confirm that the parent/guardian contact information is accurate and that I have permission to provide it for department communication. <span class="req">*</span></span></label>
+      <label class="accept"><input type="checkbox" id="privacy_notice_acknowledged" required /><span>I have read the privacy notice and confirm that the information I am submitting is accurate. <span class="req">*</span></span></label>
+      <div class="actions"><span class="muted">Fields marked * are required.</span><button type="submit" id="submitBtn">Submit student information</button></div>
+      <div id="result" role="status" aria-live="polite" class="result"></div>
+    </section>
+  </form>
+</main>
+<footer>IGMCRI · Department of General Surgery · Student Information Portal</footer>
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/+esm';
+  const db = createClient('https://dtbpchspeirxvojfozld.supabase.co', 'sb_publishable_wy0O6mXoSZR2lDOQRikNpg_kaXvI8nb', {
+    auth: {persistSession:false, autoRefreshToken:false, detectSessionInUrl:false}
+  });
+  const form = document.getElementById('intakeForm');
+  const result = document.getElementById('result');
+  const submitBtn = document.getElementById('submitBtn');
+  const get = id => document.getElementById(id).value.trim();
+  const optional = id => get(id) || null;
+  const checks = id => [...document.querySelectorAll(`#${id} input:checked`)].map(node => node.value);
+  function show(kind, message) { result.className = `result ${kind}`; result.textContent=message; result.scrollIntoView({behavior:'smooth',block:'center'}); }
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!form.reportValidity()) return;
+    const second = ['secondary_parent_name','secondary_parent_relation','secondary_parent_mobile','secondary_parent_email'].map(get);
+    if (second.some(Boolean) && !second.every(Boolean)) { show('error', 'Please complete all four fields for the second parent/guardian, or leave all four blank.'); return; }
+    const payload = {
+      student_name:get('student_name'), age:Number(get('age')), gender:get('gender'), date_of_birth:optional('date_of_birth'),
+      register_number:optional('register_number'), admission_year:Number(get('admission_year')), year_of_study:get('year_of_study'),
+      student_mobile:get('student_mobile'), student_email:get('student_email'),
+      primary_parent_name:get('primary_parent_name'), primary_parent_relation:get('primary_parent_relation'),
+      primary_parent_mobile:get('primary_parent_mobile'), primary_parent_email:get('primary_parent_email'),
+      secondary_parent_name:optional('secondary_parent_name'), secondary_parent_relation:optional('secondary_parent_relation'),
+      secondary_parent_mobile:optional('secondary_parent_mobile'), secondary_parent_email:optional('secondary_parent_email'),
+      languages_known:checks('languages'), languages_other:optional('languages_other'), tamil_proficiency:get('tamil_proficiency'),
+      sports:checks('sports'), sports_other:optional('sports_other'), hobbies:checks('hobbies'), hobbies_other:optional('hobbies_other'),
+      strengths:get('strengths'), weaknesses:get('weaknesses'), ambitions:get('ambitions'),
+      medicine_reason:get('medicine_reason'), medicine_reason_details:optional('medicine_reason_details'),
+      guardian_contact_permission:document.getElementById('guardian_contact_permission').checked,
+      privacy_notice_acknowledged:document.getElementById('privacy_notice_acknowledged').checked
+    };
+    submitBtn.disabled=true; submitBtn.textContent='Submitting…'; result.className='result';
+    try {
+      // No .select(): anonymous users may INSERT but may not SELECT any records.
+      const {error} = await db.from('gs_student_intake').insert(payload);
+      if (error) throw error;
+      form.reset();
+      show('ok', 'Your information was submitted successfully. Only authorized department staff can view the saved record.');
+    } catch (error) {
+      console.error('Student form submission failed', error?.message);
+      show('error', 'Submission failed. Please verify your details and network connection, then try again. If the problem continues, contact the department office.');
+    } finally { submitBtn.disabled=false; submitBtn.textContent='Submit student information'; }
+  });
+</script>
+</body>
+</html>
