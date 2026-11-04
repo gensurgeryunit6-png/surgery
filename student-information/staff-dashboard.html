@@ -18,7 +18,7 @@
     <form id="signupForm" class="hidden"><p class="small">Create a staff account and request approval. Registration does not give access to confidential records. A department administrator must approve you separately.</p><label for="signupName">Full name</label><input id="signupName" maxlength="100" autocomplete="name" required/><label for="signupEmail">Official email address</label><input id="signupEmail" type="email" autocomplete="email" required/><label for="signupPassword">Create password (at least 12 characters)</label><input id="signupPassword" type="password" autocomplete="new-password" minlength="12" required/><label for="signupConfirm">Confirm password</label><input id="signupConfirm" type="password" autocomplete="new-password" minlength="12" required/><div style="margin-top:18px"><button type="submit" id="signupButton">Request approval</button></div><p id="signupStatus" class="small" role="status"></p></form>
   </div>
   <div id="dashboard">
-    <div class="topbar"><div><h2>Confidential student records</h2><p class="small" id="whoami">Signed-in department staff</p></div><div class="stack"><a id="approvalLink" href="approvals.html" style="display:none;background:#d4f1f4;color:#096578;border-radius:9px;padding:11px 13px;font-weight:750;text-decoration:none">Staff Approvals</a><button class="secondary" type="button" id="exportButton">Export all as CSV</button><button class="secondary" type="button" id="logoutButton">Sign out</button></div></div>
+    <div class="topbar"><div><h2>Confidential student records</h2><p class="small" id="whoami">Signed-in department staff</p></div><div class="stack"><a id="approvalLink" href="approvals.html" style="display:none;background:#d4f1f4;color:#096578;border-radius:9px;padding:11px 13px;font-weight:750;text-decoration:none">Staff Approvals</a><button class="secondary" type="button" id="excelExportButton">Export to Excel (.xlsx)</button><button class="secondary" type="button" id="exportButton">Export all as CSV</button><button class="secondary" type="button" id="logoutButton">Sign out</button></div></div>
     <div class="panel">
       <div class="toolbar"><div><label for="searchInput">Find by student name</label><input id="searchInput" placeholder="Search student name" /></div><div class="stack"><button class="secondary" type="button" id="searchButton">Search</button><button class="secondary" type="button" id="clearButton">Clear</button></div></div>
       <p class="small" role="status" id="dataStatus"></p>
@@ -28,6 +28,7 @@
   </div>
 </main>
 <dialog id="detailDialog" aria-labelledby="detailTitle"><div class="topbar"><h2 id="detailTitle">Student details</h2><button class="secondary" id="closeDialog" type="button">Close</button></div><div class="details" id="details"></div></dialog>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/+esm';
 const db=createClient('https://dtbpchspeirxvojfozld.supabase.co','sb_publishable_wy0O6mXoSZR2lDOQRikNpg_kaXvI8nb');
@@ -76,7 +77,61 @@ function displayValue(v){if(Array.isArray(v))return v.join(', ')||'—';if(v===n
 function openDetails(item){$('detailTitle').textContent=`Details · ${item.student_name}`;$('details').replaceChildren();for(const [key,label] of Object.entries(descriptions)){const div=document.createElement('div');div.className='detail'+(['strengths','weaknesses','ambitions','medicine_reason_details'].includes(key)?' full':'');const span=document.createElement('span');span.textContent=label;const val=document.createElement('div');val.textContent=displayValue(item[key]);div.append(span,val);$('details').appendChild(div);}$('detailDialog').showModal();}
 $('closeDialog').addEventListener('click',()=>$('detailDialog').close());
 function cell(v){let s=displayValue(v);if(/^[\s\t\r\n]*[=+\-@]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';}
-$('exportButton').addEventListener('click',async()=>{const btn=$('exportButton');btn.disabled=true;btn.textContent='Preparing CSV…';try{let all=[],offset=0;while(true){const {data,error}=await db.from('gs_student_intake').select('*').order('submitted_at',{ascending:false}).range(offset,offset+499);if(error)throw error;all.push(...(data||[]));if(!data||data.length<500)break;offset+=500;}const keys=['submitted_at',...Object.keys(descriptions).filter(k=>k!=='submitted_at')];const csv='\ufeff'+[keys.map(key=>cell(descriptions[key]||key)).join(','),...all.map(x=>keys.map(k=>cell(x[k])).join(','))].join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`IGMCRI_Student_Information_${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);status(`Exported ${all.length} records. Handle the file confidentially.`);}catch(e){status('CSV export failed. Check connection and authorization.',true);}finally{btn.disabled=false;btn.textContent='Export all as CSV';}});
+
+async function fetchAllForExport(){
+  // Read every authorized record, not only the currently visible dashboard page.
+  const all=[];
+  let offset=0;
+  while(true){
+    const {data,error}=await db.from('gs_student_intake')
+      .select('*').order('submitted_at',{ascending:false})
+      .range(offset,offset+499);
+    if(error)throw error;
+    const batch=data||[];
+    all.push(...batch);
+    if(batch.length<500)break;
+    offset+=500;
+  }
+  return all;
+}
+$('excelExportButton').addEventListener('click',async()=>{
+  const btn=$('excelExportButton');
+  btn.disabled=true;
+  btn.textContent='Preparing Excel…';
+  try{
+    if(!window.XLSX?.utils?.aoa_to_sheet)throw Error('Excel library did not load. Check your internet connection and refresh the page.');
+    const {data:{user},error:authError}=await db.auth.getUser();
+    if(authError||user?.app_metadata?.gs_student_intake_admin!==true)throw Error('Staff session expired. Sign in again.');
+    const all=await fetchAllForExport();
+    const fields=['submitted_at',...Object.keys(descriptions).filter(k=>k!=='submitted_at')];
+    const header=fields.map(k=>descriptions[k]||k);
+    // Explicit strings preserve leading zeros in mobile and registration numbers.
+    // Text cells also ensure user-submitted values cannot become Excel formulas.
+    const values=all.map(item=>fields.map(k=>{
+      const value=item[k];
+      return k==='submitted_at'&&value?new Date(value).toLocaleString('en-IN'):displayValue(value);
+    }));
+    const sheet=window.XLSX.utils.aoa_to_sheet([header,...values]);
+    sheet['!cols']=fields.map((field,i)=>{
+      const contentWidth=Math.max(header[i].length,...values.slice(0,100).map(row=>String(row[i]||'').length));
+      return {wch:Math.min(Math.max(contentWidth+2,15),40)};
+    });
+    if(all.length)sheet['!autofilter']={ref:'A1:'+window.XLSX.utils.encode_cell({r:all.length,c:fields.length-1})};
+    const book=window.XLSX.utils.book_new();
+    book.Props={Title:'IGMCRI Student Information',Subject:'Confidential student records',Author:'Department of General Surgery, IGMCRI'};
+    window.XLSX.utils.book_append_sheet(book,sheet,'Student Records');
+    window.XLSX.writeFile(book,'IGMCRI_Student_Information_'+new Date().toISOString().slice(0,10)+'.xlsx',{bookType:'xlsx',compression:true});
+    status('Excel export prepared: '+all.length+' student record(s). Keep this file confidential.');
+  }catch(error){
+    status(error.message||'Excel export failed. Check your connection and authorization.',true);
+    console.error('Excel export failed',error);
+  }finally{
+    btn.disabled=false;
+    btn.textContent='Export to Excel (.xlsx)';
+  }
+});
+
+$('exportButton').addEventListener('click',async()=>{const btn=$('exportButton');btn.disabled=true;btn.textContent='Preparing CSV…';try{const all=await fetchAllForExport();const keys=['submitted_at',...Object.keys(descriptions).filter(k=>k!=='submitted_at')];const csv='\ufeff'+[keys.map(key=>cell(descriptions[key]||key)).join(','),...all.map(x=>keys.map(k=>cell(x[k])).join(','))].join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`IGMCRI_Student_Information_${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);status(`Exported ${all.length} records. Handle the file confidentially.`);}catch(e){status('CSV export failed. Check connection and authorization.',true);}finally{btn.disabled=false;btn.textContent='Export all as CSV';}});
 refreshAuth();
 </script>
 </body>
