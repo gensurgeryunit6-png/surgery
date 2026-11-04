@@ -4,7 +4,7 @@
 <meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Staff-only Student Records | IGMCRI</title>
 <style>
-:root {font-family:Inter,"Segoe UI",Arial,sans-serif; color:#17384b; background:#eff6fa}*{box-sizing:border-box}body{margin:0}header{background:#073750;color:#fff;padding:24px max(20px,calc((100vw - 1200px)/2))}header small{opacity:.7;letter-spacing:.1em;text-transform:uppercase;font-size:11px;font-weight:800}h1{font-size:24px;margin:5px 0 0}header p{margin:6px 0 0;opacity:.7;font-size:13px}main{max-width:1200px;margin:27px auto 50px;padding:0 20px}.panel{background:white;border:1px solid #d6e6ee;border-radius:17px;padding:23px;box-shadow:0 8px 30px #0a52600a}#loginPanel{max-width:470px;margin:36px auto}h2{margin:0 0 13px;font-size:20px}p{line-height:1.6}label{display:block;margin-top:15px;margin-bottom:6px;font-size:13px;font-weight:800}input{padding:12px 13px;border-radius:9px;border:1px solid #cee0e8;background:#fbfdff;font:inherit;width:100%;font-size:14px}input:focus{outline:2px solid #84d9e6}button{padding:11px 17px;background:#007f9b;color:#fff;border:0;border-radius:9px;font:inherit;font-weight:750;cursor:pointer}button.secondary{background:#e2f2f6;color:#146071}button:disabled{opacity:.5;cursor:wait}.stack{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.topbar{display:flex;justify-content:space-between;gap:15px;align-items:center;margin-bottom:17px}.small{color:#627e8d;font-size:13px}.error{color:#a12e46}.success{color:#20744a}#dashboard{display:none}.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:860px;font-size:13px}th{background:#eaf5f8;text-align:left;color:#356273;font-size:12px;position:sticky;top:0}td,th{border-bottom:1px solid #e7f0f5;padding:13px 11px;vertical-align:middle}td strong{font-size:14px}td button{padding:7px 11px;font-size:12px}.toolbar{display:flex;justify-content:space-between;align-items:end;flex-wrap:wrap;gap:12px;margin:10px 0 21px}.toolbar input{width:270px}.paginator{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-top:16px}.hidden{display:none !important}dialog{max-width:min(760px,96vw);width:100%;border:1px solid #cbe2e9;border-radius:18px;box-shadow:0 28px 80px #0a334a55;padding:24px;color:#17384b}dialog::backdrop{background:rgba(1,28,46,.55)}.details{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:22px 0}.detail{background:#f4f9fb;padding:12px;border-radius:9px;min-width:0}.detail span{display:block;font-size:11px;font-weight:800;color:#678492;text-transform:uppercase;letter-spacing:.04em;margin-bottom:7px}.detail div{overflow-wrap:anywhere;white-space:pre-wrap;font-size:14px}.detail.full{grid-column:1/-1}@media(max-width:650px){.details{grid-template-columns:1fr}.topbar{align-items:start;flex-direction:column}.toolbar input{width:100%}header{padding:20px 16px}main{padding:0 12px}dialog{padding:15px}}
+:root {font-family:Inter,"Segoe UI",Arial,sans-serif; color:#17384b; background:#eff6fa}*{box-sizing:border-box}body{margin:0}header{background:#073750;color:#fff;padding:24px max(20px,calc((100vw - 1200px)/2))}header small{opacity:.7;letter-spacing:.1em;text-transform:uppercase;font-size:11px;font-weight:800}h1{font-size:24px;margin:5px 0 0}header p{margin:6px 0 0;opacity:.7;font-size:13px}main{max-width:1200px;margin:27px auto 50px;padding:0 20px}.panel{background:white;border:1px solid #d6e6ee;border-radius:17px;padding:23px;box-shadow:0 8px 30px #0a52600a}#loginPanel{max-width:470px;margin:36px auto}h2{margin:0 0 13px;font-size:20px}p{line-height:1.6}label{display:block;margin-top:15px;margin-bottom:6px;font-size:13px;font-weight:800}input{padding:12px 13px;border-radius:9px;border:1px solid #cee0e8;background:#fbfdff;font:inherit;width:100%;font-size:14px}input:focus{outline:2px solid #84d9e6}button{padding:11px 17px;background:#007f9b;color:#fff;border:0;border-radius:9px;font:inherit;font-weight:750;cursor:pointer}button.secondary{background:#e2f2f6;color:#146071}button.danger{background:#fff0f1;color:#982941;border:1px solid #e7bfc8}button.danger:hover{background:#f9dfe6}button:disabled{opacity:.5;cursor:wait}.stack{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.topbar{display:flex;justify-content:space-between;gap:15px;align-items:center;margin-bottom:17px}.small{color:#627e8d;font-size:13px}.error{color:#a12e46}.success{color:#20744a}#dashboard{display:none}.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:860px;font-size:13px}th{background:#eaf5f8;text-align:left;color:#356273;font-size:12px;position:sticky;top:0}td,th{border-bottom:1px solid #e7f0f5;padding:13px 11px;vertical-align:middle}td strong{font-size:14px}td button{padding:7px 11px;font-size:12px}.toolbar{display:flex;justify-content:space-between;align-items:end;flex-wrap:wrap;gap:12px;margin:10px 0 21px}.toolbar input{width:270px}.paginator{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-top:16px}.hidden{display:none !important}dialog{max-width:min(760px,96vw);width:100%;border:1px solid #cbe2e9;border-radius:18px;box-shadow:0 28px 80px #0a334a55;padding:24px;color:#17384b}dialog::backdrop{background:rgba(1,28,46,.55)}.details{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:22px 0}.detail{background:#f4f9fb;padding:12px;border-radius:9px;min-width:0}.detail span{display:block;font-size:11px;font-weight:800;color:#678492;text-transform:uppercase;letter-spacing:.04em;margin-bottom:7px}.detail div{overflow-wrap:anywhere;white-space:pre-wrap;font-size:14px}.detail.full{grid-column:1/-1}@media(max-width:650px){.details{grid-template-columns:1fr}.topbar{align-items:start;flex-direction:column}.toolbar input{width:100%}header{padding:20px 16px}main{padding:0 12px}dialog{padding:15px}}
 </style>
 </head>
 <body>
@@ -20,21 +20,21 @@
   <div id="dashboard">
     <div class="topbar"><div><h2>Confidential student records</h2><p class="small" id="whoami">Signed-in department staff</p></div><div class="stack"><a id="approvalLink" href="approvals.html" style="display:none;background:#d4f1f4;color:#096578;border-radius:9px;padding:11px 13px;font-weight:750;text-decoration:none">Staff Approvals</a><button class="secondary" type="button" id="excelExportButton">Export to Excel (.xlsx)</button><button class="secondary" type="button" id="exportButton">Export all as CSV</button><button class="secondary" type="button" id="logoutButton">Sign out</button></div></div>
     <div class="panel">
-      <div class="toolbar"><div><label for="searchInput">Find by student name</label><input id="searchInput" placeholder="Search student name" /></div><div class="stack"><button class="secondary" type="button" id="searchButton">Search</button><button class="secondary" type="button" id="clearButton">Clear</button></div></div>
+      <div class="toolbar"><div><label for="searchInput">Find by student name</label><input id="searchInput" placeholder="Search student name" /></div><div class="stack"><button class="secondary" type="button" id="searchButton">Search</button><button class="secondary" type="button" id="clearButton" title="Reset the search filter, not student records">Clear search</button></div></div>
       <p class="small" role="status" id="dataStatus"></p>
-      <div class="table-wrap"><table aria-label="Student records"><thead><tr><th>Date</th><th>Student</th><th>Year</th><th>Student Mobile</th><th>Primary Parent / Guardian</th><th>Parent Mobile</th><th>Details</th></tr></thead><tbody id="recordsBody"></tbody></table></div>
+      <div class="table-wrap"><table aria-label="Student records"><thead><tr><th>Date</th><th>Student</th><th>Year</th><th>Student Mobile</th><th>Primary Parent / Guardian</th><th>Parent Mobile</th><th>Actions</th></tr></thead><tbody id="recordsBody"></tbody></table></div>
       <div class="paginator"><span id="pageInfo" class="small"></span><div class="stack"><button id="prevButton" class="secondary" type="button">Previous</button><button id="nextButton" class="secondary" type="button">Next</button></div></div>
     </div>
   </div>
 </main>
-<dialog id="detailDialog" aria-labelledby="detailTitle"><div class="topbar"><h2 id="detailTitle">Student details</h2><button class="secondary" id="closeDialog" type="button">Close</button></div><div class="details" id="details"></div></dialog>
+<dialog id="detailDialog" aria-labelledby="detailTitle"><div class="topbar"><h2 id="detailTitle">Student details</h2><div class="stack"><button class="danger" id="deleteDetailButton" type="button" style="display:none">Delete record</button><button class="secondary" id="closeDialog" type="button">Close</button></div></div><div class="details" id="details"></div></dialog>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/+esm';
 const db=createClient('https://dtbpchspeirxvojfozld.supabase.co','sb_publishable_wy0O6mXoSZR2lDOQRikNpg_kaXvI8nb');
-const $=id=>document.getElementById(id), pageSize=50;let page=0,total=0,query='',rows=[];
+const $=id=>document.getElementById(id), pageSize=50;let page=0,total=0,query='',rows=[],canDelete=false,activeDetail=null,loadSequence=0;
 function status(message,isError=false){$('dataStatus').textContent=message;$('dataStatus').className=isError?'small error':'small';}
-async function refreshAuth(){const {data:{user}}=await db.auth.getUser();if(user?.app_metadata?.gs_student_intake_admin===true&&!recoveryLinkOpened){$('loginPanel').style.display='none';$('dashboard').style.display='block';$('approvalLink').style.display=user.app_metadata?.gs_student_intake_approver===true?'inline-block':'none';$('whoami').textContent=`Signed in as ${user.email}`;await loadRows();}else{ $('loginPanel').style.display='block';$('dashboard').style.display='none'; if(user&&!recoveryLinkOpened) await db.auth.signOut();}}
+async function refreshAuth(){const {data:{user}}=await db.auth.getUser();if(user?.app_metadata?.gs_student_intake_admin===true&&!recoveryLinkOpened){canDelete=user?.app_metadata?.gs_student_intake_approver===true;$('loginPanel').style.display='none';$('dashboard').style.display='block';$('approvalLink').style.display=user.app_metadata?.gs_student_intake_approver===true?'inline-block':'none';$('whoami').textContent=`Signed in as ${user.email}`;await loadRows();}else{canDelete=false;loadSequence++;$('loginPanel').style.display='block';$('dashboard').style.display='none';if(user&&!recoveryLinkOpened)await db.auth.signOut();}}
 $('showLogin').addEventListener('click',()=>{$('loginForm').classList.remove('hidden');$('signupForm').classList.add('hidden');$('showLogin').classList.remove('secondary');$('showSignup').classList.add('secondary');});
 $('showSignup').addEventListener('click',()=>{$('loginForm').classList.add('hidden');$('signupForm').classList.remove('hidden');$('showSignup').classList.remove('secondary');$('showLogin').classList.add('secondary');});
 $('signupForm').addEventListener('submit',async e=>{e.preventDefault();const msg=$('signupStatus'),btn=$('signupButton');msg.className='small';msg.textContent='Submitting registration…';const name=$('signupName').value.trim(),email=$('signupEmail').value.trim().toLowerCase(),password=$('signupPassword').value;if(password!==$('signupConfirm').value){msg.textContent='Passwords do not match.';msg.className='small error';return;}if(password.length<12){msg.textContent='Use at least 12 characters.';msg.className='small error';return;}btn.disabled=true;try{const {error}=await db.auth.signUp({email,password,options:{data:{full_name:name,requested_department:'General Surgery, IGMCRI'},emailRedirectTo:'https://gensurgeryunit6-png.github.io/surgery/student-information/staff-dashboard.html'}});if(error)throw error;await db.auth.signOut();msg.textContent='Registration submitted. If you receive a confirmation email, verify your address. Access remains pending until a department administrator approves your account. Contact the department administrator to request approval.';msg.className='small success';$('signupForm').reset();}catch(err){msg.textContent=err.message||'Unable to register.';msg.className='small error';}finally{btn.disabled=false;}});
@@ -70,11 +70,146 @@ db.auth.onAuthStateChange((event)=>{if(event==='PASSWORD_RECOVERY')showNewPasswo
 if(recoveryLinkOpened)showNewPasswordForm();
 $('loginForm').addEventListener('submit',async e=>{e.preventDefault();$('loginStatus').textContent='Signing in…';$('loginButton').disabled=true;try{const {error}=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)throw error;const {data:{user}}=await db.auth.getUser();if(!user?.app_metadata?.gs_student_intake_admin){await db.auth.signOut();throw Error('This account has not been approved for department access.');}$('loginStatus').textContent='';$('password').value='';await refreshAuth();}catch(err){$('loginStatus').textContent=err.message||'Sign-in failed';$('loginStatus').className='small error';}finally{$('loginButton').disabled=false;}});
 $('logoutButton').addEventListener('click',async()=>{await db.auth.signOut();rows=[];await refreshAuth();});
-async function loadRows(){status('Loading records…');$('recordsBody').replaceChildren();try{let request=db.from('gs_student_intake').select('*',{count:'exact'}).order('submitted_at',{ascending:false}).range(page*pageSize,(page+1)*pageSize-1);if(query)request=request.ilike('student_name',`%${query.replace(/[%,_()]/g,'')}%`);const {data,error,count}=await request;if(error)throw error;rows=data||[];total=count||0;for(const row of rows){const tr=document.createElement('tr');const values=[new Date(row.submitted_at).toLocaleDateString('en-IN'),row.student_name,row.year_of_study,row.student_mobile,`${row.primary_parent_name} (${row.primary_parent_relation})`,row.primary_parent_mobile];for(const value of values){const td=document.createElement('td');td.textContent=value??'—';tr.appendChild(td);}const td=document.createElement('td'),btn=document.createElement('button');btn.textContent='View';btn.type='button';btn.addEventListener('click',()=>openDetails(row));td.appendChild(btn);tr.appendChild(td);$('recordsBody').appendChild(tr);}status(`${total} record(s) available${query?' for this search':''}.`);$('pageInfo').textContent=`Page ${page+1} · ${total===0?0:page*pageSize+1}–${Math.min(total,(page+1)*pageSize)} of ${total}`;$('prevButton').disabled=page===0;$('nextButton').disabled=(page+1)*pageSize>=total;}catch(e){status('Unable to load records. Check staff authorization and connection.',true);console.error(e);}}
-$('searchButton').addEventListener('click',()=>{query=$('searchInput').value.trim();page=0;loadRows();});$('searchInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('searchButton').click();}});$('clearButton').addEventListener('click',()=>{query='';page=0;$('searchInput').value='';loadRows();});$('prevButton').addEventListener('click',()=>{if(page>0){page--;loadRows();}});$('nextButton').addEventListener('click',()=>{if((page+1)*pageSize<total){page++;loadRows();}});
+
+async function loadRows(){
+  const callId=++loadSequence;
+  const searchTerm=query,requestedPage=page;
+  status(searchTerm?'Searching student records…':'Loading all student records…');
+  try{
+    let request=db.from('gs_student_intake').select('*',{count:'exact'})
+      .order('submitted_at',{ascending:false})
+      .range(requestedPage*pageSize,(requestedPage+1)*pageSize-1);
+    if(searchTerm)request=request.ilike('student_name','%'+searchTerm.replace(/[%,_()]/g,'')+'%');
+    const {data,error,count}=await request;
+    if(callId!==loadSequence)return;
+    if(error)throw error;
+    rows=data||[];
+    total=count||0;
+    if(page>0&&!rows.length&&total>0){
+      page=Math.max(0,Math.ceil(total/pageSize)-1);
+      return loadRows();
+    }
+    const tbody=$('recordsBody');
+    tbody.replaceChildren();
+    for(const item of rows){
+      const tr=document.createElement('tr');
+      const fields=[
+        item.submitted_at?new Date(item.submitted_at).toLocaleDateString('en-IN'):'—',
+        item.student_name,item.year_of_study,item.student_mobile,
+        (item.primary_parent_name||'—')+' ('+(item.primary_parent_relation||'—')+')',
+        item.primary_parent_mobile
+      ];
+      for(const value of fields){
+        const td=document.createElement('td');
+        td.textContent=value??'—';
+        tr.append(td);
+      }
+      const td=document.createElement('td'),actions=document.createElement('div');
+      actions.className='stack';
+      const view=document.createElement('button');
+      view.type='button';view.textContent='View';
+      view.addEventListener('click',()=>openDetails(item));
+      actions.append(view);
+      if(canDelete){
+        const del=document.createElement('button');
+        del.type='button';
+        del.textContent='Delete';
+        del.className='danger';
+        del.setAttribute('aria-label','Delete student record '+(item.student_name||''));
+        del.addEventListener('click',()=>deleteRecord(item));
+        actions.append(del);
+      }
+      td.append(actions);
+      tr.append(td);
+      tbody.append(tr);
+    }
+    if(!rows.length){
+      const tr=document.createElement('tr'),td=document.createElement('td');
+      td.colSpan=7;
+      td.textContent=searchTerm?'No matching students. Click Clear search to show all records.':'No student records have been submitted.';
+      tr.append(td);tbody.append(tr);
+    }
+    status(searchTerm?total+' record(s) match "'+searchTerm+'".':'Showing all '+total+' student record(s).');
+    $('pageInfo').textContent='Page '+(total===0?0:page+1)+' · '+(total===0?0:page*pageSize+1)+'–'+Math.min(total,(page+1)*pageSize)+' of '+total;
+    $('prevButton').disabled=page===0;
+    $('nextButton').disabled=(page+1)*pageSize>=total;
+  }catch(err){
+    if(callId!==loadSequence)return;
+    status('Unable to load records: '+(err.message||'Check your connection and permissions.'),true);
+    console.error(err);
+  }
+}
+$('searchButton').addEventListener('click',()=>{
+  query=$('searchInput').value.trim();page=0;loadRows();
+});
+$('searchInput').addEventListener('keydown',event=>{
+  if(event.key==='Enter'){event.preventDefault();$('searchButton').click();}
+});
+$('clearButton').addEventListener('click',()=>{
+  // Reset search input and results; never deletes student data.
+  $('searchInput').value='';
+  query='';page=0;
+  loadRows();
+  $('searchInput').focus();
+});
+$('prevButton').addEventListener('click',()=>{if(page>0){page--;loadRows();}});
+$('nextButton').addEventListener('click',()=>{if((page+1)*pageSize<total){page++;loadRows();}});
+
 const descriptions={submitted_at:'Submitted at',student_name:'Student name',age:'Age',gender:'Gender',date_of_birth:'Date of birth',register_number:'Roll / registration number',admission_year:'Admission year',year_of_study:'Year of study',student_mobile:'Student mobile',student_email:'Student email',primary_parent_name:'Primary parent / guardian',primary_parent_relation:'Primary parent relationship',primary_parent_mobile:'Primary parent mobile',primary_parent_email:'Primary parent email',secondary_parent_name:'Second parent / guardian',secondary_parent_relation:'Second parent relationship',secondary_parent_mobile:'Second parent mobile',secondary_parent_email:'Second parent email',languages_known:'Languages known',languages_other:'Other languages',tamil_proficiency:'Tamil proficiency',sports:'Sports',sports_other:'Other sports',hobbies:'Hobbies',hobbies_other:'Other hobbies',strengths:'Strengths',weaknesses:'Areas for improvement',ambitions:'Ambitions',medicine_reason:'Reason for joining medicine',medicine_reason_details:'Additional comments',guardian_contact_permission:'Guardian contact permission confirmed',privacy_notice_acknowledged:'Privacy notice acknowledged'};
 function displayValue(v){if(Array.isArray(v))return v.join(', ')||'—';if(v===null||v===undefined||v==='')return '—';if(typeof v==='boolean')return v?'Yes':'No';return String(v);}
-function openDetails(item){$('detailTitle').textContent=`Details · ${item.student_name}`;$('details').replaceChildren();for(const [key,label] of Object.entries(descriptions)){const div=document.createElement('div');div.className='detail'+(['strengths','weaknesses','ambitions','medicine_reason_details'].includes(key)?' full':'');const span=document.createElement('span');span.textContent=label;const val=document.createElement('div');val.textContent=displayValue(item[key]);div.append(span,val);$('details').appendChild(div);}$('detailDialog').showModal();}
+
+function openDetails(item){
+  activeDetail=item;
+  $('detailTitle').textContent='Details · '+(item.student_name||'Student');
+  $('deleteDetailButton').style.display=canDelete?'inline-block':'none';
+  $('details').replaceChildren();
+  for(const [key,label] of Object.entries(descriptions)){
+    const div=document.createElement('div');
+    div.className='detail'+(['strengths','weaknesses','ambitions','medicine_reason_details'].includes(key)?' full':'');
+    const span=document.createElement('span');
+    span.textContent=label;
+    const val=document.createElement('div');
+    val.textContent=displayValue(item[key]);
+    div.append(span,val);
+    $('details').append(div);
+  }
+  $('detailDialog').showModal();
+}
+async function deleteRecord(item){
+  if(!canDelete){
+    status('Only designated administrators may delete student records.',true);
+    return;
+  }
+  const name=item.student_name||'this student';
+  const suffix=item.register_number?' (Registration '+item.register_number+')':'';
+  if(!window.confirm('Permanently delete the record of '+name+suffix+'?\n\nThis cannot be undone.'))return;
+  const buttons=[...document.querySelectorAll('button.danger')];
+  buttons.forEach(b=>b.disabled=true);
+  try{
+    const {data:{user},error:authError}=await db.auth.getUser();
+    if(authError||user?.app_metadata?.gs_student_intake_admin!==true||user?.app_metadata?.gs_student_intake_approver!==true){
+      throw Error('Your administrator session is missing deletion permission. Sign out and sign in again.');
+    }
+    const {data,error}=await db.from('gs_student_intake').delete()
+      .eq('id',item.id).select('id');
+    if(error)throw error;
+    if(!data||data.length!==1||data[0].id!==item.id){
+      throw Error('No record was deleted. It may already be deleted or your session needs refreshing.');
+    }
+    if($('detailDialog').open)$('detailDialog').close();
+    activeDetail=null;
+    if(page>0&&rows.length===1)page--;
+    await loadRows();
+    status('Deleted '+name+' from the student register. Deletion logged.');
+  }catch(error){
+    status('Delete failed: '+(error.message||'Unknown error'),true);
+    window.alert('Unable to delete this record. '+(error.message||'Please retry.'));
+  }finally{
+    buttons.forEach(b=>b.disabled=false);
+  }
+}
+$('deleteDetailButton').addEventListener('click',()=>{if(activeDetail)deleteRecord(activeDetail);});
+
 $('closeDialog').addEventListener('click',()=>$('detailDialog').close());
 function cell(v){let s=displayValue(v);if(/^[\s\t\r\n]*[=+\-@]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';}
 
