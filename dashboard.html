@@ -1326,14 +1326,13 @@ body.surgery-logged-in #dashboardPage{display:block!important}
 
     <!-- ===== MAIN DASHBOARD ACADEMIC CALENDAR ===== -->
     <div class="today-academic-strip" aria-live="polite"><span class="today-flash">TODAY</span><span class="today-strip-title">Academic sessions</span><div class="today-strip-window"><div id="todayAcademicTicker" class="today-strip-content">Checking today’s academic timetable…</div></div></div>
-    <div class="premium-calendar-layout"><section id="academicCalendarPanel" style="margin:0 0 18px;background:#fff;border:1px solid #d7edf4;border-radius:18px;box-shadow:0 8px 28px rgba(15,82,107,.08);padding:16px 18px;">
+    <div class="premium-calendar-layout"><section class="dashboard-left-column" aria-label="Department registers"><div class="workspace-side-title">Department workspace <span>Quick access</span></div><div class="grid compact-workspace" id="dashGrid"><!-- cards injected by JS --></div></section><section class="dashboard-right-column" aria-label="Academic calendar and attendance"><section id="academicCalendarPanel" style="margin:0 0 18px;background:#fff;border:1px solid #d7edf4;border-radius:18px;box-shadow:0 8px 28px rgba(15,82,107,.08);padding:16px 18px;">
         <div id="dashboardAcademicCalendar"></div>
-    </section><aside class="ug-attendance-side"><section id="ugAttendanceMain" class="ug-main-panel" style="margin:0;height:100%" aria-label="UG attendance today">
+    </section><section id="ugAttendanceMain" class="ug-main-panel" style="margin:0;height:100%" aria-label="UG attendance today">
 <div class="ug-main-top"><div><div class="ug-eyebrow">UG ACADEMICS · DAILY ATTENDANCE</div><h2>Today's UG Attendance</h2><p id="ugClassMessage">Checking attendance records…</p></div><div class="ug-main-actions"><label for="ugBatchFilter">Batch</label><select id="ugBatchFilter"><option value="2022">2022</option><option value="2023">2023</option><option value="2024">2024</option></select></div></div>
 <div style="padding:8px 14px;display:flex;gap:8px;flex-wrap:wrap"><a href="UG_Attendance_Student.html" target="_blank" rel="noopener" style="padding:8px 12px;background:#087f8c;color:white;border-radius:7px;text-decoration:none;font-weight:600">Open UG Attendance Register</a><a href="USG_Register.html" target="_blank" rel="noopener">USG Form</a><a href="Dressing_Register.html" target="_blank" rel="noopener">Dressing Form</a><a href="Endoscopy_Register.html" target="_blank" rel="noopener">Endoscopy Form</a><a href="Library_Register.html" target="_blank" rel="noopener">Library Form</a></div><div class="ug-attendance-body"><div class="ug-tally"><div class="ug-tally-number" id="ugTodayRatio">—</div><div class="ug-tally-label" id="ugTodayLabel">No attendance session recorded today</div><div class="ug-tally-note" id="ugTodayDate"></div></div><div class="ug-chart-wrap"><div class="ug-bar-title">Attendance performance</div><div class="ug-ring-row"><div class="ug-ring" id="ugAttendanceRing"><div class="ug-ring-core"><strong id="ugRingPercent">—</strong><small>Present</small></div></div><div class="ug-ring-info"><strong id="ugRingStatus">Awaiting verified attendance</strong><span>Daily attendance · selected batch</span></div></div><div class="ug-stacked-bar" role="img" aria-label="No verified attendance data" id="ugBar"><div class="ug-bar-present" id="ugPresentBar"></div><div class="ug-bar-absent" id="ugAbsentBar"></div></div><div class="ug-chart-legend"><span><i class="ug-legend-present"></i> Present <b id="ugPresentCount">—</b></span><span><i class="ug-legend-absent"></i> Absent <b id="ugAbsentCount">—</b></span><span>Attendance <b id="ugPercent">—</b></span></div></div></div>
 <div class="ug-main-foot"><span>Local attendance preview · QR/Supabase sync not yet connected.</span><div><button type="button" id="ugExportToday">Export today's attendance CSV</button><button type="button" id="ugRefreshToday">Refresh</button></div></div>
-</section><div class="workspace-side-title">Department workspace <span>Quick access</span></div><div class="grid compact-workspace" id="dashGrid"><!-- cards injected by JS --></div></aside></div>
-
+</section></section></div>
 
     <!-- Live Stats -->
     <div class="live-stats" id="liveStats">
@@ -3218,6 +3217,24 @@ body.surgery-logged-in #dashboardPage{display:block!important}
 <script id="dashboard-layout-structure-2026">
 (function(){function polish(){const layout=document.querySelector('#dashboardPage .premium-calendar-layout');if(!layout||layout.querySelector('.dashboard-left-column'))return;const calendar=layout.querySelector('#academicCalendarPanel');const side=layout.querySelector('.ug-attendance-side');const title=side?.querySelector('.workspace-side-title');const tiles=side?.querySelector('#dashGrid');const attendance=side?.querySelector('#ugAttendanceMain');if(!calendar||!title||!tiles||!attendance)return;const left=document.createElement('section');left.className='dashboard-left-column';left.setAttribute('aria-label','Department register shortcuts');const right=document.createElement('section');right.className='dashboard-right-column';right.setAttribute('aria-label','Academic calendar and attendance');left.append(title,tiles);right.append(calendar,attendance);layout.replaceChildren(left,right)}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',polish);else polish()})();
 </script>
+<style id="force-two-tiles-visible">
+#dashboardPage .premium-calendar-layout{display:grid!important;grid-template-columns:minmax(360px,.92fr) minmax(0,1.65fr)!important;align-items:start!important;gap:16px!important}
+#dashboardPage .premium-calendar-layout>.dashboard-left-column{grid-column:1!important;min-width:0!important;padding:12px!important;background:#f6f9fb!important;border-radius:14px!important}
+#dashboardPage .premium-calendar-layout>.dashboard-right-column{grid-column:2!important;min-width:0!important;display:flex!important;flex-direction:column!important;gap:14px!important}
+#dashboardPage .dashboard-left-column #dashGrid.compact-workspace{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}
+#dashboardPage .dashboard-left-column #dashGrid.compact-workspace>.workspace-group-heading{grid-column:1/-1!important;display:block!important;min-height:0!important;height:auto!important;padding:9px 0 5px!important;background:transparent!important;box-shadow:none!important;border-radius:0!important;text-align:left!important}
+#dashboardPage .dashboard-left-column #dashGrid.compact-workspace>.workspace-mini-tile{min-height:58px!important;padding:8px!important;display:grid!important;grid-template-columns:28px minmax(0,1fr)!important;gap:7px!important;align-items:center!important;text-align:left!important}
+#dashboardPage .dashboard-left-column #dashGrid.compact-workspace .workspace-mini-icon{width:28px!important;height:28px!important;flex:none!important}
+#dashboardPage .dashboard-left-column #dashGrid.compact-workspace .workspace-mini-icon i{font-size:14px!important}
+#dashboardPage .dashboard-left-column #dashGrid.compact-workspace .workspace-mini-content{align-items:flex-start!important;text-align:left!important}
+#dashboardPage .dashboard-left-column #dashGrid.compact-workspace .workspace-mini-content strong{font-size:11px!important}
+#dashboardPage .dashboard-left-column #dashGrid.compact-workspace .workspace-mini-content small{font-size:9px!important;display:block!important}
+#dashboardPage .dashboard-left-column #dashGrid.compact-workspace .workspace-mini-arrow,#dashboardPage .dashboard-left-column #dashGrid.compact-workspace .library-tile-stats{display:none!important}
+#dashboardPage .dashboard-right-column #academicCalendarPanel{width:100%!important;margin:0!important}
+#dashboardPage .dashboard-right-column #ugAttendanceMain{height:auto!important;margin:0!important}
+@media(max-width:1000px){#dashboardPage .premium-calendar-layout{grid-template-columns:1fr!important}#dashboardPage .premium-calendar-layout>.dashboard-left-column,#dashboardPage .premium-calendar-layout>.dashboard-right-column{grid-column:1!important}}
+@media(max-width:390px){#dashboardPage .dashboard-left-column #dashGrid.compact-workspace{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+</style>
 </body></html>`;
     }
 
