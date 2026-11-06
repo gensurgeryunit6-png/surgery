@@ -1286,6 +1286,22 @@ body.surgery-logged-in #dashboardPage{display:block!important}
 @media(max-width:650px){#dashboardPage .dashboard-left-column #dashGrid.compact-workspace{grid-template-columns:repeat(2,minmax(0,1fr))!important}#dashboardPage .dashboard-left-column{padding:12px!important}}
 @media(max-width:380px){#dashboardPage .dashboard-left-column #dashGrid.compact-workspace{grid-template-columns:1fr!important}}
 </style>
+<style id="compact-two-up-tiles-2026">
+/* Two tiles per row in the existing left workspace; reduce each tile's footprint. */
+#dashboardPage .dashboard-left-column #dashGrid.compact-workspace{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}
+#dashboardPage .dashboard-left-column #dashGrid>.workspace-group-heading{grid-column:1/-1!important;padding:9px 0 4px!important;margin:2px 0 0!important;font-size:11px!important;line-height:1.3!important;min-height:0!important}
+#dashboardPage .dashboard-left-column #dashGrid>.workspace-mini-tile{min-height:54px!important;height:auto!important;padding:7px 8px!important;grid-template-columns:27px minmax(0,1fr)!important;gap:7px!important;align-items:center!important;justify-content:start!important;text-align:left!important;border-radius:9px!important}
+#dashboardPage .dashboard-left-column #dashGrid .workspace-mini-icon{width:27px!important;height:27px!important;min-width:27px!important;flex:none!important;border-radius:7px!important}
+#dashboardPage .dashboard-left-column #dashGrid .workspace-mini-icon i{font-size:14px!important}
+#dashboardPage .dashboard-left-column #dashGrid .workspace-mini-content{gap:1px!important;min-width:0!important;align-items:flex-start!important}
+#dashboardPage .dashboard-left-column #dashGrid .workspace-mini-content strong{font-size:11px!important;line-height:1.2!important;overflow-wrap:break-word!important}
+#dashboardPage .dashboard-left-column #dashGrid .workspace-mini-content small{font-size:9px!important;line-height:1.15!important;display:block!important}
+#dashboardPage .dashboard-left-column #dashGrid .library-tile-stats{display:none!important}
+#dashboardPage .dashboard-left-column #dashGrid>.workspace-mini-tile:has(.library-tile-stats){min-height:54px!important}
+#dashboardPage .dashboard-left-column{padding:12px!important}
+@media(max-width:650px){#dashboardPage .dashboard-left-column #dashGrid.compact-workspace{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:360px){#dashboardPage .dashboard-left-column #dashGrid.compact-workspace{grid-template-columns:1fr!important}}
+</style>
 </head>
 <body class="surgery-logged-in">
 
