@@ -1260,6 +1260,32 @@ body.surgery-logged-in #dashboardPage{display:block!important}
 #dashboardPage #dashGrid.compact-workspace .workspace-mini-arrow{display:block!important}
 @media(max-width:950px){#dashboardPage .premium-calendar-layout{grid-template-columns:1fr!important}#dashboardPage .premium-calendar-layout>.ug-attendance-side{grid-column:1!important;grid-row:2!important}#dashboardPage .premium-calendar-layout>#academicCalendarPanel{grid-column:1!important;grid-row:1!important}}
 </style>
+<style id="dashboard-layout-polish-2026">
+/* Balanced two-column professional dashboard; no changes to existing register logic. */
+#dashboardPage .premium-calendar-layout{display:grid!important;grid-template-columns:minmax(370px,.92fr) minmax(0,1.65fr)!important;gap:18px!important;align-items:start!important}
+#dashboardPage .dashboard-left-column{grid-column:1;min-width:0;background:#f5f9fb;border:1px solid #dce8ee;border-radius:17px;padding:17px;box-shadow:0 4px 16px #0e41540a}
+#dashboardPage .dashboard-right-column{grid-column:2;min-width:0;display:flex;flex-direction:column;gap:16px}
+#dashboardPage .dashboard-right-column #academicCalendarPanel{width:100%!important;margin:0!important;min-width:0!important}
+#dashboardPage .dashboard-right-column .ug-main-panel{margin:0!important;height:auto!important;border-radius:16px!important}
+#dashboardPage .dashboard-right-column .ug-main-panel>div[style*="padding:8px 14px"]{display:none!important}
+#dashboardPage .dashboard-left-column .workspace-side-title{margin:0 0 11px!important;color:#153c50!important;font-size:16px!important}
+#dashboardPage .dashboard-left-column .workspace-side-title span{color:#5e8190!important}
+#dashboardPage .dashboard-left-column #dashGrid.compact-workspace{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+#dashboardPage .dashboard-left-column #dashGrid>.workspace-group-heading{grid-column:1/-1!important;display:block!important;text-align:left!important;padding:11px 0 6px!important;margin:3px 0 0!important;border:0!important;border-bottom:1px solid #cbdde6!important;background:transparent!important;box-shadow:none!important;border-radius:0!important;color:#0e5976!important;font-size:12px!important;min-height:0!important}
+#dashboardPage .dashboard-left-column #dashGrid>.workspace-mini-tile{display:grid!important;grid-template-columns:32px minmax(0,1fr)!important;gap:9px!important;min-height:76px!important;padding:11px 10px!important;align-items:center!important;text-align:left!important;background:white!important;border:1px solid #dbe8ee!important;border-radius:11px!important;box-shadow:0 2px 5px #12465a0b!important}
+#dashboardPage .dashboard-left-column #dashGrid>.workspace-mini-tile:hover{border-color:#76b8ce!important;background:#f1f9fc!important}
+#dashboardPage .dashboard-left-column #dashGrid .workspace-mini-icon{width:32px!important;height:32px!important;flex:none!important;border-radius:9px!important}
+#dashboardPage .dashboard-left-column #dashGrid .workspace-mini-icon i{font-size:16px!important}
+#dashboardPage .dashboard-left-column #dashGrid .workspace-mini-content{align-items:flex-start!important;text-align:left!important;gap:3px!important;min-width:0!important}
+#dashboardPage .dashboard-left-column #dashGrid .workspace-mini-content strong{font-size:12px!important;line-height:1.25!important;overflow-wrap:anywhere!important}
+#dashboardPage .dashboard-left-column #dashGrid .workspace-mini-content small{font-size:9.5px!important;line-height:1.3!important;display:block!important}
+#dashboardPage .dashboard-left-column #dashGrid .workspace-mini-arrow{display:none!important}
+#dashboardPage .dashboard-left-column #dashGrid .library-tile-stats{grid-column:1/-1!important;display:flex!important;gap:5px!important;flex-wrap:wrap!important;margin:0!important;font-size:9px!important}
+#dashboardPage .dashboard-left-column #dashGrid>.workspace-mini-tile:has(.library-tile-stats){min-height:94px!important}
+@media(max-width:1040px){#dashboardPage .premium-calendar-layout{grid-template-columns:1fr!important}#dashboardPage .dashboard-left-column,#dashboardPage .dashboard-right-column{grid-column:1!important}#dashboardPage .dashboard-left-column #dashGrid.compact-workspace{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+@media(max-width:650px){#dashboardPage .dashboard-left-column #dashGrid.compact-workspace{grid-template-columns:repeat(2,minmax(0,1fr))!important}#dashboardPage .dashboard-left-column{padding:12px!important}}
+@media(max-width:380px){#dashboardPage .dashboard-left-column #dashGrid.compact-workspace{grid-template-columns:1fr!important}}
+</style>
 </head>
 <body class="surgery-logged-in">
 
@@ -3173,6 +3199,9 @@ body.surgery-logged-in #dashboardPage{display:block!important}
         return `<!doctype html><html><head><title>${esc(title)}</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}.letterhead{text-align:center;border-bottom:1.5px solid #222;padding-bottom:10px;margin-bottom:14px}.letterhead .inst{font-size:18px;font-weight:700}.letterhead .dept{font-size:15px;font-weight:700;margin-top:3px}h2{text-align:center;margin:10px 0 4px;font-size:16px}p{color:#333}table{width:100%;border-collapse:collapse;margin-top:18px}th,td{border:1px solid #777;padding:7px;font-size:11px}th{background:#e8f6f7;color:#155e68}.signature{margin-top:42px;text-align:right;line-height:1.45}.signature strong{display:block}@page{size:A4 landscape;margin:12mm}</style></head><body><div class="letterhead"><div class="inst">INDIRA GANDHI MEDICAL COLLEGE &amp; RESEARCH INSTITUTE</div><div class="dept">DEPARTMENT OF GENERAL SURGERY</div><div>PUDUCHERRY</div></div><h2>${esc(title)}</h2><p>Printed: ${new Date().toLocaleString('en-IN')}</p><table><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(v=>`<td>${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody></table><div class="signature"><strong>Dr. Simon Dasiah</strong>Professor &amp; Head<br>Department of General Surgery<br>Indira Gandhi Medical College &amp; Research Institute<br>Puducherry</div>
 
 
+<script id="dashboard-layout-structure-2026">
+(function(){function polish(){const layout=document.querySelector('#dashboardPage .premium-calendar-layout');if(!layout||layout.querySelector('.dashboard-left-column'))return;const calendar=layout.querySelector('#academicCalendarPanel');const side=layout.querySelector('.ug-attendance-side');const title=side?.querySelector('.workspace-side-title');const tiles=side?.querySelector('#dashGrid');const attendance=side?.querySelector('#ugAttendanceMain');if(!calendar||!title||!tiles||!attendance)return;const left=document.createElement('section');left.className='dashboard-left-column';left.setAttribute('aria-label','Department register shortcuts');const right=document.createElement('section');right.className='dashboard-right-column';right.setAttribute('aria-label','Academic calendar and attendance');left.append(title,tiles);right.append(calendar,attendance);layout.replaceChildren(left,right)}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',polish);else polish()})();
+</script>
 </body></html>`;
     }
 
