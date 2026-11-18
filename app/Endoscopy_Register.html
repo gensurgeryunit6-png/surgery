@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#102A43">
+<meta name="robots" content="noindex,nofollow">
+<title>Endoscopy Register · IGMCRI Surgery</title>
+<script src="config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{--navy:#102A43;--navy-2:#1C3D5A;--teal:#0B7A75;--teal-tint:#E2F2F0;--teal-deep:#075C58;--paper:#F3F6F8;--card:#FFFFFF;--line:#D8E1E7;--ink:#102A43;--ink-2:#475B6B;--ink-3:#7A8A97;--err:#A4321A;--err-tint:#FBEAE5;--warn-tint:#FBF1DE;
+--display:'Archivo',ui-sans-serif,system-ui,sans-serif;--body:'IBM Plex Sans','Segoe UI',Roboto,system-ui,sans-serif;--mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;color-scheme:light}
+*{box-sizing:border-box}html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;-webkit-text-size-adjust:100%}
+header{background:var(--navy);color:#EAF1F6;padding:calc(14px + env(safe-area-inset-top,0px)) max(18px,env(safe-area-inset-right,0px)) 18px max(18px,env(safe-area-inset-left,0px));border-radius:0 0 18px 18px}
+.hd{max-width:760px;margin:0 auto}
+.eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;color:#9FB3C4;text-transform:uppercase}
+h1{font-family:var(--display);font-weight:800;font-size:24px;letter-spacing:-.01em;margin:6px 0 2px;color:#fff;text-wrap:balance}
+.sub{color:#B8C8D6;font-size:13px;margin:0}
+.stamp{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px;padding-top:12px;border-top:1px solid #24405A}
+.stamp b{font-family:var(--display);font-size:15px;color:#fff;font-weight:700}
+.stamp span{font-family:var(--mono);font-size:20px;color:#fff;font-weight:600;font-variant-numeric:tabular-nums}
+.stamp small{font-family:var(--mono);font-size:10.5px;color:#9FB3C4;margin-left:6px}
+main{max-width:760px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-right,0px)) calc(32px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+.sec{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);margin:18px 0 8px;font-weight:600}
+.sec:first-child{margin-top:0}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.f{min-width:0}.c4{grid-column:span 4}.c2{grid-column:span 2}.c1{grid-column:span 1}
+label{display:block;font-size:12.5px;font-weight:600;color:var(--ink-2);margin:0 0 5px}
+label b{color:var(--err)}
+input,select,textarea{width:100%;border:1px solid var(--line);border-radius:10px;background:#FBFCFD;color:var(--ink);font:inherit;font-size:16px;padding:12px;min-height:48px}
+textarea{min-height:96px;resize:vertical;line-height:1.45}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--teal);outline-offset:1px;border-color:var(--teal);background:#fff}
+.bad{border-color:var(--err)!important;background:var(--err-tint)!important}
+.seg{display:flex;gap:6px}
+.seg label{flex:1;margin:0;position:relative}
+.seg input{position:absolute;opacity:0;width:1px;height:1px;min-height:0}
+.seg span{display:flex;align-items:center;justify-content:center;min-height:48px;border:1px solid var(--line);border-radius:10px;background:#FBFCFD;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;text-align:center;padding:0 4px}
+.seg input:checked+span{background:var(--navy);border-color:var(--navy);color:#fff}
+.seg input:focus-visible+span{outline:2px solid var(--teal);outline-offset:2px}
+.seg.badseg span{border-color:var(--err)}
+.hide{display:none!important}
+.btn{width:100%;border:0;border-radius:12px;background:var(--navy);color:#fff;font:inherit;font-weight:700;font-size:16px;min-height:54px;margin-top:18px;cursor:pointer}
+.btn:disabled{opacity:.6}
+.btn.ghost{background:var(--card);color:var(--ink);border:1px solid var(--line);margin-top:10px}
+.msg{margin-top:12px;padding:12px 14px;border-radius:12px;font-size:14px;line-height:1.45}
+.msg:empty{display:none}
+.msg.err{background:var(--err-tint);color:#8A2A15}
+.msg.warn{background:var(--warn-tint);color:#6B4307}
+.done{text-align:center;padding:26px 16px}
+.done .tick{width:64px;height:64px;border-radius:50%;background:var(--teal-tint);color:var(--teal);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:30px;font-weight:700}
+.done h2{font-family:var(--display);font-size:20px;margin:0 0 6px}
+.done p{color:var(--ink-2);margin:0;font-size:14px}
+.done .ref{font-family:var(--mono);font-size:12px;color:var(--ink-3);margin-top:8px}
+.pending{display:flex;gap:10px;align-items:center;background:var(--warn-tint);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:13px;color:#6B4307}
+.pending button{margin-left:auto;border:1px solid #E3C88F;background:#fff;border-radius:9px;padding:8px 12px;font:inherit;font-size:13px;font-weight:600;color:#6B4307;min-height:40px}
+.foot{color:var(--ink-3);font-size:12px;line-height:1.5;margin:16px 4px 0;text-align:center}
+.req{color:var(--ink-3);font-size:12px;margin:0 0 10px}
+.list{margin-top:14px}
+.book{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:10px 0;border-bottom:1px solid #EDF1F4}
+.book:last-child{border-bottom:0}
+.book b{font-size:14px;font-weight:600}.book small{color:var(--ink-3);font-size:12px;grid-column:1}
+.book span{grid-row:1/3;grid-column:2;align-self:center;font-family:var(--mono);font-size:12px;background:var(--teal-tint);color:var(--teal-deep);border-radius:999px;padding:3px 9px}
+.search{margin-bottom:6px}
+.prow{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,.85fr) minmax(0,1.25fr);gap:10px}
+#sex{padding-right:4px;padding-left:10px}
+.stamp>div{text-align:right}.stamp small{display:block;margin:2px 0 0}
+@media (max-width:420px){.grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}}
+@media (min-width:760px){h1{font-size:30px}main{padding-top:22px}.card{padding:22px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header><div class="hd">
+<div class="eyebrow">IGMC &amp; RI · Department of General Surgery</div>
+<h1>Endoscopy Register</h1>
+<p class="sub">Diagnostic &amp; therapeutic endoscopy</p>
+<div class="stamp"><b id="stDate"></b><div><span id="stTime"></span><small>IST · recorded automatically</small></div></div>
+</div></header>
+<main>
+<div class="pending hide" id="pending" role="status"><span></span><button type="button">Send now</button></div>
+<div id="formWrap">
+
+<form id="f" class="card" novalidate>
+<p class="req"><b style="color:var(--err)">*</b> required</p>
+<div class="sec">Patient</div>
+<div class="grid">
+<div class="f c4 prow"><div class="f"><label for="name">Patient name <b>*</b></label><input id="name" maxlength="120" autocomplete="off" autocapitalize="words" autofocus></div>
+<div class="f"><label for="age">Age <b>*</b></label><input id="age" type="number" inputmode="numeric" min="0" max="120"></div>
+<div class="f"><label for="sex">Sex <b>*</b></label><select id="sex"><option value="">–</option><option>Male</option><option>Female</option><option>Other</option></select></div></div>
+
+<div class="f c2"><label for="ip">IP / OP number</label><input id="ip" maxlength="40" autocomplete="off"></div>
+<div class="f c2"><label for="unit">Unit <b>*</b></label><select id="unit"><option value="">Select</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
+<div class="f c4"><label for="dx">Diagnosis / indication <b>*</b></label><input id="dx" maxlength="200" autocomplete="off"></div>
+</div>
+<div class="sec">Procedure</div>
+<div class="grid">
+<div class="f c4"><label for="proc">Procedure <b>*</b></label><select id="proc"><option value="">Select</option></select></div>
+<div class="f c4 hide" id="otherWrap"><label for="other">Specify procedure <b>*</b></label><input id="other" maxlength="150" autocomplete="off"></div>
+<div class="f c4"><label for="findings">Findings <b>*</b></label><textarea id="findings" maxlength="3000" placeholder="Oesophagus, stomach, duodenum / colon segments"></textarea></div>
+<div class="f c2"><label>Biopsy taken <b>*</b></label><div class="seg" data-seg="biopsy" role="radiogroup"><label><input type="radio" name="biopsy" value="No"><span>No</span></label><label><input type="radio" name="biopsy" value="Yes"><span>Yes</span></label></div></div>
+<div class="f c2"><label>Complications <b>*</b></label><div class="seg" data-seg="comp" role="radiogroup"><label><input type="radio" name="comp" value="None"><span>None</span></label><label><input type="radio" name="comp" value="Yes"><span>Yes</span></label></div></div>
+<div class="f c4 hide" id="compWrap"><label for="compText">Describe complication <b>*</b></label><input id="compText" maxlength="200" autocomplete="off"></div>
+</div>
+<div class="sec">Endoscopist</div>
+<div class="grid">
+<div class="f c2"><label for="faculty">Faculty <b>*</b></label><select id="faculty"><option value="">Select</option></select></div>
+<div class="f c2"><label for="pg">Postgraduate</label><select id="pg"><option value="">None</option></select></div>
+</div>
+<button class="btn" id="go" type="submit">Submit endoscopy entry</button>
+</form>
+
+<div class="msg" id="msg" role="alert"></div>
+</div>
+<div id="doneWrap" class="card done hide" aria-live="polite">
+<div class="tick" id="doneTick" aria-hidden="true">✓</div>
+<h2 id="doneTitle"></h2>
+<p id="doneLine"></p>
+<div class="ref" id="doneRef"></div>
+<button type="button" class="btn" id="again">Add another entry</button>
+</div>
+<p class="foot">This form only adds new entries. Earlier records are not shown here and can only be viewed or corrected by authorised staff on the department dashboard.</p>
+</main>
+<script>
+const TABLE='endoscopy_entries',REGISTER='endoscopy';
+
+const API=(window.IGMCRI_CONFIG&&window.IGMCRI_CONFIG.api)||'';
+const $=id=>document.getElementById(id);
+const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function api(body){const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)});if(!r.ok){const e=new Error('Server returned '+r.status);e.status=r.status>=500?r.status:503;throw e;}return r.json();}
+let LISTS=null;function getLists(){if(!API)return Promise.resolve({});if(!LISTS)LISTS=fetch(API+'?action=lists').then(r=>r.json()).then(j=>j.lists||{}).catch(()=>({}));return LISTS;}
+function ist(){const n=new Date();const p=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).formatToParts(n).reduce((a,x)=>(a[x.type]=x.value,a),{});return {date:p.year+'-'+p.month+'-'+p.day,time:(p.hour==='24'?'00':p.hour)+':'+p.minute+':'+p.second,label:n.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short',year:'numeric',timeZone:'Asia/Kolkata'}),hm:(p.hour==='24'?'00':p.hour)+':'+p.minute};}
+function tick(){const t=ist();$('stDate').textContent=t.label;$('stTime').textContent=t.hm;}
+tick();setInterval(tick,10000);
+function fill(sel,list){list.forEach(v=>sel.add(new Option(v,v)));}
+function ref(){return (crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2)).slice(0,18);}
+function show(cls,text){const m=$('msg');m.className='msg '+cls;m.textContent=text;}
+function clearBad(){document.querySelectorAll('.bad').forEach(e=>e.classList.remove('bad'));document.querySelectorAll('.badseg').forEach(e=>e.classList.remove('badseg'));}
+function radio(name){const r=document.querySelector('input[name="'+name+'"]:checked');return r?r.value:'';}
+function markBad(id){const el=$(id);if(!el){const g=document.querySelector('[data-seg="'+id+'"]');if(g)g.classList.add('badseg');return;}el.classList.add('bad');}
+/* Live dropdowns from Supabase (falls back to the built-in list) */
+function liveList(listName,sel,fallback,keepFirst){
+  fill(sel,fallback);
+  getLists().then(l=>{const v=l[listName];if(Array.isArray(v)&&v.length){const cur=sel.value;sel.length=keepFirst||1;fill(sel,v);sel.value=cur;}});
+}
+/* Offline-safe sending: entries wait on this phone only until the server accepts them, then are removed. */
+const QKEY='igmcri-queue-'+TABLE;
+function q(){try{return JSON.parse(localStorage.getItem(QKEY)||'[]')}catch(e){return []}}
+function qset(a){try{if(a.length)localStorage.setItem(QKEY,JSON.stringify(a));else localStorage.removeItem(QKEY);}catch(e){}renderPending();}
+async function post(row){
+  if(!API){const e=new Error('not connected');e.status=503;throw e;}
+  const j=await api({action:'add',register:REGISTER,row:row});
+  if(!j.ok){const e=new Error(j.error||'rejected');e.status=400;throw e;}
+}
+async function flush(){
+  const a=q();if(!a.length)return;const left=[];
+  for(const row of a){try{await post(row);}catch(e){left.push(row);}}
+  qset(left);
+}
+function renderPending(){
+  const n=q().length,el=$('pending');if(!el)return;
+  el.classList.toggle('hide',!n);
+  el.querySelector('span').textContent=n===1?'1 entry is waiting to be sent from this phone.':n+' entries are waiting to be sent from this phone.';
+}
+$('pending').querySelector('button').addEventListener('click',async e=>{e.target.disabled=true;e.target.textContent='Sending…';await flush();e.target.disabled=false;e.target.textContent='Send now';});
+window.addEventListener('online',flush);
+renderPending();flush();
+async function submitRow(row,btn,onDone){
+  row.client_ref=ref();
+  const t=ist();row.entry_date=t.date;row.entry_time=t.time;
+  btn.disabled=true;const label=btn.textContent;btn.textContent='Saving…';
+  try{await post(row);onDone(true,row);}
+  catch(err){
+    if(err.status&&err.status<500&&err.status!==408&&err.status!==429&&err.status!==401&&err.status!==404){show('err','The register did not accept this entry: '+err.message+'. Please check the details and try again.');}
+    else{const a=q();a.push(row);qset(a);onDone(false,row,err);}
+  }finally{btn.disabled=false;btn.textContent=label;}
+}
+function doneScreen(ok,row,title,line){
+  $('formWrap').classList.add('hide');$('doneWrap').classList.remove('hide');
+  $('doneTitle').textContent=ok?title:'Saved on this phone';
+  $('doneLine').textContent=ok?line:'The register could not be reached, so this entry is waiting on this phone. It will be sent automatically when the connection works. Do not enter it again.';
+  $('doneTick').textContent=ok?'✓':'…';
+  $('doneRef').textContent='Ref '+row.client_ref.toUpperCase().slice(0,8)+' · '+row.entry_date+' '+row.entry_time.slice(0,5);
+  window.scrollTo(0,0);
+}
+$('again').addEventListener('click',()=>{$('doneWrap').classList.add('hide');$('formWrap').classList.remove('hide');$('msg').className='msg';$('msg').textContent='';const f=document.querySelector('[autofocus]');if(f)f.focus();});
+
+
+function patient(miss){
+  const name=$('name').value.trim(),age=$('age').value,sex=$('sex').value;
+  if(!name)miss.push('name');
+  if(age===''||+age<0||+age>120||!Number.isInteger(+age))miss.push('age');
+  if(!sex)miss.push('sex');
+  return {patient_name:name,age:age===''?null:+age,sex:sex};
+}
+function resetPatient(){['name','age','sex'].forEach(id=>$(id).value='');}
+
+liveList('endoscopy_procedure',$('proc'),["Upper GI endoscopy (OGD)", "Colonoscopy", "Flexible sigmoidoscopy", "Variceal banding", "Sclerotherapy", "Oesophageal dilatation", "PEG insertion", "Polypectomy", "Foreign body removal", "Other \u2013 Specify"]);
+liveList('faculty',$('faculty'),["Dr. Simon Dasiah", "Dr. Ashley Solomon C.", "Dr. Basavanandswami", "Dr. Mima Maychet Sangma", "Dr. Ganesan", "Dr. Ray", "Dr. Sri Vengadesh", "Dr. Kapil Baliga", "Dr. Selvakumaran", "Dr. Jawahar", "Dr. Vijay Ganapathy", "Dr. Indrajit", "Dr. Ramchandar", "Dr. Viswanathan", "Dr. Govardhanan", "Dr. Keerthi A.R.", "Dr. Elanchezhiyan (SR)", "Dr. Pradeep Raj (SR)", "Dr. Mohammed Adam (SR)"]);
+liveList('postgraduate',$('pg'),["Dr. Vijay Raj", "Dr. Kanimozhi", "Dr. Lokesh", "Dr. Juliya Rose", "Dr. Mohammed Ameen Anjum", "Dr. Sai Prasanna Jandhyala", "Dr. Sai Narendiran", "Dr. Gayathri", "Dr. Swathika", "Dr. Neha Jaju", "Dr. Sundara Mugilan", "Dr. Harshitha"]);
+try{const f=localStorage.getItem('igmcri-endo-faculty');if(f)setTimeout(()=>{$('faculty').value=f;},50);}catch(e){}
+$('proc').addEventListener('change',()=>{const o=$('proc').value.startsWith('Other');$('otherWrap').classList.toggle('hide',!o);if(o)$('other').focus();});
+document.querySelectorAll('input[name=comp]').forEach(r=>r.addEventListener('change',()=>{const y=radio('comp')==='Yes';$('compWrap').classList.toggle('hide',!y);if(y)$('compText').focus();}));
+$('f').addEventListener('submit',e=>{e.preventDefault();clearBad();const miss=[];
+  const row=patient(miss);
+  row.ip_number=$('ip').value.trim()||null;
+  row.unit=$('unit').value||null;if(!row.unit)miss.push('unit');
+  row.diagnosis=$('dx').value.trim();if(!row.diagnosis)miss.push('dx');
+  row.procedure=$('proc').value;if(!row.procedure)miss.push('proc');
+  const oth=row.procedure.startsWith('Other');row.procedure_other=oth?$('other').value.trim():null;if(oth&&!row.procedure_other)miss.push('other');
+  row.findings=$('findings').value.trim();if(!row.findings)miss.push('findings');
+  const b=radio('biopsy');if(!b)miss.push('biopsy');row.biopsy=b==='Yes';
+  const c=radio('comp');if(!c)miss.push('comp');row.complications=c==='Yes'?$('compText').value.trim():(c?'None':null);if(c==='Yes'&&!row.complications)miss.push('compText');
+  row.faculty=$('faculty').value;if(!row.faculty)miss.push('faculty');
+  row.postgraduate=$('pg').value||null;
+  if(miss.length){miss.forEach(markBad);show('err','Please complete the highlighted fields.');const first=$(miss[0]);if(first)first.focus();return;}
+  try{localStorage.setItem('igmcri-endo-faculty',row.faculty);}catch(e){}
+  submitRow(row,$('go'),(ok,r)=>{doneScreen(ok,r,'Endoscopy entry saved',r.patient_name+' · '+(r.procedure_other||r.procedure)+' · '+r.faculty);
+    resetPatient();['ip','dx','other','findings','compText'].forEach(id=>$(id).value='');$('proc').value='';$('pg').value='';
+    document.querySelectorAll('input[name=biopsy],input[name=comp]').forEach(x=>x.checked=false);$('otherWrap').classList.add('hide');$('compWrap').classList.add('hide');});
+});
+
+</script>
+</body>
+</html>
