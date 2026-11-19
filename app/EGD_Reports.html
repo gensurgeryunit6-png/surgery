@@ -189,7 +189,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--teal);outline-of
   <div class="sec" style="margin-top:0">Sign in</div>
   <p class="req">EGD reports contain patient details. Sign in with an authorised department Google account.</p>
   <div id="gbtn" style="display:flex;justify-content:center;min-height:44px;margin:4px 0"></div><div class="msg" id="gmsg" role="alert"></div>
-  <details id="pwdBox" style="margin-top:14px;border-top:1px solid var(--line);padding-top:10px"><summary style="cursor:pointer;color:var(--teal);font-weight:600;min-height:36px;display:flex;align-items:center">Sign in with password instead</summary>
+  <details id="pwdBox" hidden style="margin-top:14px;border-top:1px solid var(--line);padding-top:10px"><summary style="cursor:pointer;color:var(--teal);font-weight:600;min-height:36px;display:flex;align-items:center">Sign in with password instead</summary>
   <form id="sf" novalidate>
     <label for="em">Email</label><input id="em" type="email" autocomplete="username" inputmode="email">
     <label for="pw" style="margin-top:12px">Password</label><input id="pw" type="password" autocomplete="current-password">
@@ -2568,50 +2568,15 @@ async function call(b){const r=await fetch(API,{method:'POST',headers:{'Content-
 async function adminCall(action,extra){const s=sess();const j=await call(Object.assign({action,token:s&&s.token},extra||{}));if(!j.ok&&j.error==='not_signed_in'){setSess(null);showSignin('Your session ended. Please sign in again.');throw new Error('signed out');}return j;}
 function ist(){const p=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).reduce((a,x)=>(a[x.type]=x.value,a),{});return p.year+'-'+p.month+'-'+p.day;}
 let R=[],CUR=null;const PHOTO={};
-/* Sign in with Google (Google Identity Services), with a choice of Google account.
-   igmcriGoogleButton(el, onCredential(idToken), onUnavailable(reason))
-   Shows: one option per authorised account, "Another Google account", and the Google button.
-   Picking an account passes it to Google as a login hint; Google's own account chooser opens
-   when the button is tapped, so any account signed in to this browser can be picked there too. */
-var IGMCRI_ACCOUNTS=[
-  {email:'endosurgeryigmcri@gmail.com',label:'Department account',ic:'🏥'},
-  {email:'ashleysolomonvascular@gmail.com',label:'Dr. Ashley Solomon',ic:'👤'}
-];
-function igmcriMask(e){var p=String(e).split('@');return p[0].slice(0,4)+'•••@'+(p[1]||'');}
+/* Sign in with Google (Google Identity Services). Calls onCredential(idToken).
+   Google's own popup lets the user pick any account signed in on the device. */
 function igmcriGoogleButton(el,onCredential,onUnavailable){
   var id=(window.IGMCRI_CONFIG&&window.IGMCRI_CONFIG.googleClientId)||'';
   if(!id){if(onUnavailable)onUnavailable('not_configured');return;}
-  var KEY='igmcri-google-choice',choice='';
-  try{choice=localStorage.getItem(KEY)||'';}catch(e){}
-  if(!document.getElementById('gacCss')){var st=document.createElement('style');st.id='gacCss';st.textContent=
-    '.gac{width:100%;display:grid;gap:8px;margin:2px 0 6px}.gac-t{font-size:12.5px;font-weight:600;color:#475B6B;margin:0 0 2px}'+
-    '.gac-o{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid #D8E1E7;background:#FBFCFD;border-radius:12px;padding:10px 12px;min-height:52px;font:inherit;color:#102A43;cursor:pointer}'+
-    '.gac-o:hover{border-color:#0B7A75}.gac-o[aria-checked="true"]{border:2px solid #0B7A75;background:#E2F2F0;padding:9px 11px}'+
-    '.gac-o .gi{font-size:20px;width:26px;text-align:center;flex:none}.gac-o b{display:block;font-size:14px}.gac-o small{display:block;font-size:12px;color:#5B6B78;overflow-wrap:anywhere}'+
-    '.gac-btn{display:flex;justify-content:center;min-height:44px;margin-top:6px}.gac-add{display:block;text-align:center;font-size:13px;color:#0B7A75;font-weight:600;padding:6px;text-decoration:none}'+
-    '.gac-add:hover{text-decoration:underline}';document.head.appendChild(st);}
-  var opts=IGMCRI_ACCOUNTS.map(function(a){return {key:a.email,ic:a.ic,t:a.label,s:igmcriMask(a.email),hint:a.email};})
-    .concat([{key:'other',ic:'🔄',t:'Another Google account',s:'Pick from the accounts signed in on this device',hint:''}]);
-  if(!opts.some(function(o){return o.key===choice;}))choice=opts[0].key;
-  el.innerHTML='<div class="gac"><div class="gac-t">Choose the Google account</div><div role="radiogroup" aria-label="Google account" style="display:grid;gap:8px">'+
-    opts.map(function(o){return '<button type="button" class="gac-o" role="radio" data-k="'+o.key+'" aria-checked="'+(o.key===choice)+'"><span class="gi" aria-hidden="true">'+o.ic+'</span><span><b>'+o.t+'</b><small>'+o.s+'</small></span></button>';}).join('')+
-    '</div><div class="gac-btn"></div><a class="gac-add" target="_blank" rel="noopener" href="https://accounts.google.com/AddSession?continue='+encodeURIComponent(location.href.split('#')[0])+'">+ Add another Google account to this device</a></div>';
-  var btnBox=el.querySelector('.gac-btn');
-  function render(){
-    var o=opts.filter(function(x){return x.key===choice;})[0];
-    try{
-      google.accounts.id.initialize({client_id:id,callback:function(r){onCredential(r.credential);},auto_select:false,cancel_on_tap_outside:true,ux_mode:'popup',login_hint:o.hint||undefined,itp_support:true});
-      btnBox.innerHTML='';
-      google.accounts.id.renderButton(btnBox,{theme:'filled_blue',size:'large',text:o.hint?'continue_with':'signin_with',shape:'pill',logo_alignment:'left',width:Math.min(360,Math.max(220,el.clientWidth||300))});
-    }catch(e){if(onUnavailable)onUnavailable('error');}
-  }
-  Array.prototype.forEach.call(el.querySelectorAll('.gac-o'),function(b){b.onclick=function(){
-    choice=b.getAttribute('data-k');try{localStorage.setItem(KEY,choice);}catch(e){}
-    Array.prototype.forEach.call(el.querySelectorAll('.gac-o'),function(x){x.setAttribute('aria-checked',String(x===b));});
-    if(window.google&&google.accounts&&google.accounts.id){google.accounts.id.disableAutoSelect();render();}
-  };});
-  if(window.google&&google.accounts&&google.accounts.id){render();return;}
-  var s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.async=true;s.onload=render;s.onerror=function(){btnBox.innerHTML='';if(onUnavailable)onUnavailable('blocked');};document.head.appendChild(s);
+  function go(){try{google.accounts.id.initialize({client_id:id,callback:function(r){onCredential(r.credential);},auto_select:false,cancel_on_tap_outside:true,ux_mode:'popup',itp_support:true});
+    google.accounts.id.renderButton(el,{theme:'filled_blue',size:'large',text:'signin_with',shape:'pill',logo_alignment:'left',width:Math.min(360,Math.max(220,el.clientWidth||300))});}catch(e){if(onUnavailable)onUnavailable('error');}}
+  if(window.google&&google.accounts&&google.accounts.id){go();return;}
+  var s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.async=true;s.onload=go;s.onerror=function(){if(onUnavailable)onUnavailable('blocked');};document.head.appendChild(s);
 }
 /* Call on sign-out so Google does not silently reuse the last account. */
 function igmcriGoogleSignOut(){try{if(window.google&&google.accounts&&google.accounts.id)google.accounts.id.disableAutoSelect();}catch(e){}}
@@ -2623,7 +2588,7 @@ function showGoogle(){if(gReady)return;gReady=true;igmcriGoogleButton($('gbtn'),
     if(!j.ok){m.className='msg err';m.textContent=j.error==='not_authorised'?'The Google account '+(j.email||'')+' is not authorised to view EGD reports.':j.error==='google_not_configured'?'Google sign-in is not set up in the backend script yet.':'Google sign-in failed. Please try again.';return;}
     setSess({token:j.token,email:j.email,exp:Date.now()+(j.expires_in||43200)*1000-60000});m.className='msg';m.textContent='';showApp(j.email);load();}
   catch(e){m.className='msg err';m.textContent='Could not reach the backend. Check the internet connection.';}
-},()=>{$('gbtn').innerHTML='<div class="msg warn" style="display:block">Google sign-in is not available here. Use your password below.</div>';$('pwdBox').open=true;});}
+},()=>{$('gbtn').innerHTML='<div class="msg warn" style="display:block">Google sign-in is not available here. Use your password below.</div>';$('pwdBox').hidden=false;$('pwdBox').open=true;});}
 function showSignin(note){showGoogle();$('app').hidden=true;$('who').hidden=true;$('signin').hidden=false;const m=$('smsg');m.className='msg'+(note?' warn':'');m.textContent=note||'';try{$('em').value=localStorage.getItem('ag-last-email')||'';}catch(e){}}
 function showApp(email){$('signin').hidden=true;$('app').hidden=false;if(email){$('who').hidden=false;$('whoTxt').textContent='Signed in as '+email;}}
 $('sf').addEventListener('submit',async e=>{e.preventDefault();const em=$('em').value.trim().toLowerCase(),pw=$('pw').value,m=$('smsg');
@@ -2697,5 +2662,6 @@ function samples(){const t=ist(),d=n=>{const x=new Date(t+'T12:00:00');x.setDate
   const s=sess();if(s&&ALLOWED.indexOf(s.email)>=0){showApp(s.email);load();}else showSignin();
 })();
 </script>
+<script src="dock.js"></script>
 </body>
 </html>

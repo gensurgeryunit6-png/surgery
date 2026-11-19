@@ -2721,5 +2721,6 @@ $('again').textContent='Start a new report';
 $('again').addEventListener('click',()=>{$('f').reset();document.querySelectorAll('#ckPanel input').forEach(x=>{if(x.type==='checkbox'||x.type==='radio')x.checked=false;else x.value='';});document.querySelectorAll('#ckPanel select').forEach(x=>x.selectedIndex=0);ckState();PH=[];renderPh();['sitesWrap','compWrap'].forEach(id=>$(id).classList.add('hide'));updChip();LAST=null;});
 
 </script>
+<script src="dock.js"></script>
 </body>
 </html>

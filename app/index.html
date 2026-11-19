@@ -79,8 +79,7 @@ html.auth-locked body{background:#F3F6F8!important;padding:0!important}
   window.IGMCRI_API=function(action,extra){var s=getS();var b=Object.assign({action:action,token:s&&s.token},extra||{});return call(b).then(function(j){if(!j.ok&&j.error==='not_signed_in'){setS(null);lock();signInView('Your session ended. Please sign in again.');}return j;});};
 
   function gate(){var g=document.getElementById('authGate');if(!g){g=document.createElement('div');g.id='authGate';document.body.insertBefore(g,document.body.firstChild);}return g;}
-  function view(html){gate().innerHTML='<div class="ag-card"><div class="ag-eb">IGMC &amp; RI · Department of General Surgery</div><h1>Surgery Dashboard</h1>'+html+'</div>'+openLinks()+'<p class="ag-foot">Patient records and admin tools need sign-in with an authorised account.</p>';}
-  function openLinks(){return '<div class="ag-open"><div class="ag-open-t">Open without sign-in</div><div class="ag-open-g">'+[['../','🏠','Main dashboard'],['Endoscopy_Register.html','🔬','Endoscopy register'],['USG_Register.html','📡','USG register'],['Dressing_Register.html','🩹','Dressing register'],['Library_Register.html','📚','Library register'],['EGD_Report_Form.html','📝','New EGD report'],['QR_Codes.html','▦','QR labels']].map(function(x){return '<a href="'+x[0]+'"><span aria-hidden="true">'+x[1]+'</span>'+x[2]+'</a>';}).join('')+'</div></div>';}
+  function view(html){gate().innerHTML='<div class="ag-card"><div class="ag-eb">IGMC &amp; RI · Department of General Surgery</div><h1>Surgery Dashboard</h1>'+html+'</div><p class="ag-foot">Access is limited to authorised department administrators.</p>';}
   function msg(t,kind){var m=document.getElementById('agMsg');if(m){m.className='ag-msg '+(kind||'err');m.textContent=t;}}
   function lock(){root.classList.add('auth-locked');}
   function unlock(email){
@@ -89,58 +88,23 @@ html.auth-locked body{background:#F3F6F8!important;padding:0!important}
     addSignOut();if(email)liveStats();
   }
 
-/* Sign in with Google (Google Identity Services), with a choice of Google account.
-   igmcriGoogleButton(el, onCredential(idToken), onUnavailable(reason))
-   Shows: one option per authorised account, "Another Google account", and the Google button.
-   Picking an account passes it to Google as a login hint; Google's own account chooser opens
-   when the button is tapped, so any account signed in to this browser can be picked there too. */
-var IGMCRI_ACCOUNTS=[
-  {email:'endosurgeryigmcri@gmail.com',label:'Department account',ic:'🏥'},
-  {email:'ashleysolomonvascular@gmail.com',label:'Dr. Ashley Solomon',ic:'👤'}
-];
-function igmcriMask(e){var p=String(e).split('@');return p[0].slice(0,4)+'•••@'+(p[1]||'');}
+/* Sign in with Google (Google Identity Services). Calls onCredential(idToken).
+   Google's own popup lets the user pick any account signed in on the device. */
 function igmcriGoogleButton(el,onCredential,onUnavailable){
   var id=(window.IGMCRI_CONFIG&&window.IGMCRI_CONFIG.googleClientId)||'';
   if(!id){if(onUnavailable)onUnavailable('not_configured');return;}
-  var KEY='igmcri-google-choice',choice='';
-  try{choice=localStorage.getItem(KEY)||'';}catch(e){}
-  if(!document.getElementById('gacCss')){var st=document.createElement('style');st.id='gacCss';st.textContent=
-    '.gac{width:100%;display:grid;gap:8px;margin:2px 0 6px}.gac-t{font-size:12.5px;font-weight:600;color:#475B6B;margin:0 0 2px}'+
-    '.gac-o{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid #D8E1E7;background:#FBFCFD;border-radius:12px;padding:10px 12px;min-height:52px;font:inherit;color:#102A43;cursor:pointer}'+
-    '.gac-o:hover{border-color:#0B7A75}.gac-o[aria-checked="true"]{border:2px solid #0B7A75;background:#E2F2F0;padding:9px 11px}'+
-    '.gac-o .gi{font-size:20px;width:26px;text-align:center;flex:none}.gac-o b{display:block;font-size:14px}.gac-o small{display:block;font-size:12px;color:#5B6B78;overflow-wrap:anywhere}'+
-    '.gac-btn{display:flex;justify-content:center;min-height:44px;margin-top:6px}.gac-add{display:block;text-align:center;font-size:13px;color:#0B7A75;font-weight:600;padding:6px;text-decoration:none}'+
-    '.gac-add:hover{text-decoration:underline}';document.head.appendChild(st);}
-  var opts=IGMCRI_ACCOUNTS.map(function(a){return {key:a.email,ic:a.ic,t:a.label,s:igmcriMask(a.email),hint:a.email};})
-    .concat([{key:'other',ic:'🔄',t:'Another Google account',s:'Pick from the accounts signed in on this device',hint:''}]);
-  if(!opts.some(function(o){return o.key===choice;}))choice=opts[0].key;
-  el.innerHTML='<div class="gac"><div class="gac-t">Choose the Google account</div><div role="radiogroup" aria-label="Google account" style="display:grid;gap:8px">'+
-    opts.map(function(o){return '<button type="button" class="gac-o" role="radio" data-k="'+o.key+'" aria-checked="'+(o.key===choice)+'"><span class="gi" aria-hidden="true">'+o.ic+'</span><span><b>'+o.t+'</b><small>'+o.s+'</small></span></button>';}).join('')+
-    '</div><div class="gac-btn"></div><a class="gac-add" target="_blank" rel="noopener" href="https://accounts.google.com/AddSession?continue='+encodeURIComponent(location.href.split('#')[0])+'">+ Add another Google account to this device</a></div>';
-  var btnBox=el.querySelector('.gac-btn');
-  function render(){
-    var o=opts.filter(function(x){return x.key===choice;})[0];
-    try{
-      google.accounts.id.initialize({client_id:id,callback:function(r){onCredential(r.credential);},auto_select:false,cancel_on_tap_outside:true,ux_mode:'popup',login_hint:o.hint||undefined,itp_support:true});
-      btnBox.innerHTML='';
-      google.accounts.id.renderButton(btnBox,{theme:'filled_blue',size:'large',text:o.hint?'continue_with':'signin_with',shape:'pill',logo_alignment:'left',width:Math.min(360,Math.max(220,el.clientWidth||300))});
-    }catch(e){if(onUnavailable)onUnavailable('error');}
-  }
-  Array.prototype.forEach.call(el.querySelectorAll('.gac-o'),function(b){b.onclick=function(){
-    choice=b.getAttribute('data-k');try{localStorage.setItem(KEY,choice);}catch(e){}
-    Array.prototype.forEach.call(el.querySelectorAll('.gac-o'),function(x){x.setAttribute('aria-checked',String(x===b));});
-    if(window.google&&google.accounts&&google.accounts.id){google.accounts.id.disableAutoSelect();render();}
-  };});
-  if(window.google&&google.accounts&&google.accounts.id){render();return;}
-  var s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.async=true;s.onload=render;s.onerror=function(){btnBox.innerHTML='';if(onUnavailable)onUnavailable('blocked');};document.head.appendChild(s);
+  function go(){try{google.accounts.id.initialize({client_id:id,callback:function(r){onCredential(r.credential);},auto_select:false,cancel_on_tap_outside:true,ux_mode:'popup',itp_support:true});
+    google.accounts.id.renderButton(el,{theme:'filled_blue',size:'large',text:'signin_with',shape:'pill',logo_alignment:'left',width:Math.min(360,Math.max(220,el.clientWidth||300))});}catch(e){if(onUnavailable)onUnavailable('error');}}
+  if(window.google&&google.accounts&&google.accounts.id){go();return;}
+  var s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.async=true;s.onload=go;s.onerror=function(){if(onUnavailable)onUnavailable('blocked');};document.head.appendChild(s);
 }
 /* Call on sign-out so Google does not silently reuse the last account. */
 function igmcriGoogleSignOut(){try{if(window.google&&google.accounts&&google.accounts.id)google.accounts.id.disableAutoSelect();}catch(e){}}
 
   function signInView(note){
-    view('<p class="ag-sub">Pick an account, then tap the Google button.</p>'+(note?'<div class="ag-msg warn">'+esc(note)+'</div>':'')+
+    view('<p class="ag-sub">Sign in with your department Google account.</p>'+(note?'<div class="ag-msg warn">'+esc(note)+'</div>':'')+
       '<div id="agGoogle" class="ag-google"></div><div id="agGMsg" class="ag-msg" role="alert"></div>'+
-      '<details class="ag-pwd" id="agPwd"><summary>Sign in with password instead</summary>'+
+      '<details class="ag-pwd" id="agPwd" hidden><summary>Sign in with password instead</summary>'+
       '<form id="agForm" novalidate><label for="agEmail">Email</label><input id="agEmail" type="email" autocomplete="username" inputmode="email" required>'+
       '<label for="agPass">Password</label><div class="ag-pw"><input id="agPass" type="password" autocomplete="current-password" required><button type="button" id="agShow" aria-label="Show password">Show</button></div>'+
       '<button type="submit" class="ag-btn" id="agGo">Sign in</button><div id="agMsg" class="ag-msg" role="alert"></div></form></details>');
@@ -151,7 +115,7 @@ function igmcriGoogleSignOut(){try{if(window.google&&google.accounts&&google.acc
         if(!j.ok){gm.className='ag-msg err';gm.textContent=j.error==='not_authorised'?'The Google account '+(j.email||'')+' is not authorised for this dashboard.':j.error==='google_not_configured'?'Google sign-in is not set up in the backend script yet.':'Google sign-in failed. Please try again.';return;}
         setS({token:j.token,email:j.email,exp:Date.now()+(j.expires_in||43200)*1000-60000});unlock(j.email);}
       catch(err){gm.className='ag-msg err';gm.textContent='Could not reach the backend. Check the internet connection.';}
-    },function(){var g=document.getElementById('agGoogle');if(g)g.innerHTML='<div class="ag-msg warn">Google sign-in is not available here. Use your password below.</div>';var d=document.getElementById('agPwd');if(d)d.open=true;});
+    },function(){var g=document.getElementById('agGoogle');if(g)g.innerHTML='<div class="ag-msg warn">Google sign-in is not available here. Use your password below.</div>';var d=document.getElementById('agPwd');if(d){d.hidden=false;d.open=true;}});
     var e=document.getElementById('agEmail');try{e.value=localStorage.getItem('ag-last-email')||'';}catch(x){}
     document.getElementById('agShow').onclick=function(){var p=document.getElementById('agPass');var s=p.type==='password';p.type=s?'text':'password';this.textContent=s?'Hide':'Show';this.setAttribute('aria-label',s?'Hide password':'Show password');};
     document.getElementById('agForm').onsubmit=async function(ev){
@@ -4728,8 +4692,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   #mApp .ma-page-title{font-family:var(--tb-display);font-weight:800;font-size:24px;letter-spacing:-.01em;margin:18px 0 12px}
 
   /* Bottom navigation */
-  #mApp .ma-nav{position:fixed;left:0;right:0;bottom:0;z-index:900;display:grid;grid-template-columns:repeat(4,1fr);background:var(--tb-card);border-top:1px solid var(--tb-line);padding:6px max(6px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px))}
-  #mApp .ma-nav button{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:4px;padding:7px 2px;border-radius:10px;font-size:11px;font-weight:600;color:var(--tb-ink-3);min-height:52px}
+  #mApp .ma-nav{position:fixed;left:0;right:0;bottom:0;z-index:900;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));background:var(--tb-card);border-top:1px solid var(--tb-line);padding:6px max(6px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px))}
+  #mApp .ma-nav button{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:4px;padding:7px 2px;border-radius:10px;font-size:10.5px;line-height:1.15;text-align:center;min-width:0;font-weight:600;color:var(--tb-ink-3);min-height:52px}
   #mApp .ma-nav button i{font-size:19px}
   #mApp .ma-nav button.on{color:var(--tb-ink)}
   #mApp .ma-nav button.on i{color:var(--tb-scrub)}
@@ -4737,6 +4701,26 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   #mApp [data-view].on{display:block}
   .modal-overlay{z-index:1000!important}
 }
+
+  #mApp .ma-cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;background:var(--tb-card);border:1px solid var(--tb-line);border-radius:14px;padding:8px}
+  #mApp .ma-cal .dn{text-align:center;font-family:var(--tb-mono);font-size:10.5px;color:var(--tb-ink-3);padding:3px 0}
+  #mApp .ma-cal button{aspect-ratio:1;border:0;border-radius:9px;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-family:var(--tb-mono);font-size:13px;color:var(--tb-ink);min-height:36px;padding:0;cursor:pointer}
+  #mApp .ma-cal button.ph{background:#FDECEC;color:#A01818;font-weight:700}
+  #mApp .ma-cal button.rh{background:#F1ECFB;color:#5B3FA8;font-weight:700}
+  #mApp .ma-cal button.td{box-shadow:inset 0 0 0 2px var(--tb-scrub);font-weight:700}
+  #mApp .ma-cal em{display:flex;gap:2px;height:5px}
+  #mApp .ma-cal i,#mApp .ma-cal-lg i{width:5px;height:5px;border-radius:50%;display:inline-block}
+  #mApp i.s{background:var(--tb-scrub)} #mApp i.l{background:#C9603A}
+  #mApp .ma-cal-lg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11.5px;color:var(--tb-ink-2);margin:8px 2px 0}
+  #mApp .ma-cal-lg span{display:inline-flex;align-items:center;gap:5px}
+  #mApp .ma-cal-lg b{width:11px;height:11px;border-radius:3px;display:inline-block}
+  #mApp .ma-cal-lg b.ph{background:#FDECEC;border:1px solid #D26464} #mApp .ma-cal-lg b.rh{background:#F1ECFB;border:1px solid #8C72D6}
+  #mApp .ma-cal-next{display:grid;gap:6px;margin-top:10px}
+  #mApp .ma-cal-next button{display:grid;grid-template-columns:62px minmax(0,1fr) auto;align-items:center;gap:8px;text-align:left;border:1px solid var(--tb-line);background:var(--tb-card);border-radius:11px;padding:8px 11px;font:inherit;color:var(--tb-ink);cursor:pointer}
+  #mApp .ma-cal-next button b{font-family:var(--tb-mono);font-size:12.5px}
+  #mApp .ma-cal-next button span{font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #mApp .ma-cal-next button small{font-size:10.5px;font-weight:800;border-radius:6px;padding:2px 7px}
+  #mApp .ma-cal-next button.ph small{background:#FDECEC;color:#A01818} #mApp .ma-cal-next button.rh small{background:#F1ECFB;color:#5B3FA8}
 </style>
 <style id="admin-app">/* ==== Admin sheets + new home/menu widgets (phone) ==== */
 #maSheet{display:none}
@@ -5512,6 +5496,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     open:function(screen,arg){stack=[];push(screen,arg);},
     importPersonnel:importPersonnel,
     cadre:cadre,
+    calendarOn:function(ds){return load().calendar.filter(function(e){return e.date<=ds&&(e.endDate||e.date)>=ds;});},
     leaveToday:function(){var t=today();return load().calendar.filter(function(e){return CAL_CATS[e.category]==='Leave'&&e.date<=t&&(e.endDate||e.date)>=t;}).map(function(e){return {name:pname(e.personId)||e.title,until:fmtDate(e.endDate||e.date),cat:e.category};});},
     counts:function(){var d=load();return {personnel:d.personnel.filter(isActive).length,past:d.personnel.filter(function(p){return !isActive(p);}).length,interns:d.interns.filter(function(i){return i.status!=='Completed';}).length,pubs:d.academic.filter(function(r){return r.type==='publication';}).length,log:d.log.length};},
     renderDirectoryInto:function(el){var o=SCREENS.personnel({cat:'faculty'});el.innerHTML=o.body;}
@@ -5551,15 +5536,15 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
       '<main class="ma-wrap">'+
         '<section data-view="home" class="on">'+
           '<div class="ma-sec"><div class="ma-label"><span class="ma-today-badge">TODAY</span><span id="maTodayCount"></span></div><div id="maToday"></div></div>'+
-          '<div class="ma-sec"><div class="ma-label"><h2>Registers</h2><span>Entries today</span></div><div class="ma-tiles" id="maTiles"></div></div>'+
+          '<div class="ma-sec"><div class="ma-label"><h2>Calendar</h2><span id="maCalLbl"></span></div><div id="maCal"></div></div>'+'<div class="ma-sec"><div class="ma-label"><h2>Registers</h2><span>Entries today</span></div><div class="ma-tiles" id="maTiles"></div></div>'+
           '<div class="ma-sec"><div class="ma-label"><h2>UG attendance</h2><span id="maAttSession">Today</span></div><div class="ma-att" id="maAtt"></div></div>'+
         '</section>'+
         '<section data-view="modules"><h2 class="ma-page-title">Modules</h2><div id="maModules"></div></section>'+
-        '<section data-view="schedule"><h2 class="ma-page-title">Schedule</h2><div class="ma-seg" id="maRange"></div><div id="maAgenda"></div><button class="ma-btn" type="button" data-open="academicSchedule"><i class="fas fa-calendar-alt"></i>Open full academic schedule</button></section>'+
+        '<section data-view="registers"><h2 class="ma-page-title">Registers</h2><div class="ma-label"><h2>Live counts</h2><span>Entries today</span></div><div class="ma-tiles" id="maRegTiles"></div><div class="ma-label" style="margin-top:18px"><h2>Entry forms</h2><span>QR forms</span></div><div class="ma-list" id="maForms"></div></section>'+'<section data-view="schedule"><h2 class="ma-page-title">Live sessions</h2><div class="ma-seg" id="maRange"></div><div id="maAgenda"></div><button class="ma-btn" type="button" data-open="academicSchedule"><i class="fas fa-calendar-alt"></i>Open full academic schedule</button></section>'+
         '<section data-view="people"><h2 class="ma-page-title">Personnel</h2><div id="maPeople"></div></section>'+
       '</main>'+
       '<nav class="ma-nav" aria-label="App navigation">'+
-        nav('home','fa-home','Home')+nav('modules','fa-th-large','Modules')+nav('schedule','fa-calendar-alt','Schedule')+nav('people','fa-id-card','Personnel')+
+        nav('home','fa-home','Home')+nav('schedule','fa-chalkboard-teacher','Live sessions')+nav('registers','fa-clipboard-list','Registers')+nav('calendar','fa-calendar-alt','Calendar')+nav('modules','fa-th-large','More')+
       '</nav>';
     document.body.appendChild(a);
     a.addEventListener('click',onClick);
@@ -5568,7 +5553,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 
   function onClick(e){
     var b=e.target.closest('button');if(!b)return;
-    if(b.dataset.nav){go(b.dataset.nav);return;}
+    if(b.dataset.nav){if(b.dataset.nav==='calendar'){if(window.MAdmin)MAdmin.open('calendar',{});return;}go(b.dataset.nav);return;}
+    if(b.dataset.cal&&window.MAdmin){MAdmin.open('calendar',{m:b.dataset.cal.slice(0,7),d:b.dataset.cal});return;}
     if(b.dataset.admin&&window.MAdmin){var ar={};try{ar=JSON.parse(b.dataset.arg||'{}');}catch(x){}MAdmin.open(b.dataset.admin,ar);return;}
     if(b.dataset.open){open(b.dataset.open);return;}
     if(b.dataset.batch){state.batch=b.dataset.batch;try{localStorage.setItem('ma-batch',state.batch);}catch(err){}renderAtt();return;}
@@ -5603,14 +5589,32 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   }
 
   function renderTiles(){
-    document.getElementById('maTiles').innerHTML=REGISTERS.map(function(r){
+    var tilesHtml=REGISTERS.map(function(r){
       var st=window.IGMCRI_STATS&&r.stat&&window.IGMCRI_STATS[r.stat];
       var c=st?st.today:(r.key?todayCount(r.key):null);
       return '<button type="button" class="ma-tile" data-open="'+r.id+'"><div class="top"><span class="ic"><i class="fas '+r.icon+'"></i></span>'+
         (c===null?'':'<span class="cnt'+(c?'':' zero')+'">'+c+'</span>')+'</div><div><div class="nm">'+esc(r.name)+'</div><div class="sb">'+(c===null?'Open':(c===1?'1 entry today':c+' entries today'))+'</div></div></button>';
     }).join('');
+    ['maTiles','maRegTiles'].forEach(function(id){var el=document.getElementById(id);if(el)el.innerHTML=tilesHtml;});
   }
 
+  var FORMS=[['Endoscopy_Register.html','fa-microscope','Endoscopy register','Scan-in entry form'],['USG_Register.html','fa-heartbeat','USG register','Scan-in entry form'],['Dressing_Register.html','fa-notes-medical','Dressing register','Scan-in entry form'],['Library_Register.html','fa-book','Library register','Issue & return'],['EGD_Report_Form.html','fa-file-medical','New EGD report','Checklist, findings, photos'],['EGD_Reports.html','fa-folder-open','EGD reports','View, print, QR'],['QR_Codes.html','fa-qrcode','QR labels','Print register QR codes']];
+  function renderForms(){var el=document.getElementById('maForms');if(!el)return;el.innerHTML=FORMS.map(function(f){return '<a class="ma-row" href="'+f[0]+'" style="text-decoration:none;color:inherit"><span class="ic"><i class="fas '+f[1]+'"></i></span><span><strong>'+f[2]+'</strong><small>'+f[3]+'</small></span><i class="fas fa-chevron-right chev"></i></a>';}).join('');}
+  function renderCal(){
+    var el=document.getElementById('maCal');if(!el)return;
+    var n=new Date(),y=n.getFullYear(),m=n.getMonth(),t=iso(n),ms=y+'-'+pad(m+1),first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();
+    var H=window.IGMCRI_HOLIDAYS||[],E=events(),L=window.MAdmin&&MAdmin.calendarOn?MAdmin.calendarOn:null;
+    document.getElementById('maCalLbl').textContent=n.toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+    var g='<div class="ma-cal">'+['S','M','T','W','T','F','S'].map(function(x){return '<span class="dn">'+x+'</span>';}).join('');
+    for(var i=0;i<first;i++)g+='<span></span>';
+    for(var d=1;d<=days;d++){var k=ms+'-'+pad(d),h=H.filter(function(x){return x.date===k;}),ev=E.some(function(x){return x.date===k;}),lv=L?L(k).length:0;
+      g+='<button type="button" data-cal="'+k+'" class="'+(h.some(function(x){return x.type==='PH';})?'ph':h.length?'rh':'')+(k===t?' td':'')+'" title="'+esc(h.map(function(x){return x.name;}).join(', '))+'"><span>'+d+'</span><em>'+(ev?'<i class="s"></i>':'')+(lv?'<i class="l"></i>':'')+'</em></button>';}
+    g+='</div>';
+    var up=H.filter(function(x){return x.date>=t;}).slice(0,3);
+    g+='<div class="ma-cal-lg"><span><b class="ph"></b>Public holiday</span><span><b class="rh"></b>RH</span><span><i class="s"></i>Session</span><span><i class="l"></i>Leave/event</span></div>';
+    if(up.length)g+='<div class="ma-cal-next">'+up.map(function(x){return '<button type="button" data-cal="'+x.date+'" class="'+x.type.toLowerCase()+'"><b>'+esc(new Date(x.date+'T12:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'}))+'</b><span>'+esc(x.name)+'</span><small>'+(x.type==='PH'?'Holiday':'RH')+'</small></button>';}).join('')+'</div>';
+    el.innerHTML=g;
+  }
   function attendance(batch){
     var t=iso(new Date());
     var m=ls('igmcri-ug-attendance-local-v1').filter(function(e){return String(e.batch)===batch&&e.date===t;});
@@ -5684,7 +5688,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 
   function renderAll(){
     try{
-      if(state.view==='home'){renderToday();renderTiles();renderAtt();}
+      if(state.view==='home'){renderToday();renderCal();renderTiles();renderAtt();}
+      if(state.view==='registers'){renderTiles();renderForms();}
       if(state.view==='modules')renderModules();
       if(state.view==='schedule')renderAgenda();
       if(state.view==='people')renderPeople();

@@ -44,4 +44,5 @@ $('prev').onclick=()=>{if(mode==='week')view.setDate(view.getDate()-7);else view
 async function load(){try{const r=await fetch('https://gensurgeryunit6-png.github.io/test1/academic_sessions.json',{cache:'no-store'});if(!r.ok)throw Error('Schedule not available');sessions=(await r.json()).filter(x=>x.date).sort((a,b)=>(a.date+' '+(a.time||'')).localeCompare(b.date+' '+(b.time||'')));const todayTime=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date());const upcoming=sessions.filter(x=>x.date>todayKey||(x.date===todayKey&&(x.time||'23:59')>=todayTime)).slice(0,8);$('sessionTicker').textContent=upcoming.length?upcoming.map(x=>[x.date,x.time,x.audience,x.type,x.topic&&x.topic!=='N/A'?x.topic:'',x.venue].filter(Boolean).join(' · ')).join('     ◆     '):'No upcoming sessions in the published timetable. Open Academic Schedule for updates.';draw()}catch(e){$('sessionTicker').textContent='Academic timetable unavailable — open Academic Schedule for session details.';$('sessionLegend').textContent='Unable to load the academic timetable.'}}
 load();
 })();
-</script></body></html>
+</script><script src="app/dock.js"></script>
+</body></html>
