@@ -4730,6 +4730,12 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   #mApp .ma-cal-next button span{font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   #mApp .ma-cal-next button small{font-size:10.5px;font-weight:800;border-radius:6px;padding:2px 7px}
   #mApp .ma-cal-next button.ph small{background:#FDECEC;color:#A01818} #mApp .ma-cal-next button.rh small{background:#F1ECFB;color:#5B3FA8}
+
+  #mApp .ma-dl{width:100%;display:flex;align-items:center;gap:12px;text-align:left;background:var(--tb-ink);color:#fff;border:0;border-radius:16px;padding:14px 16px;font:inherit;cursor:pointer}
+  #mApp .ma-dl .ic{width:40px;height:40px;border-radius:12px;background:#ffffff1f;display:grid;place-items:center;font-size:17px;color:#7FE0D6;flex:none}
+  #mApp .ma-dl span:nth-child(2){flex:1;min-width:0}
+  #mApp .ma-dl b{display:block;font-size:16px}
+  #mApp .ma-dl small{display:block;font-size:12px;opacity:.8}
 </style>
 <style id="admin-app">/* ==== Admin sheets + new home/menu widgets (phone) ==== */
 #maSheet{display:none}
@@ -4922,6 +4928,12 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   #maSheet .sh-legend i.sq.hol-rh{background:#F1ECFB;border-color:#8C72D6}
   #maSheet .sh-pill.hol-ph{background:#FDECEC;color:#A01818}
   #maSheet .sh-pill.hol-rh{background:#F1ECFB;color:#5B3FA8}
+
+  #maSheet .dl-it{background:var(--tb-card);border:1px solid var(--tb-line);border-radius:14px;padding:11px 12px;margin-bottom:8px}
+  #maSheet .dl-h{display:flex;align-items:center;gap:10px}
+  #maSheet .dl-h .sh-main{flex:1;min-width:0}
+  #maSheet .dl-b{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px;padding-left:46px}
+  #maSheet .dl-b .sh-btn{flex:1 1 0;justify-content:center;min-width:84px}
 </style>
 <script>/* Theatre Board layout tweaks: move KPI strip under the title, add an IST date block. */
 (function(){
@@ -5384,7 +5396,19 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     }
     return c;
   }
-  var DOCS={coa:'Pondicherry University COA',nmc:'NMC Form B – Staff section',annual:'Annual department report'};
+  var DOCS={coa:'University inspection report (Pondicherry University COA)',nmc:'NMC Form B – Staff section',annual:'Annual department report',holidays:'Holiday list 2027'};
+  SCREENS.downloads=function(){
+    var Y=new Date().getFullYear();
+    var st=function(doc,yr){var c=check(doc,yr),bad=c.filter(function(x){return !x.ok;}).length;return bad?pill(bad+' to update','c-leave'):pill('Complete','c-academic');};
+    var btns=function(arg){var j=esc(JSON.stringify(arg));return '<div class="dl-b"><button type="button" class="sh-btn small" data-dl=\''+j+'\' data-kind="doc"><i class="fas fa-file-word"></i> Word</button><button type="button" class="sh-btn small" data-dl=\''+j+'\' data-kind="html"><i class="fas fa-file-pdf"></i> PDF</button>'+(arg.doc!=='holidays'?'<button type="button" class="sh-btn small" data-go="docCheck" data-arg=\''+j+'\'><i class="fas fa-eye"></i> Check</button>':'')+'</div>';};
+    var item=function(ic,t,sub,right,arg){return '<div class="dl-it"><div class="dl-h"><span class="sh-ic"><i class="fas '+ic+'"></i></span><span class="sh-main"><strong>'+t+'</strong><small>'+sub+'</small></span>'+(right||'')+'</div>'+btns(arg)+'</div>';};
+    var body='<h4 class="sh-h">Annual department report</h4>'+[Y,Y-1,Y-2,Y-3].map(function(y){return item('fa-book-open','Annual report '+y,'January – December '+y,st('annual',y),{doc:'annual',yr:y});}).join('')+
+      '<h4 class="sh-h">University inspection</h4>'+item('fa-university','Pondicherry University COA','Continuation of affiliation · faculty, publications, attendance',st('coa',Y),{doc:'coa',yr:Y})+
+      item('fa-file-medical','NMC Form B – Staff','Faculty and residents for NMC inspection',st('nmc',Y),{doc:'nmc',yr:Y})+
+      '<h4 class="sh-h">Department</h4>'+item('fa-umbrella-beach','Holiday list 2027','Public and restricted holidays, Puducherry','',{doc:'holidays'})+
+      '<p class="sh-foot">Word downloads a .doc file. PDF opens the report ready to print — choose “Save as PDF”. Reports are built from the personnel and academic records in this app; anything missing is marked “INCOMPLETE DRAFT”. Tap Check to see what is missing.</p>';
+    return {title:'Downloads',body:body};
+  };
   SCREENS.docCheck=function(a){
     var yr=a.yr||new Date().getFullYear(),c=check(a.doc,yr),bad=c.filter(function(x){return !x.ok;}).length;
     var body=(a.doc==='annual'?'<div class="sh-f"><label for="docYear">Calendar year</label><select id="docYear">'+[0,1,2,3].map(function(i){var y=new Date().getFullYear()-i;return '<option'+(y==yr?' selected':'')+'>'+y+'</option>';}).join('')+'</select></div>':'')+
@@ -5396,6 +5420,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     return {title:DOCS[a.doc],body:body};
   };
   function docBody(doc,yr){
+    if(doc==='holidays'){var H=window.IGMCRI_HOLIDAYS||[];var ht=function(t){var r=H.filter(function(x){return x.type===t;});return '<table class="doc-t"><thead><tr><th>S.No</th><th>Date</th><th>Day</th><th>Occasion</th></tr></thead><tbody>'+r.map(function(x,i){var d=new Date(x.date+'T12:00:00');return '<tr><td>'+(i+1)+'</td><td>'+esc(d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}))+'</td><td>'+esc(d.toLocaleDateString('en-IN',{weekday:'long'}))+'</td><td>'+esc(x.name)+'</td></tr>';}).join('')+'</tbody></table>';};
+      return '<h3 class="doc-title">HOLIDAYS – 2027 (PUDUCHERRY REGION)</h3><p style="font-size:10pt;text-align:center">As per G.O. Ms. No. 109, Home Department, Government of Puducherry, dated 05-11-2026</p><h4>Public holidays</h4>'+ht('PH')+'<h4>Restricted holidays (any 2 may be availed)</h4>'+ht('RH')+'<p style="font-size:9.5pt">* Subject to change depending on the appearance of the moon.</p>';}
     var F=faculty(),c=cadre();
     var tbl=function(head,rows){return '<table class="doc-t"><thead><tr>'+head.map(function(h){return '<th>'+h+'</th>';}).join('')+'</tr></thead><tbody>'+(rows.length?rows.map(function(r){return '<tr>'+r.map(function(x){return '<td>'+esc(x)+'</td>';}).join('')+'</tr>';}).join(''):'<tr><td colspan="'+head.length+'">No records</td></tr>')+'</tbody></table>';};
     var cadreT=tbl(['Cadre','Number'],DESIG.filter(function(x){return c[x];}).map(function(x){return [x,c[x]];}));
@@ -5426,12 +5452,12 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
       '<h4>10. Achievements and awards</h4>'+tbl(['Recipient','Award','Body','Date'],A('award').map(function(r){return [pname(r.personId),r.title,r.body||'',fmtDate(r.date)];}));
   }
   var DOC_CSS='body{font-family:"Times New Roman",serif;color:#000}.doc-head{text-align:center;border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:12px}.doc-head .i1{font-weight:bold;font-size:15pt}.doc-head .i3{font-weight:bold;font-size:13pt;margin-top:4px}.doc-title{text-align:center;font-size:13pt;text-decoration:underline}h4{font-size:11.5pt;margin:14px 0 6px}.doc-t{width:100%;border-collapse:collapse;font-size:10pt}.doc-t th,.doc-t td{border:1px solid #000;padding:4px 6px;text-align:left;vertical-align:top}.doc-sign{display:flex;justify-content:space-between;margin-top:36px;font-size:11pt}.doc-draft{color:#b00;font-weight:bold;text-align:center;border:2px solid #b00;padding:4px;margin-bottom:10px}';
-  function docHtml(a){return (a.draft?'<div class="doc-draft">INCOMPLETE DRAFT – required information is missing</div>':'')+HEAD+docBody(a.doc,a.yr)+SIGN;}
+  function docHtml(a){if(a.doc==='holidays')return HEAD+docBody('holidays');return (a.draft?'<div class="doc-draft">INCOMPLETE DRAFT – required information is missing</div>':'')+HEAD+docBody(a.doc,a.yr)+SIGN;}
   SCREENS.docPreview=function(a){
     return {title:'Preview',body:'<div class="sh-actions"><button type="button" class="sh-btn" data-export="doc"><i class="fas fa-file-word"></i> Word</button><button type="button" class="sh-btn" data-export="html"><i class="fas fa-file-pdf"></i> Print / PDF</button></div><div class="sh-doc">'+docHtml(a)+'</div><p class="sh-foot">Word and PDF downloads work when the app is opened from your own website. Inside the Claude preview, downloads are blocked.</p>'};
   };
-  function exportDoc(kind){
-    var a=stack[stack.length-1].arg,name=(DOCS[a.doc]+(a.doc==='annual'?' '+a.yr:'')).replace(/[^\w]+/g,'_');
+  function exportDoc(kind,arg){
+    var a=arg||stack[stack.length-1].arg,name=(DOCS[a.doc]+(a.doc==='annual'?' '+a.yr:'')).replace(/[^\w]+/g,'_');
     var html='<html><head><meta charset="utf-8"><title>'+esc(DOCS[a.doc])+'</title><style>'+DOC_CSS+'</style></head><body>'+docHtml(a)+'</body></html>';
     if(kind==='doc'){var b=new Blob(['﻿',html],{type:'application/msword'});var l=document.createElement('a');l.href=URL.createObjectURL(b);l.download=name+'.doc';document.body.appendChild(l);l.click();l.remove();setTimeout(function(){URL.revokeObjectURL(l.href);},2000);}
     else{var w=window.open('','_blank');if(w){w.document.write(html);w.document.close();setTimeout(function(){try{w.print();}catch(e){}},400);}}
@@ -5450,6 +5476,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     if(b.dataset.cancel){document.getElementById('cf_'+b.dataset.cancel).hidden=true;return;}
     if(b.dataset.confirm==='rec'){delRec(top.arg);return;}
     if(b.dataset.export){exportDoc(b.dataset.export);return;}
+    if(b.dataset.dl){var da={};try{da=JSON.parse(b.dataset.dl);}catch(x){}if(da.doc!=='holidays'){var cc=check(da.doc,da.yr||new Date().getFullYear());da.draft=cc.some(function(x){return !x.ok;});}exportDoc(b.dataset.kind,da);return;}
     if(b.dataset.backup){var blob=new Blob([JSON.stringify(load(),null,1)],{type:'application/json'});var l=document.createElement('a');l.href=URL.createObjectURL(blob);l.download='IGMCRI_Surgery_Admin_Backup_'+today()+'.json';document.body.appendChild(l);l.click();l.remove();msg('Backup file prepared.',true);return;}
   }
   function onSheetInput(e){
@@ -5545,7 +5572,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
       '<main class="ma-wrap">'+
         '<section data-view="home" class="on">'+
           '<div class="ma-sec"><div class="ma-label"><span class="ma-today-badge">TODAY</span><span id="maTodayCount"></span></div><div id="maToday"></div></div>'+
-          '<div class="ma-sec"><div class="ma-label"><h2>Calendar</h2><span id="maCalLbl"></span></div><div id="maCal"></div></div>'+'<div class="ma-sec"><div class="ma-label"><h2>Registers</h2><span>Entries today</span></div><div class="ma-tiles" id="maTiles"></div></div>'+
+          '<div class="ma-sec"><div class="ma-label"><h2>Calendar</h2><span id="maCalLbl"></span></div><div id="maCal"></div></div>'+'<div class="ma-sec"><div class="ma-label"><h2>Registers</h2><span>Entries today</span></div><div class="ma-tiles" id="maTiles"></div></div>'+'<div class="ma-sec"><button type="button" class="ma-dl" data-admin="downloads" data-arg="{}"><span class="ic"><i class="fas fa-download"></i></span><span><b>Downloads</b><small>Annual report · University inspection · NMC · Holidays</small></span><i class="fas fa-chevron-right"></i></button></div>'+
           '<div class="ma-sec"><div class="ma-label"><h2>UG attendance</h2><span id="maAttSession">Today</span></div><div class="ma-att" id="maAtt"></div></div>'+
         '</section>'+
         '<section data-view="modules"><h2 class="ma-page-title">Modules</h2><div id="maModules"></div></section>'+
@@ -5654,10 +5681,11 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   }
 
   var MENU=[
+    {t:'Downloads',ic:'fa-download',items:[['a','downloads','fa-download','All downloads'],['a','docCheck','fa-book-open','Annual department report',{doc:'annual'}],['a','docCheck','fa-university','University inspection (COA)',{doc:'coa'}]]},
     {t:'Clinical management',ic:'fa-procedures',items:[['m','dressingRoom','fa-notes-medical','Dressing register'],['m','ultrasonogram','fa-heartbeat','USG register'],['m','endoscopyRegister','fa-microscope','Endoscopy register'],['m','dutyRoster','fa-clipboard-list','Duty roster'],['m','inventory','fa-box-open','Supplies & stock'],['m','outwardLetterRegister','fa-envelope-open-text','Outward letter register']]},
     {t:'Department administration',ic:'fa-sitemap',items:[['a','personnel','fa-address-book','Personnel directory'],['a','personEdit','fa-user-plus','Add personnel'],['a','units','fa-th','Unit allocation (S1–S6)'],['a','cadre','fa-layer-group','Cadre strength'],['a','calendar','fa-calendar-check','Department calendar & leave'],['a','entList','fa-user-nurse','Interns',{ent:'interns'}],['a','entList','fa-tools','Equipment inventory',{ent:'equipment'}],['a','entList','fa-clinic-medical','Special clinics',{ent:'clinics'}],['a','entList','fa-hospital','Department facilities',{ent:'facility'}]]},
     {t:'Academics',ic:'fa-graduation-cap',items:[['a','myRecord','fa-id-badge','My record'],['a','personnel','fa-user-md','Faculty profiles',{cat:'faculty'}],['a','acadList','fa-book','Publications',{type:'publication'}],['a','acadList','fa-users','Conferences',{type:'conference'}],['a','acadList','fa-chalkboard-teacher','CME & workshops',{type:'cme'}],['a','acadList','fa-flask','Research projects',{type:'research'}],['a','acadList','fa-vial','ICMR projects',{type:'research',icmr:1}],['a','acadList','fa-award','Awards',{type:'award'}],['a','acadList','fa-chalkboard','Academic activities',{type:'activity'}],['m','academicSchedule','fa-calendar-alt','PG activities & teaching schedule'],['m','universityExams','fa-file-signature','Examination documents'],['m','faculty','fa-folder-open','Faculty files'],['m','postgraduates','fa-folder','PG files']]},
-    {t:'Document generation',ic:'fa-file-alt',items:[['a','docCheck','fa-university','Pondicherry University COA',{doc:'coa'}],['a','docCheck','fa-file-medical','NMC Form B – staff',{doc:'nmc'}],['a','docCheck','fa-book-open','Annual department report',{doc:'annual'}]]},
+    {t:'Document generation',ic:'fa-file-alt',items:[['a','downloads','fa-download','Downloads (all reports)'],['a','docCheck','fa-university','Pondicherry University COA',{doc:'coa'}],['a','docCheck','fa-file-medical','NMC Form B – staff',{doc:'nmc'}],['a','docCheck','fa-book-open','Annual department report',{doc:'annual'}]]},
     {t:'Admin & security',ic:'fa-shield-alt',items:[['l','sheet','fa-table','Open register spreadsheet (Google Sheets)'],['a','roles','fa-user-shield','Users & roles'],['a','log','fa-history','Change log'],['a','backup','fa-database','Backup & restore']]}
   ];
   function renderModules(){
