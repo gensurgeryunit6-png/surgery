@@ -47,6 +47,14 @@ html.auth-locked body{background:#F3F6F8!important;padding:0!important}
 #authGate .ag-google{display:flex;justify-content:center;min-height:44px;margin:6px 0 4px}
 #authGate .ag-pwd{margin-top:16px;border-top:1px solid #D8E1E7;padding-top:12px}
 #authGate .ag-pwd summary{cursor:pointer;color:#0B7A75;font-weight:600;font-size:14px;min-height:36px;display:flex;align-items:center}
+
+#authGate .ag-google{display:block}
+#authGate .ag-open{width:min(400px,100%)}
+#authGate .ag-open-t{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#7A8A97;margin:2px 4px 8px}
+#authGate .ag-open-g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#authGate .ag-open-g a{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #D8E1E7;border-radius:12px;padding:10px 12px;min-height:46px;color:#102A43;text-decoration:none;font-size:13.5px;font-weight:600;min-width:0}
+#authGate .ag-open-g a:hover{border-color:#0B7A75;background:#F4FBFA}
+#authGate .ag-open-g a span{font-size:17px;flex:none}
 </style>
 <script src="config.js"></script>
 <script src="holidays.js"></script>
@@ -71,7 +79,8 @@ html.auth-locked body{background:#F3F6F8!important;padding:0!important}
   window.IGMCRI_API=function(action,extra){var s=getS();var b=Object.assign({action:action,token:s&&s.token},extra||{});return call(b).then(function(j){if(!j.ok&&j.error==='not_signed_in'){setS(null);lock();signInView('Your session ended. Please sign in again.');}return j;});};
 
   function gate(){var g=document.getElementById('authGate');if(!g){g=document.createElement('div');g.id='authGate';document.body.insertBefore(g,document.body.firstChild);}return g;}
-  function view(html){gate().innerHTML='<div class="ag-card"><div class="ag-eb">IGMC &amp; RI · Department of General Surgery</div><h1>Surgery Dashboard</h1>'+html+'</div><p class="ag-foot">Access is limited to authorised department administrators.</p>';}
+  function view(html){gate().innerHTML='<div class="ag-card"><div class="ag-eb">IGMC &amp; RI · Department of General Surgery</div><h1>Surgery Dashboard</h1>'+html+'</div>'+openLinks()+'<p class="ag-foot">Patient records and admin tools need sign-in with an authorised account.</p>';}
+  function openLinks(){return '<div class="ag-open"><div class="ag-open-t">Open without sign-in</div><div class="ag-open-g">'+[['../','🏠','Main dashboard'],['Endoscopy_Register.html','🔬','Endoscopy register'],['USG_Register.html','📡','USG register'],['Dressing_Register.html','🩹','Dressing register'],['Library_Register.html','📚','Library register'],['EGD_Report_Form.html','📝','New EGD report'],['QR_Codes.html','▦','QR labels']].map(function(x){return '<a href="'+x[0]+'"><span aria-hidden="true">'+x[1]+'</span>'+x[2]+'</a>';}).join('')+'</div></div>';}
   function msg(t,kind){var m=document.getElementById('agMsg');if(m){m.className='ag-msg '+(kind||'err');m.textContent=t;}}
   function lock(){root.classList.add('auth-locked');}
   function unlock(email){
@@ -80,18 +89,56 @@ html.auth-locked body{background:#F3F6F8!important;padding:0!important}
     addSignOut();if(email)liveStats();
   }
 
-/* Sign in with Google (Google Identity Services). Calls onCredential(idToken). */
+/* Sign in with Google (Google Identity Services), with a choice of Google account.
+   igmcriGoogleButton(el, onCredential(idToken), onUnavailable(reason))
+   Shows: one option per authorised account, "Another Google account", and the Google button.
+   Picking an account passes it to Google as a login hint; Google's own account chooser opens
+   when the button is tapped, so any account signed in to this browser can be picked there too. */
+var IGMCRI_ACCOUNTS=[
+  {email:'endosurgeryigmcri@gmail.com',label:'Department account',ic:'🏥'},
+  {email:'ashleysolomonvascular@gmail.com',label:'Dr. Ashley Solomon',ic:'👤'}
+];
+function igmcriMask(e){var p=String(e).split('@');return p[0].slice(0,4)+'•••@'+(p[1]||'');}
 function igmcriGoogleButton(el,onCredential,onUnavailable){
   var id=(window.IGMCRI_CONFIG&&window.IGMCRI_CONFIG.googleClientId)||'';
   if(!id){if(onUnavailable)onUnavailable('not_configured');return;}
-  function go(){try{google.accounts.id.initialize({client_id:id,callback:function(r){onCredential(r.credential);},auto_select:false,cancel_on_tap_outside:true,ux_mode:'popup'});
-    google.accounts.id.renderButton(el,{theme:'filled_blue',size:'large',text:'signin_with',shape:'pill',logo_alignment:'left',width:Math.min(360,Math.max(220,el.clientWidth||300))});}catch(e){if(onUnavailable)onUnavailable('error');}}
-  if(window.google&&google.accounts&&google.accounts.id){go();return;}
-  var s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.async=true;s.onload=go;s.onerror=function(){if(onUnavailable)onUnavailable('blocked');};document.head.appendChild(s);
+  var KEY='igmcri-google-choice',choice='';
+  try{choice=localStorage.getItem(KEY)||'';}catch(e){}
+  if(!document.getElementById('gacCss')){var st=document.createElement('style');st.id='gacCss';st.textContent=
+    '.gac{width:100%;display:grid;gap:8px;margin:2px 0 6px}.gac-t{font-size:12.5px;font-weight:600;color:#475B6B;margin:0 0 2px}'+
+    '.gac-o{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid #D8E1E7;background:#FBFCFD;border-radius:12px;padding:10px 12px;min-height:52px;font:inherit;color:#102A43;cursor:pointer}'+
+    '.gac-o:hover{border-color:#0B7A75}.gac-o[aria-checked="true"]{border:2px solid #0B7A75;background:#E2F2F0;padding:9px 11px}'+
+    '.gac-o .gi{font-size:20px;width:26px;text-align:center;flex:none}.gac-o b{display:block;font-size:14px}.gac-o small{display:block;font-size:12px;color:#5B6B78;overflow-wrap:anywhere}'+
+    '.gac-btn{display:flex;justify-content:center;min-height:44px;margin-top:6px}.gac-add{display:block;text-align:center;font-size:13px;color:#0B7A75;font-weight:600;padding:6px;text-decoration:none}'+
+    '.gac-add:hover{text-decoration:underline}';document.head.appendChild(st);}
+  var opts=IGMCRI_ACCOUNTS.map(function(a){return {key:a.email,ic:a.ic,t:a.label,s:igmcriMask(a.email),hint:a.email};})
+    .concat([{key:'other',ic:'🔄',t:'Another Google account',s:'Pick from the accounts signed in on this device',hint:''}]);
+  if(!opts.some(function(o){return o.key===choice;}))choice=opts[0].key;
+  el.innerHTML='<div class="gac"><div class="gac-t">Choose the Google account</div><div role="radiogroup" aria-label="Google account" style="display:grid;gap:8px">'+
+    opts.map(function(o){return '<button type="button" class="gac-o" role="radio" data-k="'+o.key+'" aria-checked="'+(o.key===choice)+'"><span class="gi" aria-hidden="true">'+o.ic+'</span><span><b>'+o.t+'</b><small>'+o.s+'</small></span></button>';}).join('')+
+    '</div><div class="gac-btn"></div><a class="gac-add" target="_blank" rel="noopener" href="https://accounts.google.com/AddSession?continue='+encodeURIComponent(location.href.split('#')[0])+'">+ Add another Google account to this device</a></div>';
+  var btnBox=el.querySelector('.gac-btn');
+  function render(){
+    var o=opts.filter(function(x){return x.key===choice;})[0];
+    try{
+      google.accounts.id.initialize({client_id:id,callback:function(r){onCredential(r.credential);},auto_select:false,cancel_on_tap_outside:true,ux_mode:'popup',login_hint:o.hint||undefined,itp_support:true});
+      btnBox.innerHTML='';
+      google.accounts.id.renderButton(btnBox,{theme:'filled_blue',size:'large',text:o.hint?'continue_with':'signin_with',shape:'pill',logo_alignment:'left',width:Math.min(360,Math.max(220,el.clientWidth||300))});
+    }catch(e){if(onUnavailable)onUnavailable('error');}
+  }
+  Array.prototype.forEach.call(el.querySelectorAll('.gac-o'),function(b){b.onclick=function(){
+    choice=b.getAttribute('data-k');try{localStorage.setItem(KEY,choice);}catch(e){}
+    Array.prototype.forEach.call(el.querySelectorAll('.gac-o'),function(x){x.setAttribute('aria-checked',String(x===b));});
+    if(window.google&&google.accounts&&google.accounts.id){google.accounts.id.disableAutoSelect();render();}
+  };});
+  if(window.google&&google.accounts&&google.accounts.id){render();return;}
+  var s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.async=true;s.onload=render;s.onerror=function(){btnBox.innerHTML='';if(onUnavailable)onUnavailable('blocked');};document.head.appendChild(s);
 }
+/* Call on sign-out so Google does not silently reuse the last account. */
+function igmcriGoogleSignOut(){try{if(window.google&&google.accounts&&google.accounts.id)google.accounts.id.disableAutoSelect();}catch(e){}}
 
   function signInView(note){
-    view('<p class="ag-sub">Sign in with your department Google account.</p>'+(note?'<div class="ag-msg warn">'+esc(note)+'</div>':'')+
+    view('<p class="ag-sub">Pick an account, then tap the Google button.</p>'+(note?'<div class="ag-msg warn">'+esc(note)+'</div>':'')+
       '<div id="agGoogle" class="ag-google"></div><div id="agGMsg" class="ag-msg" role="alert"></div>'+
       '<details class="ag-pwd" id="agPwd"><summary>Sign in with password instead</summary>'+
       '<form id="agForm" novalidate><label for="agEmail">Email</label><input id="agEmail" type="email" autocomplete="username" inputmode="email" required>'+
@@ -125,7 +172,7 @@ function igmcriGoogleButton(el,onCredential,onUnavailable){
     };
   }
   function addSignOut(){
-    var out=async function(){var s=getS();setS(null);try{if(s&&API())await call({action:'logout',token:s.token});}catch(e){}location.reload();};
+    var out=async function(){var s=getS();setS(null);igmcriGoogleSignOut();try{if(s&&API())await call({action:'logout',token:s.token});}catch(e){}location.reload();};
     var mk=function(id){var b=document.createElement('button');b.type='button';b.id=id;b.className='ag-out';b.innerHTML='<i class="fas fa-sign-out-alt" aria-hidden="true"></i><span>Sign out</span>';b.title='Sign out '+(window.IGMCRI_USER||'');b.onclick=out;return b;};
     var head=document.querySelector('#mApp .ma-brand');if(head&&!document.getElementById('agSignOut'))head.appendChild(mk('agSignOut'));
     var dh=document.querySelector('#dashboardPage .dash-header');if(dh&&!document.getElementById('agSignOutDesk'))dh.appendChild(mk('agSignOutDesk'));
