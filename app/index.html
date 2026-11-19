@@ -49,6 +49,7 @@ html.auth-locked body{background:#F3F6F8!important;padding:0!important}
 #authGate .ag-pwd summary{cursor:pointer;color:#0B7A75;font-weight:600;font-size:14px;min-height:36px;display:flex;align-items:center}
 </style>
 <script src="config.js"></script>
+<script src="holidays.js"></script>
 <script>/* ==== Sign-in gate: Google Sheets backend (Apps Script), two allowed accounts ====
    Passwords are checked by the Apps Script, never stored in this page. Patient rows are
    only returned to a signed-in admin. Session lasts 12 hours on this device. */
@@ -4871,6 +4872,16 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   #maSheet .doc-sign{display:flex;justify-content:space-between;gap:12px;margin-top:22px;font-size:11.5px}
   #maSheet .doc-draft{color:#B00;font-weight:700;text-align:center;border:2px solid #B00;padding:4px;margin-bottom:8px;font-size:12px}
 }
+
+  #maSheet .sh-cal .dc.hol-ph{background:#FDECEC;color:#A01818;font-weight:700}
+  #maSheet .sh-cal .dc.hol-rh{background:#F1ECFB;color:#5B3FA8;font-weight:700}
+  #maSheet .sh-cal .dc.hol-ph.sel,#maSheet .sh-cal .dc.hol-rh.sel{background:var(--tb-ink);color:#fff}
+  #maSheet .sh-cal .dc.today.hol-ph,#maSheet .sh-cal .dc.today.hol-rh{box-shadow:inset 0 0 0 2px var(--tb-scrub)}
+  #maSheet .sh-legend i.sq{width:10px;height:10px;border-radius:3px;border:1px solid}
+  #maSheet .sh-legend i.sq.hol-ph{background:#FDECEC;border-color:#D26464}
+  #maSheet .sh-legend i.sq.hol-rh{background:#F1ECFB;border-color:#8C72D6}
+  #maSheet .sh-pill.hol-ph{background:#FDECEC;color:#A01818}
+  #maSheet .sh-pill.hol-rh{background:#F1ECFB;color:#5B3FA8}
 </style>
 <script>/* Theatre Board layout tweaks: move KPI strip under the title, add an IST date block. */
 (function(){
@@ -5238,19 +5249,20 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     var y=cur.getFullYear(),m=cur.getMonth(),days=new Date(y,m+1,0).getDate(),first=new Date(y,m,1).getDay(),t=today(),sel=a.d||'';
     var ms=y+'-'+pad(m+1);
     var on=function(ds){return d.calendar.filter(function(e){return e.date<=ds&&(e.endDate||e.date)>=ds;});};
+    var hol=function(ds){return (window.IGMCRI_HOLIDAYS||[]).filter(function(h){return h.date===ds;});};
     var acad=function(ds){try{return typeof collectAcademicCalendarEvents==='function'?collectAcademicCalendarEvents().filter(function(e){return e.date===ds;}):[];}catch(e){return [];}};
     var prev=new Date(y,m-1,1),next=new Date(y,m+1,1);
     var grid='<div class="sh-cal-head"><button type="button" class="sh-btn small" data-go="calendar" data-replace="1" data-arg=\''+esc(JSON.stringify({m:prev.getFullYear()+'-'+pad(prev.getMonth()+1)}))+'\' aria-label="Previous month"><i class="fas fa-chevron-left"></i></button><b>'+cur.toLocaleDateString('en-IN',{month:'long',year:'numeric'})+'</b><button type="button" class="sh-btn small" data-go="calendar" data-replace="1" data-arg=\''+esc(JSON.stringify({m:next.getFullYear()+'-'+pad(next.getMonth()+1)}))+'\' aria-label="Next month"><i class="fas fa-chevron-right"></i></button></div><div class="sh-cal">'+
       ['S','M','T','W','T','F','S'].map(function(x){return '<span class="dn">'+x+'</span>';}).join('');
     for(var i=0;i<first;i++)grid+='<span></span>';
-    for(var dd=1;dd<=days;dd++){var ds=ms+'-'+pad(dd),ev=on(ds),ac=acad(ds);
+    for(var dd=1;dd<=days;dd++){var ds=ms+'-'+pad(dd),ev=on(ds),ac=acad(ds),hl=hol(ds),hc=hl.some(function(h){return h.type==='PH';})?' hol-ph':hl.length?' hol-rh':'';
       var dots=ev.slice(0,3).map(function(e){return '<i class="c-'+CAL_CATS[e.category].toLowerCase()+'"></i>';}).join('')+(ac.length?'<i class="c-academic"></i>':'');
-      grid+='<button type="button" class="dc'+(ds===t?' today':'')+(ds===sel?' sel':'')+'" data-go="calendar" data-replace="1" data-arg=\''+esc(JSON.stringify({m:ms,d:ds}))+'\'><span>'+dd+'</span><em>'+dots+'</em></button>';}
-    grid+='</div><div class="sh-legend">'+['Leave','Academic','Department','Important','Events'].map(function(c){return '<span><i class="c-'+c.toLowerCase()+'"></i>'+c+'</span>';}).join('')+'</div>';
+      grid+='<button type="button" class="dc'+hc+(ds===t?' today':'')+(ds===sel?' sel':'')+'" data-go="calendar" data-replace="1" data-arg=\''+esc(JSON.stringify({m:ms,d:ds}))+'\'><span>'+dd+'</span><em>'+dots+'</em></button>';}
+    grid+='</div><div class="sh-legend"><span><i class="sq hol-ph"></i>Public holiday</span><span><i class="sq hol-rh"></i>Restricted holiday (RH)</span>'+['Leave','Academic','Department','Important','Events'].map(function(c){return '<span><i class="c-'+c.toLowerCase()+'"></i>'+c+'</span>';}).join('')+'</div>';
     var leaveToday=on(t).filter(function(e){return CAL_CATS[e.category]==='Leave';});
-    var focus=sel||t,list=on(focus),acl=acad(focus);
+    var focus=sel||t,list=on(focus),acl=acad(focus),hll=hol(focus);
     var body=grid+'<h4 class="sh-h">'+(focus===t?'Today':fmtDate(focus))+' <span><button type="button" class="sh-btn small" data-go="recEdit" data-arg=\''+esc(JSON.stringify({kind:'ent',ent:'calendar',date:focus}))+'\'><i class="fas fa-plus"></i> Add on this date</button></span></h4>'+
-      '<div class="sh-list">'+(list.map(function(e){return row({attrs:'data-go="recEdit" data-arg=\''+esc(JSON.stringify({kind:'ent',ent:'calendar',id:e.id}))+'\'',ic:'<i class="fas '+(CAL_CATS[e.category]==='Leave'?'fa-plane-departure':'fa-calendar-check')+'"></i>',t:esc(e.title),s:esc([e.category,pname(e.personId),e.endDate&&e.endDate!==e.date?fmtDate(e.date)+' → '+fmtDate(e.endDate):''].filter(Boolean).join(' · ')),r:pill(CAL_CATS[e.category],'c-'+CAL_CATS[e.category].toLowerCase())});}).join('')+
+      '<div class="sh-list">'+(hll.map(function(h){return '<div class="sh-row static"><span class="sh-ic"><i class="fas fa-umbrella-beach"></i></span><span class="sh-main"><strong>'+esc(h.name)+'</strong><small>'+(h.type==='PH'?'Public holiday · Govt. of Puducherry':'Restricted holiday · any 2 per year')+'</small></span>'+pill(h.type==='PH'?'Holiday':'RH',h.type==='PH'?'hol-ph':'hol-rh')+'</div>';}).join('')+list.map(function(e){return row({attrs:'data-go="recEdit" data-arg=\''+esc(JSON.stringify({kind:'ent',ent:'calendar',id:e.id}))+'\'',ic:'<i class="fas '+(CAL_CATS[e.category]==='Leave'?'fa-plane-departure':'fa-calendar-check')+'"></i>',t:esc(e.title),s:esc([e.category,pname(e.personId),e.endDate&&e.endDate!==e.date?fmtDate(e.date)+' → '+fmtDate(e.endDate):''].filter(Boolean).join(' · ')),r:pill(CAL_CATS[e.category],'c-'+CAL_CATS[e.category].toLowerCase())});}).join('')+
         acl.map(function(e){return '<div class="sh-row static"><span class="sh-ic"><i class="fas fa-graduation-cap"></i></span><span class="sh-main"><strong>'+esc(e.title)+'</strong><small>'+esc([e.audience,e.time,'from Academic schedule'].filter(Boolean).join(' · '))+'</small></span></div>';}).join('')||empty('Nothing on this date. Tap “Add on this date”.'))+'</div>'+
       '<h4 class="sh-h">Today’s leave <span>'+leaveToday.length+'</span></h4><div class="sh-list">'+(leaveToday.map(function(e){return '<div class="sh-row static"><span class="sh-ic"><i class="fas fa-plane-departure"></i></span><span class="sh-main"><strong>'+esc(pname(e.personId)||e.title)+'</strong><small>'+esc(e.category+' · until '+fmtDate(e.endDate||e.date))+'</small></span></div>';}).join('')||empty('No one is on leave today.'))+'</div>'+
       '<p class="sh-foot">PG and UG teaching sessions come from the existing Academic schedule and are shown here, not entered twice.</p>';
