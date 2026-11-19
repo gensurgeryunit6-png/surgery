@@ -131,7 +131,7 @@
       '<button type="button" data-t="sess" class="live"><span class="di" aria-hidden="true">🎓</span>Live sessions</button>'+
       '<button type="button" data-t="reg"><span class="di" aria-hidden="true">📋</span>Registers</button>'+
       '<button type="button" data-t="cal"><span class="di" aria-hidden="true">📅</span>Calendar</button>'+
-      '<a data-t="app" href="'+P+'"><span class="di" aria-hidden="true">🔐</span>App</a>';
+      '<a data-t="app" href="'+P+'"><span class="di" aria-hidden="true">📱</span>App</a>';
     document.body.appendChild(dock);document.body.classList.add('ig-docked');
     dock.querySelector('[data-t="sess"]').onclick=function(){curTab==='sess'?close():showSessions();};
     dock.querySelector('[data-t="reg"]').onclick=function(){curTab==='reg'?close():showRegisters();};

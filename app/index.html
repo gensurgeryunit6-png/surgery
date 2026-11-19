@@ -76,7 +76,7 @@ html.auth-locked body{background:#F3F6F8!important;padding:0!important}
     if(!r.ok)throw new Error('server '+r.status);
     return r.json();
   }
-  window.IGMCRI_API=function(action,extra){var s=getS();var b=Object.assign({action:action,token:s&&s.token},extra||{});return call(b).then(function(j){if(!j.ok&&j.error==='not_signed_in'){setS(null);lock();signInView('Your session ended. Please sign in again.');}return j;});};
+  window.IGMCRI_API=function(action,extra){var s=getS();var b=Object.assign({action:action,token:s&&s.token},extra||{});return call(b).then(function(j){if(!j.ok&&j.error==='not_signed_in'){if(s){setS(null);lock();signInView('Your session ended. Please sign in again.');}}return j;});};
 
   function gate(){var g=document.getElementById('authGate');if(!g){g=document.createElement('div');g.id='authGate';document.body.insertBefore(g,document.body.firstChild);}return g;}
   function view(html){gate().innerHTML='<div class="ag-card"><div class="ag-eb">IGMC &amp; RI · Department of General Surgery</div><h1>Surgery Dashboard</h1>'+html+'</div><p class="ag-foot">Access is limited to authorised department administrators.</p>';}
@@ -84,7 +84,7 @@ html.auth-locked body{background:#F3F6F8!important;padding:0!important}
   function lock(){root.classList.add('auth-locked');}
   function unlock(email){
     root.classList.remove('auth-locked');var g=document.getElementById('authGate');if(g)g.remove();
-    window.IGMCRI_USER=email||'';try{if(email)localStorage.setItem('ma-user',email);}catch(e){}
+    window.IGMCRI_USER=email||'';['agSignIn','agSignInDesk'].forEach(function(i){var x=document.getElementById(i);if(x)x.remove();});try{if(email)localStorage.setItem('ma-user',email);}catch(e){}
     addSignOut();if(email)liveStats();
   }
 
@@ -103,7 +103,7 @@ function igmcriGoogleSignOut(){try{if(window.google&&google.accounts&&google.acc
 
   function signInView(note){
     view('<p class="ag-sub">Sign in with your department Google account.</p>'+(note?'<div class="ag-msg warn">'+esc(note)+'</div>':'')+
-      '<div id="agGoogle" class="ag-google"></div><div id="agGMsg" class="ag-msg" role="alert"></div>'+
+      '<div id="agGoogle" class="ag-google"></div>'+(guestOk?'<button type="button" class="ag-link" id="agGuest">Continue without signing in</button>':'')+'<div id="agGMsg" class="ag-msg" role="alert"></div>'+
       '<details class="ag-pwd" id="agPwd" hidden><summary>Sign in with password instead</summary>'+
       '<form id="agForm" novalidate><label for="agEmail">Email</label><input id="agEmail" type="email" autocomplete="username" inputmode="email" required>'+
       '<label for="agPass">Password</label><div class="ag-pw"><input id="agPass" type="password" autocomplete="current-password" required><button type="button" id="agShow" aria-label="Show password">Show</button></div>'+
@@ -116,6 +116,7 @@ function igmcriGoogleSignOut(){try{if(window.google&&google.accounts&&google.acc
         setS({token:j.token,email:j.email,exp:Date.now()+(j.expires_in||43200)*1000-60000});unlock(j.email);}
       catch(err){gm.className='ag-msg err';gm.textContent='Could not reach the backend. Check the internet connection.';}
     },function(){var g=document.getElementById('agGoogle');if(g)g.innerHTML='<div class="ag-msg warn">Google sign-in is not available here. Use your password below.</div>';var d=document.getElementById('agPwd');if(d){d.hidden=false;d.open=true;}});
+    var gb=document.getElementById('agGuest');if(gb)gb.onclick=unlockGuest;
     var e=document.getElementById('agEmail');try{e.value=localStorage.getItem('ag-last-email')||'';}catch(x){}
     document.getElementById('agShow').onclick=function(){var p=document.getElementById('agPass');var s=p.type==='password';p.type=s?'text':'password';this.textContent=s?'Hide':'Show';this.setAttribute('aria-label',s?'Hide password':'Show password');};
     document.getElementById('agForm').onsubmit=async function(ev){
@@ -135,6 +136,14 @@ function igmcriGoogleSignOut(){try{if(window.google&&google.accounts&&google.acc
       finally{b.disabled=false;b.textContent='Sign in';}
     };
   }
+  var guestOk=true;
+  function addSignIn(){
+    var go=function(){lock();signInView();var g=document.getElementById('agGuest');if(g)g.onclick=function(){unlockGuest();};};
+    var mk=function(id){var b=document.createElement('button');b.type='button';b.id=id;b.className='ag-out';b.innerHTML='<i class="fas fa-sign-in-alt" aria-hidden="true"></i><span>Sign in</span>';b.title='Sign in for patient records';b.onclick=go;return b;};
+    var head=document.querySelector('#mApp .ma-brand');if(head&&!document.getElementById('agSignIn'))head.appendChild(mk('agSignIn'));
+    var dh=document.querySelector('#dashboardPage .dash-header');if(dh&&!document.getElementById('agSignInDesk'))dh.appendChild(mk('agSignInDesk'));
+  }
+  function unlockGuest(){root.classList.remove('auth-locked');var g=document.getElementById('authGate');if(g)g.remove();window.IGMCRI_USER='';addSignIn();}
   function addSignOut(){
     var out=async function(){var s=getS();setS(null);igmcriGoogleSignOut();try{if(s&&API())await call({action:'logout',token:s.token});}catch(e){}location.reload();};
     var mk=function(id){var b=document.createElement('button');b.type='button';b.id=id;b.className='ag-out';b.innerHTML='<i class="fas fa-sign-out-alt" aria-hidden="true"></i><span>Sign out</span>';b.title='Sign out '+(window.IGMCRI_USER||'');b.onclick=out;return b;};
@@ -148,16 +157,16 @@ function igmcriGoogleSignOut(){try{if(window.google&&google.accounts&&google.acc
     pull();statsTimer=setInterval(pull,60000);
     window.IGMCRI_API('personnel').then(function(j){if(j.ok&&window.MAdmin&&MAdmin.importPersonnel){MAdmin.importPersonnel(j.rows);if(window.MApp&&MApp.refresh)MApp.refresh();}}).catch(function(){});
   }
-  window.addEventListener('load',function(){if(!root.classList.contains('auth-locked'))setTimeout(addSignOut,0);});
+  window.addEventListener('load',function(){if(!root.classList.contains('auth-locked'))setTimeout(function(){if(window.IGMCRI_USER)addSignOut();else addSignIn();},0);});
 
   function start(){
     lock();
     if(isPreview){
-      unlock('');var t=document.createElement('div');t.id='agPreview';t.textContent='Preview · sign-in is skipped inside Claude. On your website, only the two authorised accounts can open this app.';document.body.appendChild(t);return;
+      unlock('');var t=document.createElement('div');t.id='agPreview';t.textContent='Preview · sign-in is skipped inside Claude.';document.body.appendChild(t);return;
     }
     var s=getS();
     if(s&&s.email){unlock(s.email);return;}
-    setS(null);signInView();
+    setS(null);unlockGuest();
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
