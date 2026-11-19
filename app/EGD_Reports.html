@@ -2593,7 +2593,7 @@ function showSignin(note){showGoogle();$('app').hidden=true;$('who').hidden=true
 function showApp(email){$('signin').hidden=true;$('app').hidden=false;if(email){$('who').hidden=false;$('whoTxt').textContent='Signed in as '+email;}}
 $('sf').addEventListener('submit',async e=>{e.preventDefault();const em=$('em').value.trim().toLowerCase(),pw=$('pw').value,m=$('smsg');
   if(!em||!pw){m.className='msg err';m.textContent='Enter your email and password.';return;}
-  if(ALLOWED.indexOf(em)<0){m.className='msg err';m.textContent='This email is not authorised to view EGD reports.';return;}
+  
   if(!API){m.className='msg err';m.textContent='This page is not connected to the backend yet (config.js has no web app address).';return;}
   const b=$('sgo');b.disabled=true;b.textContent='Signing in…';
   try{const j=await call({action:'login',email:em,password:pw});
@@ -2659,7 +2659,7 @@ function samples(){const t=ist(),d=n=>{const x=new Date(t+'T12:00:00');x.setDate
   ];}
 (function start(){
   if(PREVIEW){$('sample').hidden=false;showApp('');R=samples();render();return;}
-  const s=sess();if(s&&ALLOWED.indexOf(s.email)>=0){showApp(s.email);load();}else showSignin();
+  const s=sess();if(s&&s.email){showApp(s.email);load();}else showSignin();
 })();
 </script>
 <script src="dock.js"></script>

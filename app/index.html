@@ -122,7 +122,7 @@ function igmcriGoogleSignOut(){try{if(window.google&&google.accounts&&google.acc
       ev.preventDefault();
       var email=document.getElementById('agEmail').value.trim().toLowerCase(),pw=document.getElementById('agPass').value;
       if(!email||!pw){msg('Enter your email and password.');return;}
-      if(ALLOWED.indexOf(email)<0){msg('This email is not authorised for the department dashboard.');return;}
+      
       if(!API()){msg('The app is not connected to the register spreadsheet yet (config.js has no web app address).');return;}
       var b=document.getElementById('agGo');b.disabled=true;b.textContent='Signing in…';
       try{
@@ -156,7 +156,7 @@ function igmcriGoogleSignOut(){try{if(window.google&&google.accounts&&google.acc
       unlock('');var t=document.createElement('div');t.id='agPreview';t.textContent='Preview · sign-in is skipped inside Claude. On your website, only the two authorised accounts can open this app.';document.body.appendChild(t);return;
     }
     var s=getS();
-    if(s&&ALLOWED.indexOf(s.email)>=0){unlock(s.email);return;}
+    if(s&&s.email){unlock(s.email);return;}
     setS(null);signInView();
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
