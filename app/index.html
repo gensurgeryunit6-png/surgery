@@ -165,8 +165,10 @@ function igmcriGoogleSignOut(){try{if(window.google&&google.accounts&&google.acc
       unlock('');var t=document.createElement('div');t.id='agPreview';t.textContent='Preview · sign-in is skipped inside Claude.';document.body.appendChild(t);return;
     }
     var s=getS();
-    if(s&&s.email){unlock(s.email);return;}
-    setS(null);unlockGuest();
+    if(s&&s.email){unlock(s.email);if(/^#login$/.test(location.hash))history.replaceState(null,'',location.pathname);return;}
+    setS(null);
+    if(/^#login$/.test(location.hash)){signInView();return;}
+    unlockGuest();
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
@@ -4934,6 +4936,11 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   #maSheet .dl-h .sh-main{flex:1;min-width:0}
   #maSheet .dl-b{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px;padding-left:46px}
   #maSheet .dl-b .sh-btn{flex:1 1 0;justify-content:center;min-width:84px}
+
+  #maSheet .dl-b .sh-btn.wa{background:#25D366;border-color:#25D366;color:#fff}
+  #maSheet .dl-b .sh-btn.wa i{color:#fff}
+  #maSheet .dl-b{padding-left:0}
+  #maSheet .dl-b .sh-btn{min-width:calc(50% - 3px)}
 </style>
 <script>/* Theatre Board layout tweaks: move KPI strip under the title, add an IST date block. */
 (function(){
@@ -5400,13 +5407,13 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   SCREENS.downloads=function(){
     var Y=new Date().getFullYear();
     var st=function(doc,yr){var c=check(doc,yr),bad=c.filter(function(x){return !x.ok;}).length;return bad?pill(bad+' to update','c-leave'):pill('Complete','c-academic');};
-    var btns=function(arg){var j=esc(JSON.stringify(arg));return '<div class="dl-b"><button type="button" class="sh-btn small" data-dl=\''+j+'\' data-kind="doc"><i class="fas fa-file-word"></i> Word</button><button type="button" class="sh-btn small" data-dl=\''+j+'\' data-kind="html"><i class="fas fa-file-pdf"></i> PDF</button>'+(arg.doc!=='holidays'?'<button type="button" class="sh-btn small" data-go="docCheck" data-arg=\''+j+'\'><i class="fas fa-eye"></i> Check</button>':'')+'</div>';};
+    var btns=function(arg){var j=esc(JSON.stringify(arg));return '<div class="dl-b"><button type="button" class="sh-btn small" data-dl=\''+j+'\' data-kind="doc"><i class="fas fa-file-word"></i> Word</button><button type="button" class="sh-btn small" data-dl=\''+j+'\' data-kind="html"><i class="fas fa-file-pdf"></i> PDF</button><button type="button" class="sh-btn small wa" data-dl=\''+j+'\' data-kind="wa"><i class="fab fa-whatsapp"></i> WhatsApp</button>'+(arg.doc!=='holidays'?'<button type="button" class="sh-btn small" data-go="docCheck" data-arg=\''+j+'\'><i class="fas fa-eye"></i> Check</button>':'')+'</div>';};
     var item=function(ic,t,sub,right,arg){return '<div class="dl-it"><div class="dl-h"><span class="sh-ic"><i class="fas '+ic+'"></i></span><span class="sh-main"><strong>'+t+'</strong><small>'+sub+'</small></span>'+(right||'')+'</div>'+btns(arg)+'</div>';};
     var body='<h4 class="sh-h">Annual department report</h4>'+[Y,Y-1,Y-2,Y-3].map(function(y){return item('fa-book-open','Annual report '+y,'January – December '+y,st('annual',y),{doc:'annual',yr:y});}).join('')+
       '<h4 class="sh-h">University inspection</h4>'+item('fa-university','Pondicherry University COA','Continuation of affiliation · faculty, publications, attendance',st('coa',Y),{doc:'coa',yr:Y})+
       item('fa-file-medical','NMC Form B – Staff','Faculty and residents for NMC inspection',st('nmc',Y),{doc:'nmc',yr:Y})+
       '<h4 class="sh-h">Department</h4>'+item('fa-umbrella-beach','Holiday list 2027','Public and restricted holidays, Puducherry','',{doc:'holidays'})+
-      '<p class="sh-foot">Word downloads a .doc file. PDF opens the report ready to print — choose “Save as PDF”. Reports are built from the personnel and academic records in this app; anything missing is marked “INCOMPLETE DRAFT”. Tap Check to see what is missing.</p>';
+      '<p class="sh-foot">WhatsApp opens the phone share menu with the report attached — pick WhatsApp and the chat. Word downloads a .doc file. PDF opens the report ready to print — choose “Save as PDF”. Reports are built from the personnel and academic records in this app; anything missing is marked “INCOMPLETE DRAFT”. Tap Check to see what is missing.</p>';
     return {title:'Downloads',body:body};
   };
   SCREENS.docCheck=function(a){
@@ -5459,6 +5466,14 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   function exportDoc(kind,arg){
     var a=arg||stack[stack.length-1].arg,name=(DOCS[a.doc]+(a.doc==='annual'?' '+a.yr:'')).replace(/[^\w]+/g,'_');
     var html='<html><head><meta charset="utf-8"><title>'+esc(DOCS[a.doc])+'</title><style>'+DOC_CSS+'</style></head><body>'+docHtml(a)+'</body></html>';
+    if(kind==='wa'){
+      var title=DOCS[a.doc]+(a.doc==='annual'?' '+a.yr:'')+(a.draft?' (draft)':''),txt=title+' – Department of General Surgery, IGMC&RI';
+      var file=null;try{file=new File(['\ufeff',html],name+'.doc',{type:'application/msword'});}catch(x){}
+      if(file&&navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],title:title,text:txt}).catch(function(){});}
+      else{var bw=new Blob(['\ufeff',html],{type:'application/msword'});var lw=document.createElement('a');lw.href=URL.createObjectURL(bw);lw.download=name+'.doc';document.body.appendChild(lw);lw.click();lw.remove();setTimeout(function(){URL.revokeObjectURL(lw.href);},2000);
+        window.open('https://wa.me/?text='+encodeURIComponent(txt+'\n(File downloaded: '+name+'.doc – attach it in WhatsApp)'),'_blank');}
+      logChange('Documents','Share',DOCS[a.doc],'','WhatsApp','');save();return;
+    }
     if(kind==='doc'){var b=new Blob(['﻿',html],{type:'application/msword'});var l=document.createElement('a');l.href=URL.createObjectURL(b);l.download=name+'.doc';document.body.appendChild(l);l.click();l.remove();setTimeout(function(){URL.revokeObjectURL(l.href);},2000);}
     else{var w=window.open('','_blank');if(w){w.document.write(html);w.document.close();setTimeout(function(){try{w.print();}catch(e){}},400);}}
     logChange('Documents','Export',DOCS[a.doc],'',kind==='doc'?'Word':'Print / PDF',a.draft?'Draft (incomplete)':'');save();
