@@ -40,7 +40,7 @@ html.auth-locked body{background:#F3F6F8!important;padding:0!important}
 #mApp .ma-brand .ag-out span{display:none}
 #mApp .ma-brand .ag-out{width:42px;justify-content:center;padding:0}
 #agPreview{position:fixed;left:50%;transform:translateX(-50%);top:calc(6px + env(safe-area-inset-top,0px));z-index:2000;background:#FBF1DE;color:#6B4307;border:1px solid #EBD3A6;border-radius:999px;padding:6px 12px;font:600 11.5px 'IBM Plex Sans',system-ui,sans-serif;max-width:calc(100% - 24px);text-align:center;box-shadow:0 4px 14px rgba(16,42,67,.12);pointer-events:none;opacity:.95}
-@media (max-width:760px){#agPreview{top:auto;bottom:calc(76px + env(safe-area-inset-bottom,0px))}}
+@media all{#agPreview{top:auto;bottom:calc(76px + env(safe-area-inset-bottom,0px))}}
 
 #authGate .ag-help{margin:14px 0 0;font-size:12.5px;color:#7A8A97;line-height:1.5}
 
@@ -146,6 +146,7 @@ function igmcriGoogleSignOut(){try{if(window.google&&google.accounts&&google.acc
     var head=document.querySelector('#mApp .ma-brand');if(head&&!document.getElementById('agSignIn'))head.appendChild(mk('agSignIn'));
     var dh=document.querySelector('#dashboardPage .dash-header');if(dh&&!document.getElementById('agSignInDesk'))dh.appendChild(mk('agSignInDesk'));
   }
+  window.IGMCRI_SIGNIN=function(){lock();signInView();};
   function unlockGuest(){root.classList.remove('auth-locked');var g=document.getElementById('authGate');if(g)g.remove();window.IGMCRI_USER='';addSignIn();}
   function addSignOut(){
     var out=async function(){var s=getS();setS(null);igmcriGoogleSignOut();try{if(s&&API())await call({action:'logout',token:s.token});}catch(e){}location.reload();};
@@ -165,7 +166,7 @@ function igmcriGoogleSignOut(){try{if(window.google&&google.accounts&&google.acc
   function start(){
     lock();
     if(isPreview){
-      unlock('');var t=document.createElement('div');t.id='agPreview';t.textContent='Preview · sign-in is skipped inside Claude.';document.body.appendChild(t);return;
+      window.IGMCRI_PREVIEW=true;unlock('');var t=document.createElement('div');t.id='agPreview';t.textContent='Preview · sign-in is skipped inside Claude.';document.body.appendChild(t);return;
     }
     var s=getS();
     if(s&&s.email){unlock(s.email);if(/^#login$/.test(location.hash))history.replaceState(null,'',location.pathname);return;}
@@ -4614,7 +4615,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 </style>
 <style id="mobile-app">/* ==== IGMCRI mobile app shell (phones only, <=760px) ==== */
 #mApp{display:none}
-@media (max-width:760px){
+@media all{
   html,body{background:var(--tb-paper)!important;overflow-x:hidden}
   body{padding:0!important}
   html body.surgery-logged-in #dashboardPage,html body #dashboardPage{display:none!important}
@@ -4747,6 +4748,25 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   #mApp .ma-duty span:nth-child(2){flex:1;min-width:0;font-size:13.5px}
   #mApp .ma-duty b{display:block;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--tb-ink-3)}
   #mApp .ma-duty small{display:block;color:var(--tb-ink-2);font-size:12.5px}
+
+/* ==== desktop / tablet: same app, wider layout ==== */
+@media (min-width:761px){
+  #mApp .ma-wrap{max-width:1180px;margin-left:auto;margin-right:auto;padding-left:24px;padding-right:24px}
+  #mApp header.ma-head{border-radius:0 0 22px 22px;padding-top:20px;padding-bottom:22px}
+  #mApp main.ma-wrap{padding-top:6px}
+  #mApp .ma-tiles{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+  #mApp .ma-nav{left:50%;right:auto;transform:translateX(-50%);bottom:14px;width:min(640px,calc(100% - 32px));border:1px solid var(--tb-line);border-radius:18px;box-shadow:0 12px 30px rgba(16,42,67,.18);padding:6px}
+  #mApp{padding-bottom:110px}
+  html.sh-open body::after{content:"";position:fixed;inset:0;background:rgba(11,34,48,.45);z-index:940}
+  #maSheet{left:auto!important;width:min(980px,100%);box-shadow:-18px 0 40px rgba(11,34,48,.25);border-radius:18px 0 0 18px}
+}
+@media (min-width:1000px){
+  #mApp section[data-view="home"].on{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);column-gap:28px;align-items:start}
+  #mApp section[data-view="home"] > .ma-sec{grid-column:1}
+  #mApp section[data-view="home"] > .ma-sec:nth-child(2){grid-column:2;grid-row:1 / span 6}
+  #mApp section[data-view="home"] .ma-cal button{min-height:54px;font-size:14.5px}
+  #mApp section[data-view="registers"].on,#mApp section[data-view="modules"].on,#mApp section[data-view="schedule"].on{max-width:900px;margin:0 auto}
+}
 </style>
 <style id="admin-app">/* ==== Admin sheets + new home/menu widgets (phone) ==== */
 #maSheet{display:none}
@@ -4772,7 +4792,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 #mApp .ma-cadre .cr.tot{border-bottom:0;padding-top:10px}
 #mApp .ma-cadre .cr.tot b{color:#7FE0D6}
 
-@media (max-width:760px){
+@media all{
   html.sh-open,html.sh-open body{overflow:hidden}
   #maSheet{position:fixed;inset:0;z-index:950;background:var(--tb-paper);display:none;flex-direction:column;color:var(--tb-ink);font-family:var(--tb-body)}
   #maSheet.on{display:flex}
@@ -5562,8 +5582,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     });
     return out;
   }
-  function rosterTable(m,editable){
-    var rows=R().months[m].rows,y=m.slice(0,4),mo=+m.slice(5,7);
+  function rosterTable(m,editable,rowsIn){
+    var rows=rowsIn||R().months[m].rows,y=m.slice(0,4),mo=+m.slice(5,7);
     var c=function(r,k,i){return '<td'+(editable?' contenteditable="true" data-rc="'+i+'" data-rk="'+k+'"':'')+(r.ed&&r.ed[k]&&editable?' class="ed"':'')+'>'+esc(r[k])+'</td>';};
     return '<div class="ro-head"><div class="ro-i">Indira Gandhi Medical College &amp; Research Institute</div><div class="ro-d">Department of Surgery: '+MONTHS[mo-1]+' -'+y+'</div></div>'+
       '<table class="ro-t"><thead><tr><th>DATE</th><th>DAY</th><th>DUTY</th><th>JR/PG</th><th>SR/ FACULTY ON DUTY</th><th>SENIOR FACULTY ON CALL</th></tr></thead><tbody>'+
@@ -5572,7 +5592,22 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   }
   var RSIGN='<div class="ro-sign"><b>Dr. Simon Dasiah</b><br>Professor &amp; Head<br>Department of Surgery<br>Indira Gandhi Medical College &amp; Research Institute<br>Pondicherry</div>';
   var RO_CSS='.ro-head{border:1px solid #000;border-bottom:0;text-align:center}.ro-i{font-weight:bold;font-size:12pt;padding:5px;border-bottom:1px solid #000}.ro-d{font-size:11pt;padding:5px}.ro-t{width:100%;border-collapse:collapse;font-size:10.5pt}.ro-t th,.ro-t td{border:1px solid #000;padding:4px 6px;text-align:left}.ro-t th{font-weight:normal;text-align:center;font-size:9.5pt;letter-spacing:.03em}.ro-t td:nth-child(1),.ro-t td:nth-child(3){text-align:center;white-space:nowrap}.ro-sign{margin:40px 0 0 auto;width:300px;font-size:10.5pt;line-height:1.35}';
+  var PUB={};
+  function pubFetch(m,cb){var api=(window.IGMCRI_CONFIG&&window.IGMCRI_CONFIG.api)||'';if(!api||m in PUB||PUB['_'+m]){return;}PUB['_'+m]=1;
+    fetch(api+'?action=roster&m='+m).then(function(r){return r.json();}).then(function(j){PUB[m]=j&&j.ok?(j.rows||null):false;cb&&cb();}).catch(function(){PUB[m]=false;cb&&cb();});}
+  function rosterView(a){
+    var n=new Date(),m=a.m||(n.getFullYear()+'-'+pad(n.getMonth()+1)),opts='';
+    for(var k=-3;k<=3;k++){var dt=new Date(n.getFullYear(),n.getMonth()+k,1),v=dt.getFullYear()+'-'+pad(dt.getMonth()+1);opts+='<option value="'+v+'"'+(v===m?' selected':'')+'>'+dt.toLocaleDateString('en-IN',{month:'long',year:'numeric'})+'</option>';}
+    var body='<div class="sh-f"><label for="roMonth">Month</label><select id="roMonth">'+opts+'</select></div>',rows=PUB[m];
+    if(!(m in PUB)){pubFetch(m,function(){if(stack.length&&stack[stack.length-1].screen==='roster')rerender();});body+=empty('Loading roster…');}
+    else if(rows===false)body+=empty('Could not load the roster. Check the internet connection.');
+    else if(!rows)body+=empty('The roster for this month has not been published yet.');
+    else body+='<div class="ro-wrap">'+rosterTable(m,false,rows)+'</div><div class="sh-actions" style="margin-top:12px"><button type="button" class="sh-btn" data-roexp="html" data-m="'+m+'" data-pub="1"><i class="fas fa-print"></i> Print / PDF</button><button type="button" class="sh-btn wa" data-roexp="wa" data-m="'+m+'" data-pub="1"><i class="fab fa-whatsapp"></i> WhatsApp</button></div>';
+    body+='<button type="button" class="sh-btn primary wide" data-rosignin="1" style="margin-top:14px"><i class="fas fa-sign-in-alt"></i> Sign in to make or edit the roster</button>';
+    return {title:'Duty roster',body:body};
+  }
   SCREENS.roster=function(a){
+    if(!window.IGMCRI_USER&&!window.IGMCRI_PREVIEW)return rosterView(a);
     var n=new Date(),def=n.getFullYear()+'-'+pad(n.getMonth()+2>12?1:n.getMonth()+2);if(n.getMonth()===11)def=(n.getFullYear()+1)+'-01';
     var m=a.m||def,mo=R().months[m],opts='';
     for(var k=-3;k<=6;k++){var dt=new Date(n.getFullYear(),n.getMonth()+k,1),v=dt.getFullYear()+'-'+pad(dt.getMonth()+1);opts+='<option value="'+v+'"'+(v===m?' selected':'')+'>'+dt.toLocaleDateString('en-IN',{month:'long',year:'numeric'})+(R().months[v]?(R().months[v].status==='final'?' · final':' · draft'):'')+'</option>';}
@@ -5630,9 +5665,9 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   function rosterDiffs(){var out=[];load().personnel.forEach(function(p){if(!isActive(p)||!p.unit)return;var h=rosterFind(p.name);if(h&&h.u!==p.unit)out.push({p:p,h:h});else if(!h&&rosterColFor(p.designation))out.push({p:p,h:{u:'—',nm:shortFor(p)}});});return out;}
   function pushUnit(sheetId,u){if(sheetId&&window.IGMCRI_API&&window.IGMCRI_USER)window.IGMCRI_API('setUnit',{id:sheetId,unit:String(u||'').replace(/^S/i,'')}).catch(function(){});}
   function diffBanner(){var D=rosterDiffs();if(!D.length)return '';return '<div class="ro-diff"><b>'+D.length+' unit change'+(D.length>1?'s':'')+' not yet in the roster</b><ul>'+D.map(function(x){return '<li>'+esc(dr(x.h.nm))+(x.h.u==='—'?': not on the roster yet → '+esc(x.p.unit):': roster '+x.h.u+' → unit allocation '+esc(x.p.unit))+'</li>';}).join('')+'</ul><button type="button" class="sh-btn primary wide" data-rosync="1"><i class="fas fa-sync"></i> Update roster to match unit allocation</button></div>';}
-  function rosterDoc(m){return rosterTable(m,false)+RSIGN;}
-  function rosterExport(kind,m){
-    var html='<html><head><meta charset="utf-8"><title>Duty roster '+m+'</title><style>body{font-family:"Times New Roman",serif;color:#000}'+RO_CSS+'@page{size:A4;margin:12mm}</style></head><body>'+rosterDoc(m)+'</body></html>',name='Duty_Roster_'+MONTHS[+m.slice(5,7)-1]+'_'+m.slice(0,4);
+  function rosterDoc(m,rows){return rosterTable(m,false,rows)+RSIGN;}
+  function rosterExport(kind,m,rows){
+    var html='<html><head><meta charset="utf-8"><title>Duty roster '+m+'</title><style>body{font-family:"Times New Roman",serif;color:#000}'+RO_CSS+'@page{size:A4;margin:12mm}</style></head><body>'+rosterDoc(m,rows)+'</body></html>',name='Duty_Roster_'+MONTHS[+m.slice(5,7)-1]+'_'+m.slice(0,4);
     if(kind==='html'){var w=window.open('','_blank');if(w){w.document.write(html);w.document.close();setTimeout(function(){try{w.print();}catch(e){}},400);}return;}
     var file=null;try{file=new File(['﻿',html],name+'.doc',{type:'application/msword'});}catch(x){}
     if(kind==='wa'&&file&&navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],title:'Duty roster '+m,text:'Department of Surgery – duty roster '+MONTHS[+m.slice(5,7)-1]+' '+m.slice(0,4)}).catch(function(){});return;}
@@ -5670,7 +5705,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     if(b.dataset.rofresh){genMonth(b.dataset.rofresh,false);rerender();msg('Started again from the units.',true);return;}
     if(b.dataset.rostat){var mo=R().months[b.dataset.m];mo.status=b.dataset.rostat;mo.updated=new Date().toISOString();mo.by=currentUser();logChange('Duty roster',b.dataset.rostat==='final'?'Finalise':'Reopen',b.dataset.m,'','','');save();rosterPush('M'+b.dataset.m);rerender();msg(b.dataset.rostat==='final'?(window.IGMCRI_USER?'Marked final. It now shows on the website.':'Marked final on this device. Sign in to publish it to the website.'):'Reopened as draft.',true);return;}
     if(b.dataset.rosync){var D=rosterDiffs();D.forEach(function(x){rosterFollow(x.p,x.p.unit,true);logChange('Duty roster','Move',dr(x.h.nm),x.h.u,x.p.unit,'From unit allocation');});save();rosterPush('setup');refreshDrafts();rerender();msg(D.length+' moved. Draft rosters updated.',true);return;}
-    if(b.dataset.roexp){rosterExport(b.dataset.roexp,b.dataset.m);return;}
+    if(b.dataset.roexp){rosterExport(b.dataset.roexp,b.dataset.m,b.dataset.pub?PUB[b.dataset.m]:null);return;}
+    if(b.dataset.rosignin){close();if(window.IGMCRI_SIGNIN)window.IGMCRI_SIGNIN();return;}
     if(b.dataset.force){savePerson(top.arg,true);return;}
     if(b.dataset.unassign){setUnit(b.dataset.unassign,'');rerender();return;}
     if(b.dataset.askdel){var cf=document.getElementById('cf_'+b.dataset.askdel);if(cf){cf.hidden=false;cf.scrollIntoView({block:'nearest'});}return;}
@@ -5741,7 +5777,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     importPersonnel:importPersonnel,
     cadre:cadre,
     calendarOn:function(ds){return load().calendar.filter(function(e){return e.date<=ds&&(e.endDate||e.date)>=ds;});},
-    dutyOn:function(ds){var m=ds.slice(0,7),mo=load().roster&&load().roster.months&&load().roster.months[m];if(!mo)return null;var r=mo.rows[+ds.slice(8,10)-1];return r?{unit:r.unit,jr:r.jr,duty:r.duty,senior:r.senior,status:mo.status}:null;},
+    dutyOn:function(ds){var m=ds.slice(0,7),mo=load().roster&&load().roster.months&&load().roster.months[m],i=+ds.slice(8,10)-1,r;if(mo&&window.IGMCRI_USER)r=mo.rows[i];else{if(!(m in PUB))pubFetch(m,function(){if(window.MApp&&MApp.refresh)MApp.refresh();});r=PUB[m]&&PUB[m][i];if(!r&&mo)r=mo.rows[i];}return r?{unit:r.unit,jr:r.jr,duty:r.duty,senior:r.senior}:null;},
     leaveToday:function(){var t=today();return load().calendar.filter(function(e){return CAL_CATS[e.category]==='Leave'&&e.date<=t&&(e.endDate||e.date)>=t;}).map(function(e){return {name:pname(e.personId)||e.title,until:fmtDate(e.endDate||e.date),cat:e.category};});},
     counts:function(){var d=load();return {personnel:d.personnel.filter(isActive).length,past:d.personnel.filter(function(p){return !isActive(p);}).length,interns:d.interns.filter(function(i){return i.status!=='Completed';}).length,pubs:d.academic.filter(function(r){return r.type==='publication';}).length,log:d.log.length};},
     renderDirectoryInto:function(el){var o=SCREENS.personnel({cat:'faculty'});el.innerHTML=o.body;}
@@ -5801,6 +5837,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     if(b.dataset.nav){if(b.dataset.nav==='calendar'){if(window.MAdmin)MAdmin.open('calendar',{});return;}go(b.dataset.nav);return;}
     if(b.dataset.cal&&window.MAdmin){MAdmin.open('calendar',{m:b.dataset.cal.slice(0,7),d:b.dataset.cal});return;}
     if(b.dataset.admin&&window.MAdmin){var ar={};try{ar=JSON.parse(b.dataset.arg||'{}');}catch(x){}MAdmin.open(b.dataset.admin,ar);return;}
+    if(b.dataset.open==='dutyRoster'&&window.MAdmin){MAdmin.open('roster',{});return;}
     if(b.dataset.open){open(b.dataset.open);return;}
     if(b.dataset.batch){state.batch=b.dataset.batch;try{localStorage.setItem('ma-batch',state.batch);}catch(err){}renderAtt();return;}
     if(b.dataset.range){state.range=b.dataset.range;renderAgenda();return;}
@@ -5826,7 +5863,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     var box=document.getElementById('maToday');
     var lv=window.MAdmin?MAdmin.leaveToday():[];
     var du=window.MAdmin&&MAdmin.dutyOn?MAdmin.dutyOn(t):null;
-    var duty='<button type="button" class="ma-duty" data-admin="roster" data-arg="{}"><span class="u">'+(du?esc(du.unit):'<i class="fas fa-clipboard-list"></i>')+'</span><span>'+(du?'<b>On duty today</b>'+esc([du.jr,du.duty].filter(Boolean).join(' · '))+'<small>On call: '+esc(du.senior||'—')+'</small>':'<b>Duty roster</b><small>No roster for this month yet · tap to generate</small>')+'</span><i class="fas fa-chevron-right"></i></button>';
+    var duty='<button type="button" class="ma-duty" data-admin="roster" data-arg="{}"><span class="u">'+(du?esc(du.unit):'<i class="fas fa-clipboard-list"></i>')+'</span><span>'+(du?'<b>On duty today</b>'+esc([du.jr,du.duty].filter(Boolean).join(' · '))+'<small>On call: '+esc(du.senior||'—')+'</small>':'<b>Duty roster</b><small>Tap to see this month’s roster</small>')+'</span><i class="fas fa-chevron-right"></i></button>';
     var leave='<button type="button" class="ma-leave" data-admin="calendar" data-arg="{}"><i class="fas fa-plane-departure"></i><span>'+(lv.length?'On leave today: '+lv.map(function(x){return esc(x.name);}).join(', '):'No one on leave today')+'</span><i class="fas fa-chevron-right"></i></button>';
     if(!ev.length){box.innerHTML=duty+'<div class="ma-empty">No academic sessions scheduled today.</div>'+leave;return;}
     box.innerHTML=duty+leave+'<div class="ma-today">'+ev.map(function(x){
@@ -5946,7 +5983,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 
   window.MApp={refresh:function(){renderAll();}};
   function init(){
-    if(location.hash==='#roster')setTimeout(function(){if(window.MAdmin){history.replaceState(null,'',location.pathname);MAdmin.open('roster',{});}},400);
+    var hr=function(){if(location.hash==='#roster'&&window.MAdmin){history.replaceState(null,'',location.pathname);MAdmin.open('roster',{});}};setTimeout(hr,400);window.addEventListener('hashchange',hr);
     if(document.getElementById('mApp'))return;
     shell();clock();renderAll();
     setInterval(clock,15000);
