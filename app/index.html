@@ -5205,7 +5205,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     if(a.id){
       var p=person(a.id),ch=diff(p,o,PERSON_FIELDS);
       if(!ch.length){msg('No changes to save.');return;}
-      if(o.unit!==(p.unit||'')){(p.unitHistory=p.unitHistory||[]).forEach(function(h){if(!h.to)h.to=today();});p.unitHistory.push({unit:o.unit,from:today()});var _ru=o.unit;setTimeout(function(){rosterFollow(person(p.id),_ru);},0);}
+      if(o.unit!==(p.unit||'')){(p.unitHistory=p.unitHistory||[]).forEach(function(h){if(!h.to)h.to=today();});p.unitHistory.push({unit:o.unit,from:today()});var _ru=o.unit;setTimeout(function(){var _p=person(p.id);rosterFollow(_p,_ru);if(_p)pushUnit(_p.sheetId,_ru);},0);}
       if(o.status!==p.status)(p.statusHistory=p.statusHistory||[]).push({status:o.status,date:today(),note:o._reason||'Edited'});
       PERSON_FIELDS.forEach(function(f){p[f[0]]=o[f[0]];});p.updated=now;
       logChange('Personnel','Edit',p.name,ch.map(function(c){return c[0]+': '+(c[1]||'—');}).join('; '),ch.map(function(c){return c[0]+': '+(c[2]||'—');}).join('; '),o._reason);
@@ -5259,6 +5259,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     (p.unitHistory=p.unitHistory||[]).forEach(function(h){if(!h.to)h.to=today();});
     p.unitHistory.push({unit:u,from:today()});p.unit=u;p.updated=new Date().toISOString();
     if(reason!=='Duty roster')rosterFollow(p,u);
+    pushUnit(p.sheetId,u);
     logChange('Unit allocation','Edit',p.name,old||'Unassigned',u||'Unassigned',reason||'');save();
   }
 
@@ -5614,14 +5615,18 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   function rosterColFor(des){return ['Professor','Associate Professor'].indexOf(des)>=0?'senior':['Assistant Professor','Senior Resident'].indexOf(des)>=0?'duty':['Postgraduate','Junior Resident','Non-PG Junior Resident'].indexOf(des)>=0?'jr':'';}
   /* a unit change anywhere in the app follows through to the roster units (drafts refresh) */
   function rosterFollow(p,u,quiet){
-    if(!p||!load().roster)return false;var S=R().setup,h=rosterFind(p.name);
+    if(!p||!u)return false;var S=R().setup,h=rosterFind(p.name);
     if(h&&h.u===u)return false;
     if(h){S.units[h.u][h.k].splice(h.i,1);if(u)(S.units[u][h.k]=S.units[u][h.k]||[]).push(h.nm);}
-    else{var k=rosterColFor(p.designation);if(!u||!k||!isActive(p))return false;var t=toks(p.name),sn=t[0]==='mohammed'&&t[1]?t[1]:t[0];sn=sn.charAt(0).toUpperCase()+sn.slice(1);S.units[u][k].push(sn);}
+    else{var k=rosterColFor(p.designation);if(!u||!k||!isActive(p))return false;var sn=shortFor(p);S.units[u][k].push(sn);}
     S.updated=new Date().toISOString();save();if(!quiet){rosterPush('setup');refreshDrafts();}return true;
   }
-  function rosterDiffs(){var out=[];load().personnel.forEach(function(p){if(!isActive(p)||!p.unit)return;var h=rosterFind(p.name);if(h&&h.u!==p.unit)out.push({p:p,h:h});});return out;}
-  function diffBanner(){var D=rosterDiffs();if(!D.length)return '';return '<div class="ro-diff"><b>'+D.length+' unit change'+(D.length>1?'s':'')+' not yet in the roster</b><ul>'+D.map(function(x){return '<li>'+esc(dr(x.h.nm))+': roster '+x.h.u+' → unit allocation '+esc(x.p.unit)+'</li>';}).join('')+'</ul><button type="button" class="sh-btn primary wide" data-rosync="1"><i class="fas fa-sync"></i> Update roster to match unit allocation</button></div>';}
+  function shortFor(p){var t=toks(p.name);if(t[0]==='mohammed'&&t[1])t=t.slice(1);var cap=function(x){return x.charAt(0).toUpperCase()+x.slice(1);};
+    var clash=load().personnel.some(function(o){if(o===p||!isActive(o))return false;var u=toks(o.name);if(u[0]==='mohammed'&&u[1])u=u.slice(1);return u[0]===t[0];});
+    return clash&&t[1]?cap(t[0])+' '+cap(t[1]):cap(t[0]);}
+  function rosterDiffs(){var out=[];load().personnel.forEach(function(p){if(!isActive(p)||!p.unit)return;var h=rosterFind(p.name);if(h&&h.u!==p.unit)out.push({p:p,h:h});else if(!h&&rosterColFor(p.designation))out.push({p:p,h:{u:'—',nm:shortFor(p)}});});return out;}
+  function pushUnit(sheetId,u){if(sheetId&&window.IGMCRI_API&&window.IGMCRI_USER)window.IGMCRI_API('setUnit',{id:sheetId,unit:String(u||'').replace(/^S/i,'')}).catch(function(){});}
+  function diffBanner(){var D=rosterDiffs();if(!D.length)return '';return '<div class="ro-diff"><b>'+D.length+' unit change'+(D.length>1?'s':'')+' not yet in the roster</b><ul>'+D.map(function(x){return '<li>'+esc(dr(x.h.nm))+(x.h.u==='—'?': not on the roster yet → '+esc(x.p.unit):': roster '+x.h.u+' → unit allocation '+esc(x.p.unit))+'</li>';}).join('')+'</ul><button type="button" class="sh-btn primary wide" data-rosync="1"><i class="fas fa-sync"></i> Update roster to match unit allocation</button></div>';}
   function rosterDoc(m){return rosterTable(m,false)+RSIGN;}
   function rosterExport(kind,m){
     var html='<html><head><meta charset="utf-8"><title>Duty roster '+m+'</title><style>body{font-family:"Times New Roman",serif;color:#000}'+RO_CSS+'@page{size:A4;margin:12mm}</style></head><body>'+rosterDoc(m)+'</body></html>',name='Duty_Roster_'+MONTHS[+m.slice(5,7)-1]+'_'+m.slice(0,4);
@@ -5715,6 +5720,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
       var p=d.personnel.filter(function(x){return x.sheetId&&x.sheetId===r['ID'];})[0]||d.personnel.filter(function(x){return !x.sheetId&&sameName(x.name,name);})[0];
       var next={name:name,designation:des,unit:unit,phone:[r['Mobile'],r['Alt mobile']].filter(Boolean).join(', '),email:r['Email']||'',status:status};
       if(!p){p={id:uid('P'),created:new Date().toISOString(),statusHistory:[{status:status,date:today(),note:'From department contact list'}],unitHistory:unit?[{unit:unit,from:today()}]:[]};d.personnel.push(p);added++;}
+      if(!unit){var hist=(p.unitHistory||[]).filter(function(h){return h.unit;}),lastU=p.unit||(hist.length?hist[hist.length-1].unit:'');
+        if(lastU){next.unit=lastU;if(!p.unit){p.unit=lastU;var lh=hist[hist.length-1];if(lh&&lh.to)delete lh.to;rosterFollow(p,lastU);}pushUnit(r['ID'],lastU);}}
       var diffs=[];Object.keys(next).forEach(function(k){if(String(p[k]||'')!==String(next[k]||''))diffs.push(k);});
       if(p.unit!==next.unit&&p.unit!==undefined&&diffs.indexOf('unit')>=0){(p.unitHistory=p.unitHistory||[]).forEach(function(h){if(!h.to)h.to=today();});if(next.unit)p.unitHistory.push({unit:next.unit,from:today()});var _pp=p,_nu=next.unit;setTimeout(function(){rosterFollow(_pp,_nu);},0);}
       if(diffs.indexOf('status')>=0&&p.status)(p.statusHistory=p.statusHistory||[]).push({status:next.status,date:today(),note:'Updated in spreadsheet'});
