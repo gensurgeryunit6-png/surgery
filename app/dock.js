@@ -1,3 +1,6 @@
+/* auto-update: reload once when a newer version of the site is published */
+(function(){try{var m=document.querySelector('meta[name="igmcri-build"]');if(!m||!window.fetch)return;var base=/\/app\//.test(location.pathname)?'':'app/';
+fetch(base+'version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){if(j&&j.v&&j.v!==m.content){var k='igmcri-reloaded-'+j.v;try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1');}catch(e){}location.reload();}}).catch(function(){});}catch(e){}})();
 /* IGMCRI site dock — Home · Live sessions · Registers · Calendar · App
    One file, included on the main dashboard and every form page. */
 (function(){

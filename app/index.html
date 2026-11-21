@@ -58,7 +58,10 @@ html.auth-locked body{background:#F3F6F8!important;padding:0!important}
 </style>
 <script src="config.js"></script>
 <script src="holidays.js"></script>
-<script>/* ==== Sign-in gate: Google Sheets backend (Apps Script), two allowed accounts ====
+<script>/* auto-update: reload once when a newer version of the site is published */
+(function(){try{var m=document.querySelector('meta[name="igmcri-build"]');if(!m||!window.fetch)return;var base=/\/app\//.test(location.pathname)?'':'app/';
+fetch(base+'version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){if(j&&j.v&&j.v!==m.content){var k='igmcri-reloaded-'+j.v;try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1');}catch(e){}location.reload();}}).catch(function(){});}catch(e){}})();
+/* ==== Sign-in gate: Google Sheets backend (Apps Script), two allowed accounts ====
    Passwords are checked by the Apps Script, never stored in this page. Patient rows are
    only returned to a signed-in admin. Session lasts 12 hours on this device. */
 (function(){
