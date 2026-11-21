@@ -147,6 +147,7 @@ function igmcriGoogleSignOut(){try{if(window.google&&google.accounts&&google.acc
     var dh=document.querySelector('#dashboardPage .dash-header');if(dh&&!document.getElementById('agSignInDesk'))dh.appendChild(mk('agSignInDesk'));
   }
   window.IGMCRI_SIGNIN=function(){lock();signInView();};
+  window.IGMCRI_SIGNOUT=async function(){var s=getS();setS(null);igmcriGoogleSignOut();try{if(s&&API())await call({action:'logout',token:s.token});}catch(e){}location.reload();};
   function unlockGuest(){root.classList.remove('auth-locked');var g=document.getElementById('authGate');if(g)g.remove();window.IGMCRI_USER='';addSignIn();}
   function addSignOut(){
     var out=async function(){var s=getS();setS(null);igmcriGoogleSignOut();try{if(s&&API())await call({action:'logout',token:s.token});}catch(e){}location.reload();};
@@ -5774,6 +5775,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     importPersonnel:importPersonnel,
     cadre:cadre,
     calendarOn:function(ds){return load().calendar.filter(function(e){return e.date<=ds&&(e.endDate||e.date)>=ds;});},
+    dutyFor:function(ds){var d=window.MAdmin.dutyOn(ds);if(d)return d;var u=unitFor(ds);return {unit:u,jr:fill(u,'jr',0),duty:fill(u,'duty',0),senior:fill(u,'senior',0),planned:true};},
+    unitFor:function(ds){return unitFor(ds);},
     dutyOn:function(ds){var m=ds.slice(0,7),mo=load().roster&&load().roster.months&&load().roster.months[m],i=+ds.slice(8,10)-1,r;if(mo&&window.IGMCRI_USER)r=mo.rows[i];else{if(!(m in PUB))pubFetch(m,function(){if(window.MApp&&MApp.refresh)MApp.refresh();});r=PUB[m]&&PUB[m][i];if(!r&&mo)r=mo.rows[i];}return r?{unit:r.unit,jr:r.jr,duty:r.duty,senior:r.senior}:null;},
     leaveToday:function(){var t=today();return load().calendar.filter(function(e){return CAL_CATS[e.category]==='Leave'&&e.date<=t&&(e.endDate||e.date)>=t;}).map(function(e){return {name:pname(e.personId)||e.title,until:fmtDate(e.endDate||e.date),cat:e.category};});},
     counts:function(){var d=load();return {personnel:d.personnel.filter(isActive).length,past:d.personnel.filter(function(p){return !isActive(p);}).length,interns:d.interns.filter(function(i){return i.status!=='Completed';}).length,pubs:d.academic.filter(function(r){return r.type==='publication';}).length,log:d.log.length};},
@@ -5978,7 +5981,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     }catch(e){if(window.console)console.warn('mobile app render',e);}
   }
 
-  window.MApp={refresh:function(){renderAll();}};
+  window.MApp={refresh:function(){renderAll();if(window.Desk)Desk.render();},MENU:MENU,FORMS:FORMS,events:events,attendance:attendance,batches:Object.keys(BATCH_SIZE),counts:function(){return REGISTERS.filter(function(r){return r.stat;}).map(function(r){var st=window.IGMCRI_STATS&&window.IGMCRI_STATS[r.stat];return {name:r.name,id:r.id,today:st?st.today:todayCount(r.key),live:!!st};});}};
   function init(){
     var hr=function(){if(location.hash==='#roster'&&window.MAdmin){history.replaceState(null,'',location.pathname);MAdmin.open('roster',{});}};setTimeout(hr,400);window.addEventListener('hashchange',hr);
     if(document.getElementById('mApp'))return;
@@ -6008,5 +6011,362 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   }
   window.addEventListener('load',function(){hook();strip();setInterval(strip,60000);setTimeout(strip,2500);});
   var r=window.MApp&&MApp.refresh;
+})();
+</script>
+<style id="desk">/* ==== desktop dashboard (Navy live) ==== */
+#dDesk{display:none}
+@media (min-width:761px){
+html.dk-on body{background:#F6F7FB!important;padding:0!important}
+html.dk-on #dashboardPage{display:none!important}
+html.dk-on #dDesk{display:block;min-height:100vh;background:#F6F7FB;color:#1B2440;font-family:"Source Sans 3",system-ui,sans-serif;font-size:15px}
+#dDesk *{box-sizing:border-box}
+#dDesk button{font:inherit;color:inherit;cursor:pointer}
+#dDesk a{color:#C2410C}
+.dk-top{position:sticky;top:0;z-index:60;background:#16224A;color:#fff;padding:0 28px;display:flex;flex-wrap:wrap;align-items:center;gap:18px 24px;min-height:66px}
+.dk-brand{display:flex;align-items:center;gap:12px;padding:8px 0}
+.dk-brand b{display:block;font-family:"Space Grotesk",sans-serif;font-size:19px}
+.dk-brand small{display:block;font-size:12px;color:#AEB8DA}
+.dk-heart{animation:dkbeat 1.2s ease-in-out infinite;transform-origin:center;flex:none}
+.dk-nav{display:flex;flex-wrap:wrap;gap:4px;flex:1 1 420px}
+.dk-nav button{border:0;background:none;color:#D6DCF2!important;padding:9px 14px;border-radius:8px;font-weight:600}
+.dk-nav button:hover,.dk-nav button[aria-expanded="true"]{background:#26346A;color:#fff!important}
+.dk-nav button.on{background:#26346A;color:#fff!important}
+.dk-clock{font-family:"JetBrains Mono",monospace;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.dk-clock small{font-size:12px;color:#AEB8DA;margin-left:6px}
+.dk-sign{border:0;background:#fff;color:#16224A!important;padding:9px 16px;border-radius:8px;font-weight:700;display:inline-flex;gap:8px;align-items:center}
+.dk-menu{position:fixed;top:70px;z-index:70;background:#fff;border:1px solid #E1E5F0;border-radius:16px;box-shadow:0 18px 40px rgba(22,34,74,.22);padding:16px;display:flex;gap:18px;max-width:calc(100vw - 32px);max-height:calc(100vh - 90px);overflow:auto}
+.dk-menu[hidden]{display:none}
+.dk-mcol{min-width:230px;display:flex;flex-direction:column;gap:2px}
+.dk-mcol h3{margin:2px 8px 8px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#C2410C}
+.dk-mcol a,.dk-mcol button{display:flex;align-items:center;gap:10px;text-align:left;border:0;background:none;padding:9px 10px;border-radius:8px;color:#1B2440!important;text-decoration:none;font-size:14.5px}
+.dk-mcol a:hover,.dk-mcol button:hover{background:#F1F3F9}
+.dk-mcol i{width:18px;color:#16224A;text-align:center}
+.dk-main{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start;padding:20px 28px 28px}
+.dk-left{flex:1 1 400px;max-width:500px;min-width:0;display:flex;flex-direction:column;gap:14px}
+.dk-live{position:relative;overflow:hidden;background:#1F2E63;color:#fff;border-radius:18px;padding:20px 22px 22px}
+.dk-live>div{position:relative}
+.dk-ecg{position:absolute;left:0;right:0;bottom:8px;width:100%;height:96px;opacity:.28}
+.dk-ecg path{fill:none;stroke:#94A3B8;stroke-width:2.5;stroke-dasharray:1400;animation:dkecg 3.2s linear infinite}
+.dk-live.on .dk-ecg{opacity:.38}.dk-live.on .dk-ecg path{stroke:#FB7185}
+.dk-lrow{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:center}
+.dk-ltag{display:inline-flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.12em;font-size:12.5px;color:#FDA4AF}
+.dk-ltag.idle{color:#C9D1EE}
+.dk-dot{width:12px;height:12px;border-radius:50%;background:#FB7185;display:inline-block;animation:dkpulse 1.6s infinite}
+.dk-dot.idle{background:#94A3B8;animation:none}
+.dk-mono{font-family:"JetBrains Mono",monospace;font-size:13px;color:#C9D1EE}
+.dk-lmeta{margin-top:12px;display:flex;gap:8px;align-items:center;color:#C9D1EE;font-size:14px}
+.tag{font-weight:700;font-size:11.5px;padding:3px 8px;border-radius:6px;background:#0F766E;color:#fff}
+.tag.pg{background:#7C3AED}
+.dk-live .dk-h1{margin:6px 0 4px;font-family:"Space Grotesk",sans-serif;font-size:25px;line-height:1.2}
+.dk-lsub{color:#C9D1EE;font-size:14px}
+.dk-starts{margin-top:6px;color:#FDBA74;font-weight:700}
+.dk-bar{margin-top:14px;height:12px;border-radius:999px;background:#2A3B78;overflow:hidden}
+.dk-bar i{display:block;height:100%;border-radius:999px;background-color:#FB923C;background-image:linear-gradient(45deg,rgba(255,255,255,.22) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.22) 50%,rgba(255,255,255,.22) 75%,transparent 75%);background-size:40px 40px;animation:dkstripes 1s linear infinite;transition:width 1s linear}
+.dk-bfoot{display:flex;justify-content:space-between;gap:10px;margin-top:7px;font-size:12.5px;color:#AEB8DA}
+.dk-bfoot span:nth-child(2){text-align:center;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dk-ticker{background:#fff;border:1px solid #E1E5F0;border-radius:12px;overflow:hidden;white-space:nowrap}
+.dk-track{display:inline-flex;gap:44px;padding:10px 0 10px 16px;font-size:14px;animation:dkticker 45s linear infinite}
+.dk-ticker:hover .dk-track{animation-play-state:paused}
+.dk-track b.ug{color:#0F766E}.dk-track b.pg{color:#7C3AED}.dk-track b.hd{color:#C2410C}
+.dk-duty{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:#fff;border:1px solid #E1E5F0;border-radius:14px;padding:14px 16px}
+.dk-duty:hover{border-color:#16224A}
+.dk-duty .u{width:52px;height:52px;border-radius:13px;background:#16224A;color:#fff;display:grid;place-items:center;font-family:"JetBrains Mono",monospace;font-weight:700;font-size:18px;flex:none}
+.dk-duty .tx{flex:1;min-width:0}
+.dk-duty b{display:block;font-size:16.5px}
+.dk-duty small{color:#5B6585}
+.lb{display:block;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:#C2410C;font-weight:700}
+.dk-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:14px}
+.dk-card{background:#fff;border:1px solid #E1E5F0;border-radius:14px;padding:14px 16px}
+.dk-card>b{display:block;font-size:16px;margin-top:3px}
+.dk-card>small{display:block;color:#5B6585;margin-top:2px}
+.dk-counts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;text-align:center;align-content:start}
+.dk-counts button{border:0;background:none;border-radius:10px;padding:4px 2px}
+.dk-counts button:hover{background:#F1F3F9}
+.dk-counts b{display:block;font-family:"Space Grotesk",sans-serif;font-size:28px}
+.dk-counts small{color:#5B6585;font-size:12.5px}
+.dk-cnote{grid-column:1/-1;font-size:11.5px;color:#7C86A6}
+.dk-atth{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.dk-batch{display:flex;gap:4px}
+.dk-batch button{border:1px solid #E1E5F0;background:#fff;border-radius:7px;padding:4px 10px;font-size:13px}
+.dk-batch button.on{background:#16224A;border-color:#16224A;color:#fff!important}
+.dk-attb{display:flex;align-items:center;gap:18px;margin-top:10px}
+.dk-pie{width:110px;height:110px;border-radius:50%;display:grid;place-items:center;flex:none;transition:background .6s}
+.dk-pie>div{width:70px;height:70px;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.dk-pie b{font-family:"Space Grotesk",sans-serif;font-size:20px}
+.dk-pie small{font-size:11px;color:#5B6585}
+.dk-attk{display:flex;flex-direction:column;gap:4px;font-size:14px;min-width:0}
+.dk-attk i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:7px}
+.dk-attk i.p{background:#0F766E}.dk-attk i.a{background:#F97316}.dk-attk i.n{background:#E5E7EB}
+.dk-attk b{margin-left:4px}
+.dk-attk small{color:#5B6585;font-size:12.5px}
+.dk-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.dk-links a,.dk-links button{display:block;text-align:left;text-decoration:none;color:#1B2440!important;background:#fff;border:1px solid #E1E5F0;border-radius:12px;padding:12px 14px;font-weight:700}
+.dk-links a:hover,.dk-links button:hover{border-color:#16224A}
+.dk-cal{flex:999 1 620px;min-width:0;background:#fff;border:1px solid #E1E5F0;border-radius:18px;padding:18px 20px}
+.dk-calhead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px}
+.dk-calhead h2{margin:0;font-family:"Space Grotesk",sans-serif;font-size:24px}
+.dk-calbtn{display:flex;gap:6px}
+.dk-calbtn button{border:1px solid #E1E5F0;background:#fff;border-radius:8px;padding:7px 13px}
+.dk-calbtn button.on{background:#16224A;border-color:#16224A;color:#fff!important;font-weight:600}
+.dk-legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:#5B6585;margin:10px 0}
+.dk-legend b{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.dk-legend b.ug{background:#0F766E}.dk-legend b.pg{background:#7C3AED}.dk-legend b.ph{background:#DC2626}.dk-legend b.rh{background:#8B5CF6}.dk-legend b.un{background:#C2410C}
+.dk-legend .hint{margin-left:auto;font-style:italic}
+.dk-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.dk-wd{font-size:12px;font-weight:700;color:#5B6585;padding:2px 8px}
+.dk-day{min-height:96px;border-radius:10px;padding:7px;display:flex;flex-direction:column;gap:3px;text-align:left;background:#FAFBFD;border:1px solid #EEF0F6;min-width:0;align-items:stretch}
+.dk-grid.week .dk-day{min-height:340px}
+.dk-day:hover,.dk-day:focus-visible{border-color:#16224A;outline:none;box-shadow:0 4px 14px rgba(22,34,74,.12)}
+.dk-day.sun{background:#F5F3FF}
+.dk-day.out{opacity:.45}
+.dk-day.today{background:#FFF7ED;border:2px solid #FB923C}
+.dk-day.ph{background:#FEF2F2}.dk-day.rh{background:#F5F0FF}
+.dk-day .dh{display:flex;justify-content:space-between;align-items:center}
+.dk-day .dh b{font-size:14px}
+.dk-day.today .dh b{color:#C2410C}
+.dk-day .dh i{font-style:normal;font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:700;color:#C2410C}
+.dk-day .ev,.dk-day .hl{display:block;font-size:11.5px;line-height:1.25;border-radius:6px;padding:3px 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dk-grid.week .dk-day .ev{white-space:normal}
+.dk-day .ev.ug{background:#CCFBF1;color:#115E59}.dk-day .ev.pg{background:#EDE9FE;color:#5B21B6}
+.dk-day .hl{background:#FEE2E2;color:#991B1B;font-weight:700}.dk-day.rh .hl{background:#EDE9FE;color:#5B21B6}
+.dk-day .more{font-size:11px;color:#5B6585}
+.dk-pop{position:fixed;z-index:80;width:330px;background:#fff;border:1px solid #E1E5F0;border-radius:14px;box-shadow:0 18px 40px rgba(22,34,74,.25);padding:14px 16px;font-family:"Source Sans 3",system-ui,sans-serif;color:#1B2440;font-size:14px}
+.dk-pop[hidden]{display:none}
+.dk-ph{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.dk-ph b{font-size:15.5px}
+.dk-unit{font-family:"JetBrains Mono",monospace;font-weight:700;background:#16224A;color:#fff;border-radius:7px;padding:3px 8px;font-size:13px}
+.dk-hol{border-radius:8px;padding:6px 9px;margin-bottom:8px;font-weight:700;font-size:13px;background:#FEE2E2;color:#991B1B}.dk-hol.rh{background:#EDE9FE;color:#5B21B6}
+.dk-fac{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;margin:0}
+.dk-fac dt{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:#C2410C;font-weight:700;padding-top:2px}
+.dk-fac dd{margin:0;font-weight:600}
+.dk-psec{margin:10px 0 4px;font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:#5B6585;font-weight:700}
+.dk-pev{display:flex;gap:8px;align-items:flex-start;margin-bottom:6px}
+.dk-pev .tag{flex:none;margin-top:1px}
+.dk-pev small{display:block;color:#5B6585}
+.dk-note{margin-top:8px;font-size:12px;color:#7C86A6}
+html.dk-on #maSheet{z-index:200}
+/* guard against older global styles */
+#dDesk .dk-top{background:#16224A!important;color:#fff!important}
+#dDesk .dk-nav button{color:#D6DCF2!important;background:transparent!important;border:0!important}
+#dDesk .dk-nav button:hover,#dDesk .dk-nav button.on,#dDesk .dk-nav button[aria-expanded="true"]{background:#26346A!important;color:#fff!important}
+#dDesk .dk-live .dk-h1{color:#fff!important;margin:6px 0 4px;font-family:"Space Grotesk",sans-serif;font-size:24px;line-height:1.2;font-weight:700}
+#dDesk .dk-day{color:#1B2440!important}
+#dDesk .dk-day:hover,#dDesk .dk-day:focus-visible{background:#EEF2FF!important;border-color:#16224A!important;color:#1B2440!important}
+#dDesk .dk-day.today:hover{background:#FFEDD5!important}
+#dDesk .dk-counts small{display:block;font-size:11.5px;white-space:nowrap}
+#dDesk .dk-two{grid-template-columns:minmax(0,1fr) minmax(0,1.35fr)}
+#dDesk .dk-links{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+#dDesk .dk-links a,#dDesk .dk-links button{padding:10px 10px;font-size:13.5px;text-align:center}
+#dDesk .dk-calbtn button:hover,#dDesk .dk-batch button:hover{border-color:#16224A!important;color:#16224A!important}
+#dDesk .dk-calbtn button.on,#dDesk .dk-batch button.on{color:#fff!important}
+#dDesk .dk-sign{background:#fff!important;color:#16224A!important}
+}
+@keyframes dkecg{from{stroke-dashoffset:1400}to{stroke-dashoffset:0}}
+@keyframes dkpulse{0%{box-shadow:0 0 0 0 rgba(251,113,133,.75)}70%{box-shadow:0 0 0 12px rgba(251,113,133,0)}100%{box-shadow:0 0 0 0 rgba(251,113,133,0)}}
+@keyframes dkbeat{0%,100%{transform:scale(1)}15%{transform:scale(1.18)}30%{transform:scale(1)}45%{transform:scale(1.12)}}
+@keyframes dkstripes{from{background-position:0 0}to{background-position:40px 0}}
+@keyframes dkticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.dk-heart,.dk-ecg path,.dk-dot,.dk-bar i,.dk-track{animation:none!important}}
+</style>
+<script>/* ==== IGMCRI desktop dashboard (≥ 761px): Navy live layout ====
+   Same data and functions as the phone app; different layout. */
+(function(){
+  'use strict';
+  if(window.Desk)return;
+  var esc=function(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});};
+  var pad=function(n){return String(n).padStart(2,'0');};
+  var iso=function(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());};
+  var mq=window.matchMedia('(min-width:761px)');
+  var st={y:null,m:null,view:'month',batch:'2022',menu:null};
+  try{var sb=localStorage.getItem('dk-batch');if(sb)st.batch=sb;}catch(e){}
+  var DUR=60; // minutes a session is treated as running
+
+  function evs(){try{return (window.MApp&&MApp.events)?MApp.events():[];}catch(e){return [];}}
+  function mins(t){var m=String(t||'').match(/(\d{1,2})[:.](\d{2})\s*([AaPp][Mm])?/);if(!m)return null;var h=+m[1],mi=+m[2];if(m[3]){var pm=/p/i.test(m[3]);if(pm&&h<12)h+=12;if(!pm&&h===12)h=0;}return h*60+mi;}
+  function hhmm(x){return pad(Math.floor(x/60)%24)+':'+pad(x%60);}
+  function short(t,n){t=String(t||'');return t.length>n?t.slice(0,n-1)+'…':t;}
+  function holidays(ds){return (window.IGMCRI_HOLIDAYS||[]).filter(function(h){return h.date===ds;});}
+
+  /* ---------- shell ---------- */
+  var HEART='<svg class="dk-heart" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#FB7185" stroke-width="2" aria-hidden="true"><path d="M12 21s-7-4.4-9.3-9C1 8.6 3.2 5 6.6 5c2 0 3.4 1.1 4.4 2.5C12 6.1 13.4 5 15.4 5 18.8 5 21 8.6 19.3 12c-2.3 4.6-7.3 9-7.3 9z"/><path d="M3.5 12h4l1.5-3 2.5 6 1.5-3h7.5"/></svg>';
+  var ECG='<svg class="dk-ecg" viewBox="0 0 1400 120" preserveAspectRatio="none" aria-hidden="true"><path d="M0 70 H180 L200 70 L215 40 L230 100 L250 10 L270 110 L285 70 H520 L540 70 L555 40 L570 100 L590 10 L610 110 L625 70 H860 L880 70 L895 40 L910 100 L930 10 L950 110 L965 70 H1200 L1220 70 L1235 40 L1250 100 L1270 10 L1290 110 L1305 70 H1400"/></svg>';
+  function build(){
+    if(document.getElementById('dDesk'))return;
+    var f=document.createElement('link');f.rel='stylesheet';f.href='https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@500;700&display=swap';document.head.appendChild(f);
+    var d=document.createElement('div');d.id='dDesk';
+    d.innerHTML=
+      '<div class="dk-top" role="banner"><div class="dk-brand">'+HEART+'<div><b>IGMC &amp; RI · Surgery</b><small>Department of General Surgery, Puducherry</small></div></div>'+
+      '<nav class="dk-nav" aria-label="Main"><button type="button" class="on" data-dk="home">Home</button><button type="button" data-dk="menu:regs" aria-haspopup="true">Registers</button><button type="button" data-dk="menu:acad" aria-haspopup="true">Academics</button><button type="button" data-dk="roster">Duty roster</button><button type="button" data-dk="downloads">Downloads</button><button type="button" data-dk="menu:admin" aria-haspopup="true">Admin</button></nav>'+
+      '<span class="dk-clock" id="dkClock"></span><button type="button" class="dk-sign" id="dkSign"></button></div>'+
+      '<div class="dk-menu" id="dkMenu" hidden></div>'+
+      '<main class="dk-main"><div class="dk-left">'+
+        '<section class="dk-live" id="dkLive" aria-live="polite">'+ECG+'<div id="dkLiveBody"></div></section>'+
+        '<div class="dk-ticker" aria-label="Upcoming sessions"><div class="dk-track" id="dkTicker"></div></div>'+
+        '<button type="button" class="dk-duty" id="dkDuty" data-dk="roster"></button>'+
+        '<div class="dk-two"><div class="dk-card" id="dkLeave"></div><div class="dk-card dk-counts" id="dkCounts"></div></div>'+
+        '<section class="dk-card dk-att" id="dkAtt" aria-label="UG attendance"></section>'+
+        '<div class="dk-links"><button type="button" data-dk="menu:regs">Registers &amp; QR forms ›</button><a href="EGD_Reports.html">EGD reports ›</a><button type="button" data-dk="downloads">Downloads ›</button><a href="https://gensurgeryunit6-png.github.io/test1/UG_Attendance_Student.html" target="_blank" rel="noopener">Mark UG attendance ›</a></div>'+
+      '</div><section class="dk-cal" aria-label="Department calendar"><div class="dk-calhead"><h2 id="dkMonth"></h2><div class="dk-calbtn"><button type="button" data-dk="prev" aria-label="Previous">‹</button><button type="button" data-dk="today">Today</button><button type="button" data-dk="next" aria-label="Next">›</button><button type="button" data-dk="view:month" id="dkVm">Month</button><button type="button" data-dk="view:week" id="dkVw">Week</button></div></div>'+
+        '<div class="dk-legend"><span><b class="ug"></b>UG session</span><span><b class="pg"></b>PG session</span><span><b class="ph"></b>Public holiday</span><span><b class="rh"></b>Restricted holiday</span><span><b class="un"></b>Duty unit</span><span class="hint">Hover or click a date for faculty on duty</span></div>'+
+        '<div class="dk-grid" id="dkGrid"></div></section></main>'+
+      '<div class="dk-pop" id="dkPop" role="tooltip" hidden></div>';
+    document.body.appendChild(d);
+    d.addEventListener('click',onClick);
+    d.addEventListener('mouseover',onHover);
+    d.addEventListener('focusin',onHover);
+    d.addEventListener('mouseleave',function(){hidePop();});
+    document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeMenu();hidePop();}});
+    document.addEventListener('click',function(e){if(st.menu&&!e.target.closest('#dkMenu')&&!e.target.closest('[data-dk^="menu:"]'))closeMenu();if(st.pin&&!e.target.closest('[data-day]')&&!e.target.closest('#dkPop'))hidePop();});
+  }
+
+  /* ---------- menus (same items as the phone app's More) ---------- */
+  function item(it){
+    if(it[0]==='h')return '<a href="'+esc(it[1])+'"'+(/^https?:/.test(it[1])?' target="_blank" rel="noopener"':'')+'><i class="fas '+it[2]+'"></i><span>'+esc(it[3])+'</span></a>';
+    if(it[0]==='l'){var u=(window.IGMCRI_CONFIG&&window.IGMCRI_CONFIG.sheet)||'#';return '<a href="'+esc(u)+'" target="_blank" rel="noopener"><i class="fas '+it[2]+'"></i><span>'+esc(it[3])+'</span></a>';}
+    return '<button type="button" '+(it[0]==='m'?'data-mod="'+it[1]+'"':'data-adm="'+it[1]+'" data-arg=\''+esc(JSON.stringify(it[4]||{}))+'\'')+'><i class="fas '+it[2]+'"></i><span>'+esc(it[3])+'</span></button>';
+  }
+  function menuHtml(kind){
+    var M=(window.MApp&&MApp.MENU)||[],F=(window.MApp&&MApp.FORMS)||[];
+    var sec=function(t){return M.filter(function(x){return x.t===t;})[0]||{items:[]};};
+    var col=function(t,items){return '<div class="dk-mcol"><h3>'+esc(t)+'</h3>'+items.map(item).join('')+'</div>';};
+    if(kind==='regs')return col('QR entry forms',F.map(function(f){return ['h',f[0],f[1],f[2]];}))+col('Register logs & clinical',sec('Clinical management').items);
+    if(kind==='acad')return col('Academics',sec('Academics').items.slice(0,6))+col('More academics',sec('Academics').items.slice(6).concat([['h','https://gensurgeryunit6-png.github.io/test1/academic.html','fa-external-link-alt','Full academic timetable']]));
+    return col('Department administration',sec('Department administration').items)+col('Documents',sec('Document generation').items)+col('Admin & security',sec('Admin & security').items);
+  }
+  function openMenu(kind,btn){
+    var m=document.getElementById('dkMenu');
+    if(st.menu===kind){closeMenu();return;}
+    st.menu=kind;m.innerHTML=menuHtml(kind);m.hidden=false;
+    var r=btn.getBoundingClientRect();m.style.left=Math.max(16,Math.min(r.left,window.innerWidth-m.offsetWidth-16))+'px';
+    document.querySelectorAll('#dDesk [data-dk^="menu:"]').forEach(function(b){b.setAttribute('aria-expanded',String(b.dataset.dk==='menu:'+kind));});
+  }
+  function closeMenu(){st.menu=null;var m=document.getElementById('dkMenu');if(m)m.hidden=true;document.querySelectorAll('#dDesk [aria-expanded]').forEach(function(b){b.setAttribute('aria-expanded','false');});}
+
+  /* ---------- clicks ---------- */
+  function onClick(e){
+    var b=e.target.closest('button,a');if(!b)return;
+    var k=b.dataset.dk;
+    if(b.dataset.adm&&window.MAdmin){var a={};try{a=JSON.parse(b.dataset.arg||'{}');}catch(x){}closeMenu();MAdmin.open(b.dataset.adm,a);return;}
+    if(b.dataset.mod){closeMenu();if(typeof openModule==='function')openModule(b.dataset.mod);return;}
+    if(b.dataset.day){var ds=b.dataset.day;if(st.pin===ds){hidePop();if(window.MAdmin)MAdmin.open('calendar',{m:ds.slice(0,7),d:ds});}else{st.pin=ds;showPop(b,ds);}return;}
+    if(b.dataset.batch){st.batch=b.dataset.batch;try{localStorage.setItem('dk-batch',st.batch);}catch(x){}renderAtt();return;}
+    if(b.id==='dkSign'){if(window.IGMCRI_USER){if(window.IGMCRI_SIGNOUT)IGMCRI_SIGNOUT();}else if(window.IGMCRI_SIGNIN)IGMCRI_SIGNIN();return;}
+    if(!k)return;
+    if(k.indexOf('menu:')===0){openMenu(k.slice(5),b);return;}
+    closeMenu();
+    if(k==='home'){window.scrollTo({top:0,behavior:'smooth'});return;}
+    if(k==='roster'&&window.MAdmin){MAdmin.open('roster',{});return;}
+    if(k==='downloads'&&window.MAdmin){MAdmin.open('downloads',{});return;}
+    if(k==='prev'||k==='next'){var dir=k==='prev'?-1:1;if(st.view==='week'){st.anchor=new Date(st.anchor.getTime()+dir*7*864e5);}else{var d=new Date(st.y,st.m+dir,1);st.y=d.getFullYear();st.m=d.getMonth();}renderCal();return;}
+    if(k==='today'){var n=new Date();st.y=n.getFullYear();st.m=n.getMonth();st.anchor=n;renderCal();return;}
+    if(k.indexOf('view:')===0){st.view=k.slice(5);var n2=new Date();if(st.view==='week')st.anchor=(st.y===n2.getFullYear()&&st.m===n2.getMonth())?n2:new Date(st.y,st.m,1);renderCal();return;}
+  }
+
+  /* ---------- hover card: faculty on the date ---------- */
+  function onHover(e){var c=e.target.closest&&e.target.closest('[data-day]');if(c&&!st.pin)showPop(c,c.dataset.day);else if(!c&&!st.pin&&!e.target.closest('#dkPop'))hidePop();}
+  function hidePop(){st.pin=null;var p=document.getElementById('dkPop');if(p)p.hidden=true;}
+  function showPop(cell,ds){
+    var p=document.getElementById('dkPop');if(!p)return;
+    var du=window.MAdmin&&MAdmin.dutyFor?MAdmin.dutyFor(ds):null,h=holidays(ds),E=evs().filter(function(x){return x.date===ds;});
+    var lv=window.MAdmin&&MAdmin.calendarOn?MAdmin.calendarOn(ds):[];
+    var dt=new Date(ds+'T12:00:00');
+    var html='<div class="dk-ph"><b>'+esc(dt.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'}))+'</b>'+(du?'<span class="dk-unit">'+esc(du.unit)+'</span>':'')+'</div>';
+    h.forEach(function(x){html+='<div class="dk-hol '+x.type.toLowerCase()+'">'+esc(x.name)+' · '+(x.type==='PH'?'Public holiday':'Restricted holiday')+'</div>';});
+    if(du)html+='<dl class="dk-fac"><dt>JR / PG</dt><dd>'+esc(du.jr||'—')+'</dd><dt>SR / faculty on duty</dt><dd>'+esc(du.duty||'—')+'</dd><dt>Senior faculty on call</dt><dd>'+esc(du.senior||'—')+'</dd></dl>'+(du.planned?'<div class="dk-note">From the unit rota · roster not published for this month</div>':'');
+    if(E.length)html+='<div class="dk-psec">Sessions</div>'+E.map(function(x){return '<div class="dk-pev"><span class="tag '+(x.audience==='PG'?'pg':'ug')+'">'+esc(x.audience)+' '+esc(x.time)+'</span><span><b>'+esc(short(x.title,70))+'</b>'+(x.meta?'<small>'+esc(x.meta)+'</small>':'')+'</span></div>';}).join('');
+    if(lv.length)html+='<div class="dk-psec">Leave &amp; events</div>'+lv.map(function(x){return '<div class="dk-pev"><span>'+esc(x.title||x.category)+'</span></div>';}).join('');
+    html+='<div class="dk-note">'+(st.pin===ds?'Click the date again to open the full day':'Click to keep this open')+'</div>';
+    p.innerHTML=html;p.hidden=false;
+    var r=cell.getBoundingClientRect(),pw=p.offsetWidth,ph=p.offsetHeight;
+    var left=r.right+10;if(left+pw>window.innerWidth-12)left=r.left-pw-10;if(left<12)left=12;
+    var top=r.top;if(top+ph>window.innerHeight-12)top=window.innerHeight-ph-12;if(top<12)top=12;
+    p.style.left=left+'px';p.style.top=top+'px';
+  }
+
+  /* ---------- live session ---------- */
+  function renderLive(){
+    var el=document.getElementById('dkLiveBody');if(!el)return;
+    var n=new Date(),t=iso(n),now=n.getHours()*60+n.getMinutes()+n.getSeconds()/60;
+    var E=evs(),today=E.filter(function(x){return x.date===t&&mins(x.time)!=null;});
+    var live=today.filter(function(x){var s=mins(x.time);return now>=s&&now<s+DUR;})[0];
+    var next=E.filter(function(x){var s=mins(x.time);return x.date>t||(x.date===t&&s!=null&&s>now);})[0];
+    var sec=document.getElementById('dkLive');sec.classList.toggle('on',!!live);
+    var nx=next?'Next: '+esc(next.audience)+' '+esc(next.time)+' '+(next.date===t?'today':new Date(next.date+'T12:00:00').toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'}))+' · '+esc(short(next.title,46)):'No more sessions scheduled';
+    if(live){
+      var s=mins(live.time),el2=Math.max(0,now-s),pct=Math.min(100,el2/DUR*100);
+      var fm=function(x){x=Math.max(0,Math.round(x*60));return pad(Math.floor(x/60))+':'+pad(x%60);};
+      el.innerHTML='<div class="dk-lrow"><span class="dk-ltag"><i class="dk-dot"></i>LIVE NOW'+(live.meta&&/room|hall|seminar|ward|ot\b/i.test(live.meta)?' · '+esc(short(live.meta.split(' · ').pop(),40)).toUpperCase():'')+'</span><span class="dk-mono">'+fm(el2)+' elapsed · '+fm(DUR-el2)+' left</span></div>'+
+        '<div class="dk-lmeta"><span class="tag '+(live.audience==='PG'?'pg':'ug')+'">'+esc(live.audience)+'</span>'+esc(live.type)+' · '+esc(live.time)+' – '+hhmm(s+DUR)+'</div>'+
+        '<div class="dk-h1" role="heading" aria-level="1">'+esc(short(live.title,90))+'</div>'+(live.meta?'<div class="dk-lsub">'+esc(live.meta)+'</div>':'')+
+        '<div class="dk-bar"><i style="width:'+pct.toFixed(1)+'%"></i></div><div class="dk-bfoot"><span>'+esc(live.time)+'</span><span>'+nx+'</span><span>'+hhmm(s+DUR)+'</span></div>';
+    }else{
+      var starts='';if(next&&next.date===t){var d=mins(next.time)-now;starts='Starts in '+(d>=60?Math.floor(d/60)+' h '+Math.round(d%60)+' min':Math.max(1,Math.round(d))+' min');}
+      el.innerHTML='<div class="dk-lrow"><span class="dk-ltag idle"><i class="dk-dot idle"></i>NO SESSION RUNNING</span><span class="dk-mono">'+esc(n.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'}))+'</span></div>'+
+        (next?'<div class="dk-lmeta"><span class="tag '+(next.audience==='PG'?'pg':'ug')+'">'+esc(next.audience)+'</span>Up next · '+esc(next.time)+' · '+(next.date===t?'today':esc(new Date(next.date+'T12:00:00').toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short'})))+'</div><div class="dk-h1" role="heading" aria-level="1">'+esc(short(next.title,90))+'</div>'+(next.meta?'<div class="dk-lsub">'+esc(next.meta)+'</div>':'')+(starts?'<div class="dk-lsub dk-starts">'+starts+'</div>':''):'<div class="dk-h1">No upcoming sessions in the timetable</div>');
+    }
+    // ticker
+    var tk=document.getElementById('dkTicker'),up=E.filter(function(x){return x.date>=t;}).slice(0,8),H=(window.IGMCRI_HOLIDAYS||[]).filter(function(x){return x.date>=t;}).slice(0,2);
+    var items=up.map(function(x){return '<span><b class="'+(x.audience==='PG'?'pg':'ug')+'">'+esc(x.audience)+' '+esc(x.time)+' '+esc(new Date(x.date+'T12:00:00').toLocaleDateString('en-IN',{weekday:'short',day:'numeric'}))+'</b> · '+esc(short(x.title,60))+'</span>';}).concat(H.map(function(x){return '<span><b class="hd">'+esc(new Date(x.date+'T12:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'}))+'</b> · '+esc(x.name)+' — '+(x.type==='PH'?'public holiday':'restricted holiday')+'</span>';}));
+    var sig=items.join('');if(tk.dataset.sig!==sig){tk.dataset.sig=sig;tk.innerHTML=items.length?sig+sig:'<span>No upcoming sessions</span>';}
+  }
+
+  /* ---------- left cards ---------- */
+  function renderCards(){
+    var t=iso(new Date()),du=window.MAdmin&&MAdmin.dutyFor?MAdmin.dutyFor(t):null,el=document.getElementById('dkDuty');
+    el.innerHTML='<span class="u">'+esc(du?du.unit:'—')+'</span><span class="tx"><span class="lb">On duty today'+(du&&du.planned?' · from unit rota':'')+'</span><b>'+esc(du?[du.jr,du.duty].filter(Boolean).join(' · '):'Roster not set')+'</b><small>On call: '+esc(du&&du.senior||'—')+'</small></span><i class="fas fa-chevron-right"></i>';
+    var lv=window.MAdmin&&MAdmin.leaveToday?MAdmin.leaveToday():[],H=(window.IGMCRI_HOLIDAYS||[]).filter(function(x){return x.date>=t;})[0];
+    document.getElementById('dkLeave').innerHTML='<span class="lb">On leave</span><b>'+(lv.length?esc(lv.map(function(x){return x.name;}).join(', ')):'No one on leave')+'</b><small>'+(H?'Next holiday: '+esc(H.name)+(H.type==='RH'?' (RH)':'')+', '+esc(new Date(H.date+'T12:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'})):'')+'</small>';
+    var C=(window.MApp&&MApp.counts)?MApp.counts():[];
+    document.getElementById('dkCounts').innerHTML=C.map(function(c){return '<button type="button" data-mod="'+c.id+'"><b>'+esc(c.today)+'</b><small>'+esc(c.name)+'</small></button>';}).join('')+'<span class="dk-cnote">'+(C.some(function(c){return c.live;})?'Live · entries today':'Today on this device · sign in for live counts')+'</span>';
+    var sg=document.getElementById('dkSign');sg.innerHTML=window.IGMCRI_USER?'<i class="fas fa-sign-out-alt"></i> Sign out':'<i class="fas fa-sign-in-alt"></i> Sign in';sg.title=window.IGMCRI_USER||'Sign in for patient records and editing';
+  }
+  function renderAtt(){
+    var el=document.getElementById('dkAtt');if(!el||!window.MApp||!MApp.attendance)return;
+    var B=MApp.batches||['2022'];if(B.indexOf(st.batch)<0)st.batch=B[0];
+    var a=MApp.attendance(st.batch),has=!!a.sel,P=has?a.present:0,A=has?a.absent:0,T=a.total||0,pp=T?Math.round(P/T*100):0,ap=T?Math.round(A/T*100):0;
+    var pie=has?'conic-gradient(#0F766E 0 '+pp+'%, #F97316 '+pp+'% '+(pp+ap)+'%, #E5E7EB '+(pp+ap)+'% 100%)':'conic-gradient(#E5E7EB 0 100%)';
+    el.innerHTML='<div class="dk-atth"><span class="lb">UG attendance · today</span><div class="dk-batch">'+B.map(function(b){return '<button type="button" data-batch="'+b+'" class="'+(b===st.batch?'on':'')+'" aria-pressed="'+(b===st.batch)+'">'+b+'</button>';}).join('')+'</div></div>'+
+      '<div class="dk-attb"><div class="dk-pie" style="background:'+pie+'" role="img" aria-label="'+esc(has?P+' present, '+A+' absent of '+T:'No attendance recorded today')+'"><div><b>'+(has?pp+'%':'—')+'</b><small>present</small></div></div>'+
+      '<div class="dk-attk"><div><i class="p"></i>Present <b>'+(has?P:'—')+'</b></div><div><i class="a"></i>Absent <b>'+(has?A:'—')+'</b></div><div><i class="n"></i>Batch size <b>'+T+'</b></div><small>'+(has?esc(a.sel)+(a.complete?' · finalised':' · marking in progress'):'No attendance recorded for the '+esc(st.batch)+' batch today')+'</small></div></div>';
+  }
+
+  /* ---------- calendar ---------- */
+  function dayCell(dt,inMonth,week){
+    var ds=iso(dt),t=iso(new Date()),h=holidays(ds),E=evs().filter(function(x){return x.date===ds;}),u=window.MAdmin&&MAdmin.unitFor?MAdmin.unitFor(ds):'';
+    var lim=week?8:3,cls='dk-day'+(inMonth?'':' out')+(ds===t?' today':'')+(dt.getDay()===0?' sun':'')+(h.some(function(x){return x.type==='PH';})?' ph':h.length?' rh':'');
+    return '<button type="button" class="'+cls+'" data-day="'+ds+'" aria-label="'+esc(dt.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})+(h.length?', '+h[0].name:'')+', '+E.length+' sessions, duty '+u)+'">'+
+      '<span class="dh"><b>'+(week?esc(dt.toLocaleDateString('en-IN',{weekday:'short'}))+' ':'')+dt.getDate()+'</b><i>'+esc(u)+'</i></span>'+
+      h.map(function(x){return '<span class="hl">'+esc(short(x.name,22))+'</span>';}).join('')+
+      E.slice(0,lim).map(function(x){return '<span class="ev '+(x.audience==='PG'?'pg':'ug')+'">'+esc(x.audience)+' '+esc(x.time)+' · '+esc(short(x.title,week?60:24))+'</span>';}).join('')+
+      (E.length>lim?'<span class="more">+'+(E.length-lim)+' more</span>':'')+'</button>';
+  }
+  function renderCal(){
+    var g=document.getElementById('dkGrid');if(!g)return;
+    var head=['SUN','MON','TUE','WED','THU','FRI','SAT'].map(function(x){return '<span class="dk-wd">'+x+'</span>';}).join(''),html=head;
+    document.getElementById('dkVm').classList.toggle('on',st.view==='month');document.getElementById('dkVw').classList.toggle('on',st.view==='week');
+    if(st.view==='week'){
+      var a=st.anchor||new Date(),s=new Date(a.getFullYear(),a.getMonth(),a.getDate()-a.getDay());
+      document.getElementById('dkMonth').textContent='Week of '+s.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'});
+      for(var i=0;i<7;i++)html+=dayCell(new Date(s.getFullYear(),s.getMonth(),s.getDate()+i),true,true);
+      g.className='dk-grid week';
+    }else{
+      var f=new Date(st.y,st.m,1),start=new Date(st.y,st.m,1-f.getDay()),last=new Date(st.y,st.m+1,0),cells=Math.ceil((f.getDay()+last.getDate())/7)*7;
+      document.getElementById('dkMonth').textContent=f.toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+      for(var j=0;j<cells;j++){var d=new Date(start.getFullYear(),start.getMonth(),start.getDate()+j);html+=dayCell(d,d.getMonth()===st.m,false);}
+      g.className='dk-grid';
+    }
+    g.innerHTML=html;
+  }
+
+  function tick(){var c=document.getElementById('dkClock');if(c)c.innerHTML=esc(new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}))+'<small>IST</small>';renderLive();}
+  function render(){if(!mq.matches||!document.getElementById('dDesk'))return;renderCards();renderAtt();renderLive();renderCal();}
+  function start(){
+    var n=new Date();st.y=n.getFullYear();st.m=n.getMonth();st.anchor=n;
+    build();document.documentElement.classList.add('dk-on');render();tick();
+    setInterval(tick,1000);setInterval(function(){renderCards();renderAtt();},30000);
+    setTimeout(render,1500);setTimeout(render,4000);
+  }
+  window.Desk={render:render};
+  if(document.readyState==='complete')start();else window.addEventListener('load',start);
 })();
 </script>
