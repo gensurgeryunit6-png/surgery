@@ -22,6 +22,7 @@
     ['Library_Register.html','📚','Library register','Issue & return'],
     ['EGD_Report_Form.html','📝','New EGD report','Checklist, findings, photos'],
     ['EGD_Reports.html','🗂️','EGD reports','Sign in · view & print'],
+    ['roster.html','🗓️','Duty roster','This month · who is on duty'],
     ['QR_Codes.html','▦','QR labels','Print register QR codes']
   ];
 
@@ -82,8 +83,8 @@
   var duty=null,dutyM='';
   function loadDuty(cb){var n=nowIST(),m=n.date.slice(0,7);if(dutyM===m){cb();return;}
     fetch(API_URL+'?action=roster&m='+m).then(function(r){return r.json();}).then(function(j){dutyM=m;duty=j&&j.rows||null;cb();}).catch(function(){dutyM=m;duty=null;cb();});}
-  function dutyCard(){var n=nowIST(),r=duty&&duty[+n.date.slice(8,10)-1];if(!r)return '';
-    return '<div class="ss" style="border-left:4px solid #087f93"><div class="t"><span class="tg">'+esc(r.unit)+'</span>On duty today</div><div class="n">'+esc([r.jr,r.duty].filter(Boolean).join(' · '))+'</div><div class="t">On call: '+esc(r.senior||'—')+'</div></div>';}
+  function dutyCard(){var n=nowIST(),r=duty&&duty[+n.date.slice(8,10)-1];if(!r)return '<a class="it" href="'+P+'roster.html" style="margin-bottom:8px"><span class="e">🗓️</span><span><b>Duty roster</b><small>See who is on duty this month</small></span></a>';
+    return '<div class="ss" style="border-left:4px solid #087f93"><div class="t"><span class="tg">'+esc(r.unit)+'</span>On duty today</div><div class="n">'+esc([r.jr,r.duty].filter(Boolean).join(' · '))+'</div><div class="t">On call: '+esc(r.senior||'—')+' · <a href="'+P+'roster.html" style="color:#087f93;font-weight:700">Full roster ›</a></div></div>';}
   function showSessions(){
     openSheet('sess','<h3>Live sessions <button type="button" data-close>Close</button></h3><div class="em">Loading timetable…</div>');
     loadSessions(function(){loadDuty(function(){

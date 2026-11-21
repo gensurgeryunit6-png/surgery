@@ -5936,6 +5936,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 
   window.MApp={refresh:function(){renderAll();}};
   function init(){
+    if(location.hash==='#roster')setTimeout(function(){if(window.MAdmin){history.replaceState(null,'',location.pathname);MAdmin.open('roster',{});}},400);
     if(document.getElementById('mApp'))return;
     shell();clock();renderAll();
     setInterval(clock,15000);

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Duty Roster · Department of Surgery, IGMC&amp;RI</title>
+<script src="config.js"></script>
+<style>
+:root{--navy:#103b51;--teal:#087f93;--ink:#183d50;--muted:#658091;--line:#dce8ee;--bg:#f2f7f9;--card:#fff;--sun:#f5f1fc;--today:#fff6d9}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "Segoe UI",system-ui,sans-serif}
+header{background:var(--navy);color:#fff;padding:14px max(16px,env(safe-area-inset-left)) 16px}
+header .eb{font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.75}
+header h1{margin:2px 0 0;font-size:22px}
+main{max-width:980px;margin:0 auto;padding:14px max(16px,env(safe-area-inset-right)) 110px max(16px,env(safe-area-inset-left))}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.bar .m{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px}
+.bar button,.bar a{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:9px 13px;font:inherit;font-weight:600;cursor:pointer;text-decoration:none;min-height:42px;display:inline-flex;align-items:center;gap:6px}
+.bar .m button{border:0;min-width:42px;justify-content:center;font-size:18px}
+.bar .m b{min-width:150px;text-align:center}
+.bar .edit{background:var(--teal);border-color:var(--teal);color:#fff;margin-left:auto}
+.today{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--teal);border-radius:14px;padding:12px 14px;margin-bottom:12px}
+.today .l{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--teal)}
+.today .n{font-size:16px;font-weight:700;margin-top:2px}
+.today .s{color:var(--muted)}
+.paper{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;overflow-x:auto}
+.ro-head{border:1px solid #333;border-bottom:0;text-align:center;font-family:"Times New Roman",serif;color:#000;min-width:620px}
+.ro-i{font-weight:700;padding:5px;border-bottom:1px solid #333;font-size:15px}
+.ro-d{padding:5px;font-size:14px}
+table{border-collapse:collapse;width:100%;min-width:620px;font-family:"Times New Roman",serif;font-size:14px;color:#000}
+th,td{border:1px solid #333;padding:5px 7px;text-align:left}
+th{font-weight:400;font-size:11.5px;text-align:center;background:#f4f6f8}
+td:nth-child(1),td:nth-child(3){text-align:center;white-space:nowrap}
+tr.sun td{background:var(--sun)}
+tr.now td{background:var(--today);font-weight:700}
+.sign{margin:36px 0 4px auto;width:290px;font-family:"Times New Roman",serif;font-size:13.5px;line-height:1.35;color:#000}
+.msg{background:var(--card);border:1px dashed #c3d6de;border-radius:14px;padding:22px;text-align:center;color:var(--muted)}
+@media print{header,.bar,.today,#igDock{display:none!important}body{background:#fff}main{padding:0;max-width:none}.paper{border:0;padding:0;overflow:visible}tr.now td{background:none;font-weight:400}tr.sun td{background:none}@page{size:A4;margin:12mm}}
+</style>
+</head>
+<body>
+<header><div class="eb">IGMC &amp; RI · Department of Surgery</div><h1>Duty Roster</h1></header>
+<main>
+  <div class="bar">
+    <div class="m"><button type="button" id="prev" aria-label="Previous month">‹</button><b id="ml"></b><button type="button" id="next" aria-label="Next month">›</button></div>
+    <button type="button" id="print">🖨 Print</button>
+    <a class="edit" href="./#roster">✏️ Make / edit roster</a>
+  </div>
+  <div id="today"></div>
+  <div id="out"><div class="msg">Loading roster…</div></div>
+</main>
+<script>
+(function(){
+  var API=(window.IGMCRI_CONFIG&&window.IGMCRI_CONFIG.api)||'';
+  var MONTHS=['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+  var WD=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var esc=function(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});};
+  var pad=function(n){return String(n).padStart(2,'0');};
+  var todayIST=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata'}).format(new Date());
+  var m=(location.hash.match(/^#(\d{4}-\d{2})$/)||[])[1]||todayIST.slice(0,7);
+  var cache={};
+  function label(mm){return new Date(mm+'-01T12:00:00').toLocaleDateString('en-IN',{month:'long',year:'numeric'});}
+  function shift(k){var d=new Date(m+'-01T12:00:00');d.setMonth(d.getMonth()+k);m=d.getFullYear()+'-'+pad(d.getMonth()+1);history.replaceState(null,'','#'+m);go();}
+  function dd(ds){return ds.slice(8,10)+'.'+ds.slice(5,7)+'.'+ds.slice(2,4);}
+  function render(rows){
+    document.getElementById('ml').textContent=label(m);
+    var out=document.getElementById('out'),td=document.getElementById('today');
+    if(rows===undefined){out.innerHTML='<div class="msg">Could not load the roster. Check the internet connection.</div>';td.innerHTML='';return;}
+    if(!rows){out.innerHTML='<div class="msg">The roster for <b>'+esc(label(m))+'</b> has not been published yet.<br><br>Department admins: tap <b>Make / edit roster</b>, generate it and mark it final.</div>';td.innerHTML='';return;}
+    var t=rows.filter(function(r){return r.date===todayIST;})[0];
+    td.innerHTML=t?'<div class="today"><div class="l">On duty today · '+esc(t.unit)+'</div><div class="n">'+esc([t.jr,t.duty].filter(Boolean).join(' · '))+'</div><div class="s">Senior faculty on call: '+esc(t.senior||'—')+'</div></div>':'';
+    out.innerHTML='<div class="paper"><div class="ro-head"><div class="ro-i">Indira Gandhi Medical College &amp; Research Institute</div><div class="ro-d">Department of Surgery: '+MONTHS[+m.slice(5,7)-1]+' -'+m.slice(0,4)+'</div></div>'+
+      '<table><thead><tr><th>DATE</th><th>DAY</th><th>DUTY</th><th>JR/PG</th><th>SR/ FACULTY ON DUTY</th><th>SENIOR FACULTY ON CALL</th></tr></thead><tbody>'+
+      rows.map(function(r){var w=new Date(r.date+'T12:00:00').getDay();return '<tr class="'+(w===0?'sun':'')+(r.date===todayIST?' now':'')+'"><td>'+dd(r.date)+'</td><td>'+WD[w]+'</td><td>'+esc(r.unit)+'</td><td>'+esc(r.jr)+'</td><td>'+esc(r.duty)+'</td><td>'+esc(r.senior)+'</td></tr>';}).join('')+
+      '</tbody></table><div class="sign"><b>Dr. Simon Dasiah</b><br>Professor &amp; Head<br>Department of Surgery<br>Indira Gandhi Medical College &amp; Research Institute<br>Pondicherry</div></div>';
+  }
+  function go(){
+    document.getElementById('ml').textContent=label(m);
+    if(m in cache){render(cache[m]);return;}
+    document.getElementById('out').innerHTML='<div class="msg">Loading roster…</div>';
+    var want=m;
+    fetch(API+'?action=roster&m='+want).then(function(r){return r.json();}).then(function(j){cache[want]=j&&j.ok?(j.rows||null):undefined;if(want===m)render(cache[want]);})
+      .catch(function(){if(want===m)render(undefined);});
+  }
+  document.getElementById('prev').onclick=function(){shift(-1);};
+  document.getElementById('next').onclick=function(){shift(1);};
+  document.getElementById('print').onclick=function(){window.print();};
+  go();
+})();
+</script>
+<script src="dock.js"></script>
+</body>
+</html>
