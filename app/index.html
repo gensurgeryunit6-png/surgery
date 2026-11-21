@@ -4977,6 +4977,9 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   #maSheet .ro-add input{flex:1;min-width:0;border:1px solid var(--tb-line);border-radius:10px;padding:7px 10px;font:inherit;font-size:14px}
   #maSheet .sh-btn.wa{background:#25D366;border-color:#25D366;color:#fff}
   #maSheet .sh-btn.subtle{background:none;border-color:transparent;color:var(--tb-ink-3)}
+
+  #maSheet .ro-diff{background:#FFF4E0;border:1px solid #F0C987;border-radius:14px;padding:12px;margin:10px 0;font-size:13.5px}
+  #maSheet .ro-diff ul{margin:6px 0 10px;padding-left:18px}
 </style>
 <script>/* Theatre Board layout tweaks: move KPI strip under the title, add an IST date block. */
 (function(){
@@ -5202,7 +5205,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     if(a.id){
       var p=person(a.id),ch=diff(p,o,PERSON_FIELDS);
       if(!ch.length){msg('No changes to save.');return;}
-      if(o.unit!==(p.unit||'')){(p.unitHistory=p.unitHistory||[]).forEach(function(h){if(!h.to)h.to=today();});p.unitHistory.push({unit:o.unit,from:today()});}
+      if(o.unit!==(p.unit||'')){(p.unitHistory=p.unitHistory||[]).forEach(function(h){if(!h.to)h.to=today();});p.unitHistory.push({unit:o.unit,from:today()});var _ru=o.unit;setTimeout(function(){rosterFollow(person(p.id),_ru);},0);}
       if(o.status!==p.status)(p.statusHistory=p.statusHistory||[]).push({status:o.status,date:today(),note:o._reason||'Edited'});
       PERSON_FIELDS.forEach(function(f){p[f[0]]=o[f[0]];});p.updated=now;
       logChange('Personnel','Edit',p.name,ch.map(function(c){return c[0]+': '+(c[1]||'—');}).join('; '),ch.map(function(c){return c[0]+': '+(c[2]||'—');}).join('; '),o._reason);
@@ -5255,6 +5258,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     var p=person(id),old=p.unit||'';if(old===u)return;
     (p.unitHistory=p.unitHistory||[]).forEach(function(h){if(!h.to)h.to=today();});
     p.unitHistory.push({unit:u,from:today()});p.unit=u;p.updated=new Date().toISOString();
+    if(reason!=='Duty roster')rosterFollow(p,u);
     logChange('Unit allocation','Edit',p.name,old||'Unassigned',u||'Unassigned',reason||'');save();
   }
 
@@ -5581,11 +5585,12 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
         '<div class="sh-confirm" id="cf_rofresh" hidden><p>Start this month again from the units? All hand edits for this month will be lost.</p><button type="button" class="sh-btn danger" data-rofresh="'+m+'">Yes, start again</button> <button type="button" class="sh-btn" data-cancel="rofresh">Cancel</button></div>'+
         '<button type="button" class="sh-btn wide subtle" data-askdel="rofresh"><i class="fas fa-redo"></i> Start again (discard edits)</button>';
     }
+    body+=diffBanner();
     body+='<button type="button" class="sh-btn wide" data-go="rosterUnits" style="margin-top:14px"><i class="fas fa-people-arrows"></i> Units &amp; who is in them</button><div class="sh-msg" role="status"></div>';
     return {title:'Duty roster',body:body,after:function(){if(!a.pulled){a.pulled=1;rosterPull(function(){if(stack.length&&stack[stack.length-1].screen==='roster')rerender();});}}};
   };
   SCREENS.rosterUnits=function(){
-    var S=R().setup,body='<p class="sh-foot" style="margin-top:0">Moving someone here updates every draft roster from today on, and their unit in the personnel list. Final rosters and your hand edits are not changed.</p>';
+    var S=R().setup,body=diffBanner()+'<p class="sh-foot" style="margin-top:0">Moving someone here updates every draft roster from today on, and their unit in the personnel list. Final rosters and your hand edits are not changed.</p>';
     var mvOpts=function(u,k){var o='<option value="">Move…</option>';UNITS.forEach(function(x){RCOLS.forEach(function(c){if(x!==u||c[0]!==k)o+='<option value="'+x+'|'+c[0]+'">'+x+' · '+c[1]+'</option>';});});return o+'<option value="del">Remove</option>';};
     UNITS.forEach(function(u){var U=S.units[u]||(S.units[u]={jr:[],duty:[],senior:[]});
       body+='<div class="ro-unit"><h4>Unit '+u+' <small>'+(UNITS.indexOf(u)<6?WD[UNITS.indexOf(u)+1]:'')+'s</small></h4>'+RCOLS.map(function(c){var k=c[0];
@@ -5603,6 +5608,20 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     else logChange('Duty roster','Remove',label,'','','');
     S.updated=new Date().toISOString();save();rosterPush('setup');refreshDrafts();
   }
+  function toks(full){return String(full||'').replace(/^dr\.?\s*/i,'').toLowerCase().split(/[\s.]+/).map(function(x){return x.replace(/[^a-z]/g,'');}).filter(Boolean);}
+  function rosterIs(short,full){var n=norm(short);if(n.length<3)return false;var f=norm(full);if(f===n||f.indexOf(n)===0)return true;return toks(full).some(function(t){return t.length>=3&&t.indexOf(n)===0;});}
+  function rosterFind(full){var U=R().setup.units,hit=null;UNITS.forEach(function(u){RCOLS.forEach(function(c){(U[u]&&U[u][c[0]]||[]).forEach(function(nm,i){if(!hit&&rosterIs(nm,full))hit={u:u,k:c[0],i:i,nm:nm};});});});return hit;}
+  function rosterColFor(des){return ['Professor','Associate Professor'].indexOf(des)>=0?'senior':['Assistant Professor','Senior Resident'].indexOf(des)>=0?'duty':['Postgraduate','Junior Resident','Non-PG Junior Resident'].indexOf(des)>=0?'jr':'';}
+  /* a unit change anywhere in the app follows through to the roster units (drafts refresh) */
+  function rosterFollow(p,u,quiet){
+    if(!p||!load().roster)return false;var S=R().setup,h=rosterFind(p.name);
+    if(h&&h.u===u)return false;
+    if(h){S.units[h.u][h.k].splice(h.i,1);if(u)(S.units[u][h.k]=S.units[u][h.k]||[]).push(h.nm);}
+    else{var k=rosterColFor(p.designation);if(!u||!k||!isActive(p))return false;var t=toks(p.name),sn=t[0]==='mohammed'&&t[1]?t[1]:t[0];sn=sn.charAt(0).toUpperCase()+sn.slice(1);S.units[u][k].push(sn);}
+    S.updated=new Date().toISOString();save();if(!quiet){rosterPush('setup');refreshDrafts();}return true;
+  }
+  function rosterDiffs(){var out=[];load().personnel.forEach(function(p){if(!isActive(p)||!p.unit)return;var h=rosterFind(p.name);if(h&&h.u!==p.unit)out.push({p:p,h:h});});return out;}
+  function diffBanner(){var D=rosterDiffs();if(!D.length)return '';return '<div class="ro-diff"><b>'+D.length+' unit change'+(D.length>1?'s':'')+' not yet in the roster</b><ul>'+D.map(function(x){return '<li>'+esc(dr(x.h.nm))+': roster '+x.h.u+' → unit allocation '+esc(x.p.unit)+'</li>';}).join('')+'</ul><button type="button" class="sh-btn primary wide" data-rosync="1"><i class="fas fa-sync"></i> Update roster to match unit allocation</button></div>';}
   function rosterDoc(m){return rosterTable(m,false)+RSIGN;}
   function rosterExport(kind,m){
     var html='<html><head><meta charset="utf-8"><title>Duty roster '+m+'</title><style>body{font-family:"Times New Roman",serif;color:#000}'+RO_CSS+'@page{size:A4;margin:12mm}</style></head><body>'+rosterDoc(m)+'</body></html>',name='Duty_Roster_'+MONTHS[+m.slice(5,7)-1]+'_'+m.slice(0,4);
@@ -5642,6 +5661,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     if(b.dataset.roregen){genMonth(b.dataset.roregen,true);rerender();msg('Refreshed from the current units. Your edits were kept.',true);return;}
     if(b.dataset.rofresh){genMonth(b.dataset.rofresh,false);rerender();msg('Started again from the units.',true);return;}
     if(b.dataset.rostat){var mo=R().months[b.dataset.m];mo.status=b.dataset.rostat;mo.updated=new Date().toISOString();mo.by=currentUser();logChange('Duty roster',b.dataset.rostat==='final'?'Finalise':'Reopen',b.dataset.m,'','','');save();rosterPush('M'+b.dataset.m);rerender();msg(b.dataset.rostat==='final'?(window.IGMCRI_USER?'Marked final. It now shows on the website.':'Marked final on this device. Sign in to publish it to the website.'):'Reopened as draft.',true);return;}
+    if(b.dataset.rosync){var D=rosterDiffs();D.forEach(function(x){rosterFollow(x.p,x.p.unit,true);logChange('Duty roster','Move',dr(x.h.nm),x.h.u,x.p.unit,'From unit allocation');});save();rosterPush('setup');refreshDrafts();rerender();msg(D.length+' moved. Draft rosters updated.',true);return;}
     if(b.dataset.roexp){rosterExport(b.dataset.roexp,b.dataset.m);return;}
     if(b.dataset.force){savePerson(top.arg,true);return;}
     if(b.dataset.unassign){setUnit(b.dataset.unassign,'');rerender();return;}
@@ -5696,7 +5716,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
       var next={name:name,designation:des,unit:unit,phone:[r['Mobile'],r['Alt mobile']].filter(Boolean).join(', '),email:r['Email']||'',status:status};
       if(!p){p={id:uid('P'),created:new Date().toISOString(),statusHistory:[{status:status,date:today(),note:'From department contact list'}],unitHistory:unit?[{unit:unit,from:today()}]:[]};d.personnel.push(p);added++;}
       var diffs=[];Object.keys(next).forEach(function(k){if(String(p[k]||'')!==String(next[k]||''))diffs.push(k);});
-      if(p.unit!==next.unit&&p.unit!==undefined&&diffs.indexOf('unit')>=0){(p.unitHistory=p.unitHistory||[]).forEach(function(h){if(!h.to)h.to=today();});if(next.unit)p.unitHistory.push({unit:next.unit,from:today()});}
+      if(p.unit!==next.unit&&p.unit!==undefined&&diffs.indexOf('unit')>=0){(p.unitHistory=p.unitHistory||[]).forEach(function(h){if(!h.to)h.to=today();});if(next.unit)p.unitHistory.push({unit:next.unit,from:today()});var _pp=p,_nu=next.unit;setTimeout(function(){rosterFollow(_pp,_nu);},0);}
       if(diffs.indexOf('status')>=0&&p.status)(p.statusHistory=p.statusHistory||[]).push({status:next.status,date:today(),note:'Updated in spreadsheet'});
       Object.keys(next).forEach(function(k){p[k]=next[k];});p.sheetId=r['ID'];if(role)p.role=role;
       if(diffs.length){p.updated=new Date().toISOString();changed++;}
