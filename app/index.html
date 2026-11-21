@@ -4738,6 +4738,12 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   #mApp .ma-dl span:nth-child(2){flex:1;min-width:0}
   #mApp .ma-dl b{display:block;font-size:16px}
   #mApp .ma-dl small{display:block;font-size:12px;opacity:.8}
+
+  #mApp .ma-duty{width:100%;display:flex;align-items:center;gap:12px;text-align:left;background:var(--tb-card);border:1px solid var(--tb-line);border-left:4px solid var(--tb-scrub);border-radius:14px;padding:11px 13px;margin-bottom:8px;font:inherit;color:var(--tb-ink);cursor:pointer}
+  #mApp .ma-duty .u{width:40px;height:40px;border-radius:11px;background:var(--tb-ink);color:#fff;display:grid;place-items:center;font-family:var(--tb-mono);font-weight:700;flex:none}
+  #mApp .ma-duty span:nth-child(2){flex:1;min-width:0;font-size:13.5px}
+  #mApp .ma-duty b{display:block;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--tb-ink-3)}
+  #mApp .ma-duty small{display:block;color:var(--tb-ink-2);font-size:12.5px}
 </style>
 <style id="admin-app">/* ==== Admin sheets + new home/menu widgets (phone) ==== */
 #maSheet{display:none}
@@ -4941,6 +4947,36 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   #maSheet .dl-b .sh-btn.wa i{color:#fff}
   #maSheet .dl-b{padding-left:0}
   #maSheet .dl-b .sh-btn{min-width:calc(50% - 3px)}
+
+  #maSheet .ro-wrap{overflow-x:auto;background:#fff;border-radius:10px;padding:8px;border:1px solid var(--tb-line);-webkit-overflow-scrolling:touch}
+  #maSheet .ro-head{border:1px solid #333;border-bottom:0;text-align:center;font-family:"Times New Roman",serif;color:#000;min-width:640px}
+  #maSheet .ro-i{font-weight:700;padding:5px;border-bottom:1px solid #333;font-size:14px}
+  #maSheet .ro-d{padding:5px;font-size:13px}
+  #maSheet .ro-t{border-collapse:collapse;width:100%;min-width:640px;font-family:"Times New Roman",serif;font-size:13px;color:#000}
+  #maSheet .ro-t th,#maSheet .ro-t td{border:1px solid #333;padding:5px 6px;text-align:left;vertical-align:top}
+  #maSheet .ro-t th{font-weight:400;font-size:11px;text-align:center;background:#f4f6f8}
+  #maSheet .ro-t td:nth-child(1),#maSheet .ro-t td:nth-child(3){text-align:center;white-space:nowrap}
+  #maSheet .ro-t tr.sun td{background:#f5f1fc}
+  #maSheet .ro-t tr.hol td:nth-child(2){background:#fdecec;color:#a01818;font-weight:700}
+  #maSheet .ro-t td[contenteditable]{cursor:text;outline:none}
+  #maSheet .ro-t td[contenteditable]:focus{background:#fff8d6;box-shadow:inset 0 0 0 2px #e0a800}
+  #maSheet .ro-t td.ed{background:#fffbe8}
+  #maSheet .ro-bar{display:flex;align-items:center;gap:10px;margin:4px 0 8px}
+  #maSheet .ro-bar small{color:var(--tb-ink-3)}
+  #maSheet .ro-iss{background:var(--tb-card);border:1px solid var(--tb-line);border-radius:12px;padding:9px 12px;margin-bottom:8px;font-size:13px}
+  #maSheet .ro-iss summary{cursor:pointer;font-weight:600}
+  #maSheet .ro-iss li.bad{color:#a01818;font-weight:600}
+  #maSheet .ro-unit{background:var(--tb-card);border:1px solid var(--tb-line);border-radius:14px;padding:12px;margin-bottom:10px}
+  #maSheet .ro-unit h4{margin:0 0 8px;font-size:16px}
+  #maSheet .ro-unit h4 small{font-weight:500;color:var(--tb-ink-3);font-size:12px;margin-left:6px}
+  #maSheet .ro-col{margin-bottom:10px}
+  #maSheet .ro-cl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--tb-ink-3);margin-bottom:5px}
+  #maSheet .ro-chip{display:inline-flex;align-items:center;gap:6px;background:#eef6f6;border:1px solid #cfe5e3;border-radius:999px;padding:3px 4px 3px 11px;margin:0 6px 6px 0;font-size:13.5px;font-weight:600}
+  #maSheet .ro-chip select{border:0;background:#fff;border-radius:999px;font-size:12px;padding:4px 6px;max-width:92px}
+  #maSheet .ro-add{display:flex;gap:6px}
+  #maSheet .ro-add input{flex:1;min-width:0;border:1px solid var(--tb-line);border-radius:10px;padding:7px 10px;font:inherit;font-size:14px}
+  #maSheet .sh-btn.wa{background:#25D366;border-color:#25D366;color:#fff}
+  #maSheet .sh-btn.subtle{background:none;border-color:transparent;color:var(--tb-ink-3)}
 </style>
 <script>/* Theatre Board layout tweaks: move KPI strip under the title, add an IST date block. */
 (function(){
@@ -5479,12 +5515,134 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     logChange('Documents','Export',DOCS[a.doc],'',kind==='doc'?'Word':'Print / PDF',a.draft?'Draft (incomplete)':'');save();
   }
 
+  /* ---------- Duty roster ----------
+     Mon–Sat: S1–S6. Sunday: rotates one unit each week (anchor 06-09-2026 = S5).
+     Each unit has JR/PG, SR/Faculty on duty, Senior faculty on call. Cells edited by hand are kept on regenerate. */
+  var RCOLS=[['jr','JR/PG'],['duty','SR/ Faculty on duty'],['senior','Senior faculty on call']];
+  var WD=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var MONTHS=['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+  var RSEED={S1:{jr:['Harshitha'],duty:['Viswanathan','Indrajit'],senior:['Simon']},S2:{jr:['Neha'],duty:['Elan','Selva'],senior:['Mima']},S3:{jr:['Sai'],duty:['Adam','Keerthi','Kapil'],senior:['Ashley']},
+    S4:{jr:['Swathika'],duty:['Pradeep','Jawahar'],senior:['Basava']},S5:{jr:['Gayathri'],duty:['Ram'],senior:['Sri','Ganesan']},S6:{jr:['Sundar'],duty:['Govardhan'],senior:['Ray']}};
+  function R(){var d=load();if(!d.roster||!d.roster.setup){d.roster={setup:{units:JSON.parse(JSON.stringify(RSEED)),anchor:{date:'2026-09-06',unit:'S5'},updated:''},months:{}};save();}if(!d.roster.months)d.roster.months={};return d.roster;}
+  function dr(n){n=String(n||'').trim();return n?(/^dr\.?\s/i.test(n)?n.replace(/^dr\.?\s*/i,'Dr. '):'Dr. '+n):'';}
+  function sundayUnit(ds){var a=R().setup.anchor,w=Math.round((new Date(ds+'T12:00:00')-new Date(a.date+'T12:00:00'))/6048e5),i=(UNITS.indexOf(a.unit)+w)%6;return UNITS[(i+6)%6];}
+  function unitFor(ds){var wd=new Date(ds+'T12:00:00').getDay();return wd===0?sundayUnit(ds):UNITS[wd-1];}
+  function fill(unit,col,turn){var L=(R().setup.units[unit]||{})[col]||[];if(!L.length)return '';if(col==='jr')return dr(L[turn%L.length]);return L.map(dr).join(' / ');}
+  function genMonth(m,keepEdits){
+    var y=+m.slice(0,4),mo=+m.slice(5,7),days=new Date(y,mo,0).getDate(),old=R().months[m],turns={},rows=[];
+    for(var i=1;i<=days;i++){
+      var ds=m+'-'+pad(i),prev=old&&old.rows&&old.rows[i-1],u=(keepEdits&&prev&&prev.ed&&prev.ed.unit)?prev.unit:unitFor(ds);
+      turns[u]=(turns[u]||0);var r={date:ds,unit:u,ed:{}};
+      RCOLS.forEach(function(c){var k=c[0];if(keepEdits&&prev&&prev.ed&&prev.ed[k]){r[k]=prev[k];r.ed[k]=1;}else r[k]=fill(u,k,turns[u]);});
+      if(keepEdits&&prev&&prev.ed&&prev.ed.unit)r.ed.unit=1;
+      turns[u]++;rows.push(r);
+    }
+    R().months[m]={rows:rows,status:old&&keepEdits?old.status:'draft',updated:new Date().toISOString(),by:currentUser()};
+    save();rosterPush('M'+m);
+  }
+  function refreshDrafts(){var M=R().months;Object.keys(M).forEach(function(m){if(M[m].status!=='final'&&m>=today().slice(0,7))genMonth(m,true);});}
+  function ddmmyy(ds){return ds.slice(8,10)+'.'+ds.slice(5,7)+'.'+ds.slice(2,4);}
+  function rosterIssues(m){
+    var out=[],rows=(R().months[m]||{}).rows||[];
+    rows.forEach(function(r){
+      var h=(window.IGMCRI_HOLIDAYS||[]).filter(function(x){return x.date===r.date;});
+      if(h.length)out.push({ds:r.date,t:ddmmyy(r.date)+' is a '+(h[0].type==='PH'?'public holiday':'restricted holiday')+' ('+h[0].name+')',k:'info'});
+      load().calendar.filter(function(e){return CAL_CATS[e.category]==='Leave'&&e.date<=r.date&&(e.endDate||e.date)>=r.date;}).forEach(function(e){
+        var n=norm(pname(e.personId)||e.title);if(!n)return;
+        [r.jr,r.duty,r.senior].join(' / ').split('/').forEach(function(x){var s=norm(x);if(s&&s.length>=3&&(n.indexOf(s)===0||s.indexOf(n)===0))out.push({ds:r.date,t:ddmmyy(r.date)+': '+x.trim()+' is on leave ('+(pname(e.personId)||e.title)+')',k:'bad'});});
+      });
+    });
+    return out;
+  }
+  function rosterTable(m,editable){
+    var rows=R().months[m].rows,y=m.slice(0,4),mo=+m.slice(5,7);
+    var c=function(r,k,i){return '<td'+(editable?' contenteditable="true" data-rc="'+i+'" data-rk="'+k+'"':'')+(r.ed&&r.ed[k]&&editable?' class="ed"':'')+'>'+esc(r[k])+'</td>';};
+    return '<div class="ro-head"><div class="ro-i">Indira Gandhi Medical College &amp; Research Institute</div><div class="ro-d">Department of Surgery: '+MONTHS[mo-1]+' -'+y+'</div></div>'+
+      '<table class="ro-t"><thead><tr><th>DATE</th><th>DAY</th><th>DUTY</th><th>JR/PG</th><th>SR/ FACULTY ON DUTY</th><th>SENIOR FACULTY ON CALL</th></tr></thead><tbody>'+
+      rows.map(function(r,i){var wd=new Date(r.date+'T12:00:00').getDay(),h=(window.IGMCRI_HOLIDAYS||[]).some(function(x){return x.date===r.date;});
+        return '<tr class="'+(wd===0?'sun':'')+(h&&editable?' hol':'')+'"><td>'+ddmmyy(r.date)+'</td><td>'+WD[wd]+'</td>'+c(r,'unit',i)+c(r,'jr',i)+c(r,'duty',i)+c(r,'senior',i)+'</tr>';}).join('')+'</tbody></table>';
+  }
+  var RSIGN='<div class="ro-sign"><b>Dr. Simon Dasiah</b><br>Professor &amp; Head<br>Department of Surgery<br>Indira Gandhi Medical College &amp; Research Institute<br>Pondicherry</div>';
+  var RO_CSS='.ro-head{border:1px solid #000;border-bottom:0;text-align:center}.ro-i{font-weight:bold;font-size:12pt;padding:5px;border-bottom:1px solid #000}.ro-d{font-size:11pt;padding:5px}.ro-t{width:100%;border-collapse:collapse;font-size:10.5pt}.ro-t th,.ro-t td{border:1px solid #000;padding:4px 6px;text-align:left}.ro-t th{font-weight:normal;text-align:center;font-size:9.5pt;letter-spacing:.03em}.ro-t td:nth-child(1),.ro-t td:nth-child(3){text-align:center;white-space:nowrap}.ro-sign{margin:40px 0 0 auto;width:300px;font-size:10.5pt;line-height:1.35}';
+  SCREENS.roster=function(a){
+    var n=new Date(),def=n.getFullYear()+'-'+pad(n.getMonth()+2>12?1:n.getMonth()+2);if(n.getMonth()===11)def=(n.getFullYear()+1)+'-01';
+    var m=a.m||def,mo=R().months[m],opts='';
+    for(var k=-3;k<=6;k++){var dt=new Date(n.getFullYear(),n.getMonth()+k,1),v=dt.getFullYear()+'-'+pad(dt.getMonth()+1);opts+='<option value="'+v+'"'+(v===m?' selected':'')+'>'+dt.toLocaleDateString('en-IN',{month:'long',year:'numeric'})+(R().months[v]?(R().months[v].status==='final'?' · final':' · draft'):'')+'</option>';}
+    var body='<div class="sh-f"><label for="roMonth">Month</label><select id="roMonth">'+opts+'</select></div>';
+    if(!mo){body+='<div class="sh-card"><p style="margin:0 0 10px">No roster yet for this month.</p><button type="button" class="sh-btn primary wide" data-rogen="'+m+'"><i class="fas fa-magic"></i> Generate roster</button></div>';}
+    else{
+      var iss=rosterIssues(m),bad=iss.filter(function(x){return x.k==='bad';});
+      body+='<div class="ro-bar">'+pill(mo.status==='final'?'Final':'Draft',mo.status==='final'?'c-academic':'c-leave')+'<small>Updated '+esc(new Date(mo.updated).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}))+(mo.by?' · '+esc(mo.by):'')+'</small></div>'+
+        (iss.length?'<details class="ro-iss"'+(bad.length?' open':'')+'><summary>'+(bad.length?bad.length+' clash'+(bad.length>1?'es':'')+' with leave · ':'')+iss.filter(function(x){return x.k==='info';}).length+' holiday'+(iss.length-bad.length===1?'':'s')+' this month</summary><ul>'+iss.map(function(x){return '<li class="'+x.k+'">'+esc(x.t)+'</li>';}).join('')+'</ul></details>':'')+
+        '<p class="sh-foot" style="margin:6px 0 8px">Tap any cell to edit. Edited cells are kept when the roster is refreshed.</p><div class="ro-wrap">'+rosterTable(m,true)+'</div>'+
+        '<div class="sh-actions" style="margin-top:12px"><button type="button" class="sh-btn" data-roexp="html" data-m="'+m+'"><i class="fas fa-print"></i> Print / PDF</button><button type="button" class="sh-btn" data-roexp="doc" data-m="'+m+'"><i class="fas fa-file-word"></i> Word</button><button type="button" class="sh-btn wa" data-roexp="wa" data-m="'+m+'"><i class="fab fa-whatsapp"></i> WhatsApp</button></div>'+
+        (mo.status==='final'?'<button type="button" class="sh-btn wide" data-rostat="draft" data-m="'+m+'"><i class="fas fa-lock-open"></i> Reopen as draft</button>':'<button type="button" class="sh-btn primary wide" data-rostat="final" data-m="'+m+'"><i class="fas fa-check"></i> Mark as final (shows on the website)</button>')+
+        '<button type="button" class="sh-btn wide" data-roregen="'+m+'"><i class="fas fa-sync"></i> Refresh from units (keeps my edits)</button>'+
+        '<div class="sh-confirm" id="cf_rofresh" hidden><p>Start this month again from the units? All hand edits for this month will be lost.</p><button type="button" class="sh-btn danger" data-rofresh="'+m+'">Yes, start again</button> <button type="button" class="sh-btn" data-cancel="rofresh">Cancel</button></div>'+
+        '<button type="button" class="sh-btn wide subtle" data-askdel="rofresh"><i class="fas fa-redo"></i> Start again (discard edits)</button>';
+    }
+    body+='<button type="button" class="sh-btn wide" data-go="rosterUnits" style="margin-top:14px"><i class="fas fa-people-arrows"></i> Units &amp; who is in them</button><div class="sh-msg" role="status"></div>';
+    return {title:'Duty roster',body:body,after:function(){if(!a.pulled){a.pulled=1;rosterPull(function(){if(stack.length&&stack[stack.length-1].screen==='roster')rerender();});}}};
+  };
+  SCREENS.rosterUnits=function(){
+    var S=R().setup,body='<p class="sh-foot" style="margin-top:0">Moving someone here updates every draft roster from today on, and their unit in the personnel list. Final rosters and your hand edits are not changed.</p>';
+    var mvOpts=function(u,k){var o='<option value="">Move…</option>';UNITS.forEach(function(x){RCOLS.forEach(function(c){if(x!==u||c[0]!==k)o+='<option value="'+x+'|'+c[0]+'">'+x+' · '+c[1]+'</option>';});});return o+'<option value="del">Remove</option>';};
+    UNITS.forEach(function(u){var U=S.units[u]||(S.units[u]={jr:[],duty:[],senior:[]});
+      body+='<div class="ro-unit"><h4>Unit '+u+' <small>'+(UNITS.indexOf(u)<6?WD[UNITS.indexOf(u)+1]:'')+'s</small></h4>'+RCOLS.map(function(c){var k=c[0];
+        return '<div class="ro-col"><div class="ro-cl">'+c[1]+'</div>'+(U[k]||[]).map(function(nm,i){return '<span class="ro-chip">'+esc(dr(nm))+'<select data-romv="'+u+'|'+k+'|'+i+'" aria-label="Move '+esc(nm)+'">'+mvOpts(u,k)+'</select></span>';}).join('')+
+          '<form class="ro-add" data-roadd="'+u+'|'+k+'"><input name="n" placeholder="Add name" aria-label="Add to '+u+' '+c[1]+'" list="roPeople"><button type="submit" class="sh-btn small">Add</button></form></div>';}).join('')+'</div>';});
+    var sa=S.anchor;body+='<div class="ro-unit"><h4>Sunday rotation</h4><div class="sh-f"><label for="roSunDate">On this Sunday</label><input type="date" id="roSunDate" value="'+sa.date+'"></div><div class="sh-f"><label for="roSunUnit">the unit on duty is</label><select id="roSunUnit">'+UNITS.map(function(x){return '<option'+(x===sa.unit?' selected':'')+'>'+x+'</option>';}).join('')+'</select></div><p class="sh-foot">Each following Sunday moves to the next unit (S6 → S1).</p></div>';
+    body+='<datalist id="roPeople">'+load().personnel.filter(isActive).map(function(p){return '<option value="'+esc(String(p.name).replace(/^dr\.?\s*/i,''))+'">';}).join('')+'</datalist><div class="sh-msg" role="status"></div>';
+    return {title:'Roster units',body:body};
+  };
+  function matchPerson(nm){var n=norm(nm);if(n.length<3)return null;return load().personnel.filter(function(p){var q=norm(p.name);return isActive(p)&&(q===n||q.indexOf(n)===0);})[0]||null;}
+  function rosterMove(spec,to){
+    var a=spec.split('|'),u=a[0],k=a[1],i=+a[2],S=R().setup,L=S.units[u][k],nm=L[i];if(nm==null)return;
+    L.splice(i,1);var label=dr(nm)+': '+u+' '+k;
+    if(to!=='del'){var b=to.split('|');(S.units[b[0]][b[1]]=S.units[b[0]][b[1]]||[]).push(nm);var p=matchPerson(nm);if(p&&b[0]!==u)setUnit(p.id,b[0],'Duty roster');logChange('Duty roster','Move',dr(nm),u+' · '+k,b[0]+' · '+b[1],'');}
+    else logChange('Duty roster','Remove',label,'','','');
+    S.updated=new Date().toISOString();save();rosterPush('setup');refreshDrafts();
+  }
+  function rosterDoc(m){return rosterTable(m,false)+RSIGN;}
+  function rosterExport(kind,m){
+    var html='<html><head><meta charset="utf-8"><title>Duty roster '+m+'</title><style>body{font-family:"Times New Roman",serif;color:#000}'+RO_CSS+'@page{size:A4;margin:12mm}</style></head><body>'+rosterDoc(m)+'</body></html>',name='Duty_Roster_'+MONTHS[+m.slice(5,7)-1]+'_'+m.slice(0,4);
+    if(kind==='html'){var w=window.open('','_blank');if(w){w.document.write(html);w.document.close();setTimeout(function(){try{w.print();}catch(e){}},400);}return;}
+    var file=null;try{file=new File(['﻿',html],name+'.doc',{type:'application/msword'});}catch(x){}
+    if(kind==='wa'&&file&&navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],title:'Duty roster '+m,text:'Department of Surgery – duty roster '+MONTHS[+m.slice(5,7)-1]+' '+m.slice(0,4)}).catch(function(){});return;}
+    var b=new Blob(['﻿',html],{type:'application/msword'}),l=document.createElement('a');l.href=URL.createObjectURL(b);l.download=name+'.doc';document.body.appendChild(l);l.click();l.remove();setTimeout(function(){URL.revokeObjectURL(l.href);},2000);
+    if(kind==='wa')window.open('https://wa.me/?text='+encodeURIComponent('Department of Surgery – duty roster '+MONTHS[+m.slice(5,7)-1]+' '+m.slice(0,4)+'\n(File downloaded: '+name+'.doc – attach it in WhatsApp)'),'_blank');
+  }
+  /* sync with the spreadsheet (Roster tab) when signed in */
+  var pushT={};
+  function rosterPush(key){
+    if(!window.IGMCRI_API||!window.IGMCRI_USER)return;
+    clearTimeout(pushT[key]);pushT[key]=setTimeout(function(){
+      var r=R(),data=key==='setup'?r.setup:r.months[key.slice(1)];if(!data)return;
+      window.IGMCRI_API('rosterSave',{key:key,data:JSON.stringify(data),status:key==='setup'?'':data.status}).catch(function(){});
+    },1200);
+  }
+  function rosterPull(done){
+    if(!window.IGMCRI_API||!window.IGMCRI_USER){done&&done();return;}
+    window.IGMCRI_API('rosterLoad').then(function(j){
+      if(j&&j.ok&&j.items){var r=R(),ch=0;Object.keys(j.items).forEach(function(k){var it=j.items[k],v;try{v=JSON.parse(it.data);}catch(e){return;}
+        if(k==='setup'){if(!r.setup.updated||(v.updated||'')>r.setup.updated){r.setup=v;ch++;}}
+        else if(k[0]==='M'){var m=k.slice(1),cur=r.months[m];if(!cur||(v.updated||'')>(cur.updated||'')){r.months[m]=v;ch++;}}});
+        if(ch)save();}
+      done&&done();
+    }).catch(function(){done&&done();});
+  }
+
   /* ---------- events ---------- */
   function onSheetClick(e){
     var b=e.target.closest('button');if(!b)return;
     var top=stack[stack.length-1];
     if(b.dataset.go){var arg={};try{arg=JSON.parse(b.dataset.arg||'{}');}catch(x){}if(b.dataset.replace)replace(b.dataset.go,arg);else push(b.dataset.go,arg);return;}
     if(b.dataset.cat){top.arg.cat=b.dataset.cat;rerender();return;}
+    if(b.dataset.rogen){genMonth(b.dataset.rogen,false);top.arg.m=b.dataset.rogen;rerender();msg('Roster generated. Check it, edit any cell, then mark it final.',true);return;}
+    if(b.dataset.roregen){genMonth(b.dataset.roregen,true);rerender();msg('Refreshed from the current units. Your edits were kept.',true);return;}
+    if(b.dataset.rofresh){genMonth(b.dataset.rofresh,false);rerender();msg('Started again from the units.',true);return;}
+    if(b.dataset.rostat){var mo=R().months[b.dataset.m];mo.status=b.dataset.rostat;mo.updated=new Date().toISOString();mo.by=currentUser();logChange('Duty roster',b.dataset.rostat==='final'?'Finalise':'Reopen',b.dataset.m,'','','');save();rosterPush('M'+b.dataset.m);rerender();msg(b.dataset.rostat==='final'?(window.IGMCRI_USER?'Marked final. It now shows on the website.':'Marked final on this device. Sign in to publish it to the website.'):'Reopened as draft.',true);return;}
+    if(b.dataset.roexp){rosterExport(b.dataset.roexp,b.dataset.m);return;}
     if(b.dataset.force){savePerson(top.arg,true);return;}
     if(b.dataset.unassign){setUnit(b.dataset.unassign,'');rerender();return;}
     if(b.dataset.askdel){var cf=document.getElementById('cf_'+b.dataset.askdel);if(cf){cf.hidden=false;cf.scrollIntoView({block:'nearest'});}return;}
@@ -5500,12 +5658,17 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     if(t.id==='logSearch'&&e.type==='input'){top.arg.q=t.value;rerender();return;}
     if(t.id==='logMod'&&e.type==='change'){top.arg.mod=t.value;rerender();return;}
     if(t.id==='docYear'&&e.type==='change'){top.arg.yr=+t.value;rerender();return;}
+    if(t.id==='roMonth'&&e.type==='change'){top.arg.m=t.value;rerender();return;}
+    if(t.dataset&&t.dataset.rc!=null&&e.type==='input'){var mm=top.arg.m||(document.getElementById('roMonth')||{}).value,row=R().months[mm].rows[+t.dataset.rc],k=t.dataset.rk;row[k]=t.textContent.trim();(row.ed=row.ed||{})[k]=1;t.classList.add('ed');R().months[mm].updated=new Date().toISOString();R().months[mm].by=currentUser();save();rosterPush('M'+mm);return;}
+    if(t.dataset&&t.dataset.romv&&e.type==='change'&&t.value){rosterMove(t.dataset.romv,t.value);rerender();msg('Moved. Draft rosters updated.',true);return;}
+    if((t.id==='roSunDate'||t.id==='roSunUnit')&&e.type==='change'){var sd=document.getElementById('roSunDate').value;if(!sd||new Date(sd+'T12:00:00').getDay()!==0){msg('Pick a Sunday.');return;}R().setup.anchor={date:sd,unit:document.getElementById('roSunUnit').value};R().setup.updated=new Date().toISOString();logChange('Duty roster','Sunday rotation',sd,'',R().setup.anchor.unit,'');save();rosterPush('setup');refreshDrafts();msg('Sunday rotation updated in draft rosters.',true);return;}
     if(t.id==='restoreAdmin'&&e.type==='change'&&t.files[0]){var r=new FileReader();r.onload=function(){try{var d=JSON.parse(r.result);if(!Array.isArray(d.personnel))throw 0;mem=d;load();logChange('Backup','Restore','Administration data restored','',d.personnel.length+' personnel','From backup file');save();msg('Restored '+d.personnel.length+' personnel records.',true);}catch(x){msg('That file is not an administration backup.');}};r.readAsText(t.files[0]);}
   }
   document.addEventListener('submit',function(e){
     var f=e.target;if(!f.closest||!f.closest('#maSheet'))return;e.preventDefault();
     var top=stack[stack.length-1];if(!top)return;
     if(f.dataset.ext){saveExt(top.arg);return;}
+    if(f.dataset.roadd){var nv=(f.elements.n.value||'').replace(/^dr\.?\s*/i,'').trim();if(!nv){msg('Type a name.');return;}var pr=f.dataset.roadd.split('|');R().setup.units[pr[0]][pr[1]].push(nv);R().setup.updated=new Date().toISOString();var pp=matchPerson(nv);if(pp&&pp.unit!==pr[0])setUnit(pp.id,pr[0],'Duty roster');logChange('Duty roster','Add',dr(nv),'',pr[0]+' · '+pr[1],'');save();rosterPush('setup');refreshDrafts();rerender();msg('Added. Draft rosters updated.',true);return;}
     if(f.dataset.me){var v=f.elements.me.value;if(!v){msg('Choose your name.');return;}try{localStorage.setItem('ma-me',v);localStorage.setItem('ma-user',pname(v));}catch(x){}replace('person',{id:v});return;}
     if(top.screen==='personEdit')savePerson(top.arg);
     else if(top.screen==='personStatus')saveStatus(top.arg);
@@ -5548,6 +5711,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     importPersonnel:importPersonnel,
     cadre:cadre,
     calendarOn:function(ds){return load().calendar.filter(function(e){return e.date<=ds&&(e.endDate||e.date)>=ds;});},
+    dutyOn:function(ds){var m=ds.slice(0,7),mo=load().roster&&load().roster.months&&load().roster.months[m];if(!mo)return null;var r=mo.rows[+ds.slice(8,10)-1];return r?{unit:r.unit,jr:r.jr,duty:r.duty,senior:r.senior,status:mo.status}:null;},
     leaveToday:function(){var t=today();return load().calendar.filter(function(e){return CAL_CATS[e.category]==='Leave'&&e.date<=t&&(e.endDate||e.date)>=t;}).map(function(e){return {name:pname(e.personId)||e.title,until:fmtDate(e.endDate||e.date),cat:e.category};});},
     counts:function(){var d=load();return {personnel:d.personnel.filter(isActive).length,past:d.personnel.filter(function(p){return !isActive(p);}).length,interns:d.interns.filter(function(i){return i.status!=='Completed';}).length,pubs:d.academic.filter(function(r){return r.type==='publication';}).length,log:d.log.length};},
     renderDirectoryInto:function(el){var o=SCREENS.personnel({cat:'faculty'});el.innerHTML=o.body;}
@@ -5631,9 +5795,11 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     document.getElementById('maTodayCount').textContent=ev.length?ev.length+' session'+(ev.length>1?'s':''):'';
     var box=document.getElementById('maToday');
     var lv=window.MAdmin?MAdmin.leaveToday():[];
+    var du=window.MAdmin&&MAdmin.dutyOn?MAdmin.dutyOn(t):null;
+    var duty='<button type="button" class="ma-duty" data-admin="roster" data-arg="{}"><span class="u">'+(du?esc(du.unit):'<i class="fas fa-clipboard-list"></i>')+'</span><span>'+(du?'<b>On duty today</b>'+esc([du.jr,du.duty].filter(Boolean).join(' · '))+'<small>On call: '+esc(du.senior||'—')+'</small>':'<b>Duty roster</b><small>No roster for this month yet · tap to generate</small>')+'</span><i class="fas fa-chevron-right"></i></button>';
     var leave='<button type="button" class="ma-leave" data-admin="calendar" data-arg="{}"><i class="fas fa-plane-departure"></i><span>'+(lv.length?'On leave today: '+lv.map(function(x){return esc(x.name);}).join(', '):'No one on leave today')+'</span><i class="fas fa-chevron-right"></i></button>';
-    if(!ev.length){box.innerHTML='<div class="ma-empty">No academic sessions scheduled today.</div>'+leave;return;}
-    box.innerHTML=leave+'<div class="ma-today">'+ev.map(function(x){
+    if(!ev.length){box.innerHTML=duty+'<div class="ma-empty">No academic sessions scheduled today.</div>'+leave;return;}
+    box.innerHTML=duty+leave+'<div class="ma-today">'+ev.map(function(x){
       var done=x.time&&x.time<now;
       return '<div class="ma-sess'+(done?' done':'')+'"><div class="t"><span class="ma-tag '+cls(x.audience)+'">'+esc(tagTxt(x.audience))+'</span>'+esc(x.time||'Time TBA')+(done?' · over':'')+'</div><div class="n">'+esc(x.title)+'</div>'+((x.batch||x.meta)?'<div class="m">'+esc([x.batch,x.meta].filter(Boolean).join(' · '))+'</div>':'')+'</div>';
     }).join('')+'</div>';
@@ -5697,7 +5863,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 
   var MENU=[
     {t:'Downloads',ic:'fa-download',items:[['a','downloads','fa-download','All downloads'],['a','docCheck','fa-book-open','Annual department report',{doc:'annual'}],['a','docCheck','fa-university','University inspection (COA)',{doc:'coa'}]]},
-    {t:'Clinical management',ic:'fa-procedures',items:[['m','dressingRoom','fa-notes-medical','Dressing register'],['m','ultrasonogram','fa-heartbeat','USG register'],['m','endoscopyRegister','fa-microscope','Endoscopy register'],['m','dutyRoster','fa-clipboard-list','Duty roster'],['m','inventory','fa-box-open','Supplies & stock'],['m','outwardLetterRegister','fa-envelope-open-text','Outward letter register']]},
+    {t:'Clinical management',ic:'fa-procedures',items:[['m','dressingRoom','fa-notes-medical','Dressing register'],['m','ultrasonogram','fa-heartbeat','USG register'],['m','endoscopyRegister','fa-microscope','Endoscopy register'],['a','roster','fa-clipboard-list','Duty roster'],['m','inventory','fa-box-open','Supplies & stock'],['m','outwardLetterRegister','fa-envelope-open-text','Outward letter register']]},
     {t:'Department administration',ic:'fa-sitemap',items:[['a','personnel','fa-address-book','Personnel directory'],['a','personEdit','fa-user-plus','Add personnel'],['a','units','fa-th','Unit allocation (S1–S6)'],['a','cadre','fa-layer-group','Cadre strength'],['a','calendar','fa-calendar-check','Department calendar & leave'],['a','entList','fa-user-nurse','Interns',{ent:'interns'}],['a','entList','fa-tools','Equipment inventory',{ent:'equipment'}],['a','entList','fa-clinic-medical','Special clinics',{ent:'clinics'}],['a','entList','fa-hospital','Department facilities',{ent:'facility'}]]},
     {t:'Academics',ic:'fa-graduation-cap',items:[['a','myRecord','fa-id-badge','My record'],['a','personnel','fa-user-md','Faculty profiles',{cat:'faculty'}],['a','acadList','fa-book','Publications',{type:'publication'}],['a','acadList','fa-users','Conferences',{type:'conference'}],['a','acadList','fa-chalkboard-teacher','CME & workshops',{type:'cme'}],['a','acadList','fa-flask','Research projects',{type:'research'}],['a','acadList','fa-vial','ICMR projects',{type:'research',icmr:1}],['a','acadList','fa-award','Awards',{type:'award'}],['a','acadList','fa-chalkboard','Academic activities',{type:'activity'}],['m','academicSchedule','fa-calendar-alt','PG activities & teaching schedule'],['m','universityExams','fa-file-signature','Examination documents'],['m','faculty','fa-folder-open','Faculty files'],['m','postgraduates','fa-folder','PG files']]},
     {t:'Document generation',ic:'fa-file-alt',items:[['a','downloads','fa-download','Downloads (all reports)'],['a','docCheck','fa-university','Pondicherry University COA',{doc:'coa'}],['a','docCheck','fa-file-medical','NMC Form B – staff',{doc:'nmc'}],['a','docCheck','fa-book-open','Annual department report',{doc:'annual'}]]},

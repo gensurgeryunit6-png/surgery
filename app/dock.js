@@ -78,21 +78,28 @@
   }
   document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
 
+  var API_URL=(window.IGMCRI_CONFIG&&window.IGMCRI_CONFIG.api)||'https://script.google.com/macros/s/AKfycbygBb_9jAGAebxdu15MmgqOAh06ss9uSLFoaFVBEzM9BfuPGF0RaZzZahqcfp924lIG7A/exec';
+  var duty=null,dutyM='';
+  function loadDuty(cb){var n=nowIST(),m=n.date.slice(0,7);if(dutyM===m){cb();return;}
+    fetch(API_URL+'?action=roster&m='+m).then(function(r){return r.json();}).then(function(j){dutyM=m;duty=j&&j.rows||null;cb();}).catch(function(){dutyM=m;duty=null;cb();});}
+  function dutyCard(){var n=nowIST(),r=duty&&duty[+n.date.slice(8,10)-1];if(!r)return '';
+    return '<div class="ss" style="border-left:4px solid #087f93"><div class="t"><span class="tg">'+esc(r.unit)+'</span>On duty today</div><div class="n">'+esc([r.jr,r.duty].filter(Boolean).join(' · '))+'</div><div class="t">On call: '+esc(r.senior||'—')+'</div></div>';}
   function showSessions(){
     openSheet('sess','<h3>Live sessions <button type="button" data-close>Close</button></h3><div class="em">Loading timetable…</div>');
-    loadSessions(function(){
+    loadSessions(function(){loadDuty(function(){
       if(curTab!=='sess')return;
       var n=nowIST(),html='';
       if(sessErr){html='<div class="em">The academic timetable could not be loaded. Check the internet connection.</div>';}
       else{
         var today=sessions.filter(function(x){return x.date===n.date;});
         var up=sessions.filter(function(x){return x.date>n.date;}).slice(0,12);
+        html+=dutyCard();
         html+='<div class="dh">Today · '+esc(fmt(n.date,{weekday:'long',day:'numeric',month:'short'}))+'</div>'+(today.length?today.map(function(x){return sessCard(x,n);}).join(''):'<div class="em">No sessions scheduled today.</div>');
         var last='';up.forEach(function(x){if(x.date!==last){last=x.date;html+='<div class="dh">'+esc(fmt(x.date,{weekday:'long',day:'numeric',month:'short'}))+'</div>';}html+=sessCard(x,n);});
         html+='<a class="it" style="margin-top:12px" href="https://gensurgeryunit6-png.github.io/test1/academic.html"><span class="e">📅</span><span><b>Full academic schedule</b><small>Opens the timetable site</small></span></a>';
       }
       sheet.innerHTML='<div class="gr"></div><h3>Live sessions <button type="button" data-close>Close</button></h3>'+html;sheet.querySelector('[data-close]').onclick=close;
-    });
+    });});
   }
   function showRegisters(){
     openSheet('reg','<h3>Registers <button type="button" data-close>Close</button></h3><div class="lst">'+REG.map(function(r){return '<a class="it'+(inApp&&here===r[0]?' cur':'')+'" href="'+P+r[0]+'"><span class="e" aria-hidden="true">'+r[1]+'</span><span><b>'+r[2]+'</b><small>'+(inApp&&here===r[0]?'You are here':r[3])+'</small></span></a>';}).join('')+'</div>');
