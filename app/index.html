@@ -40,7 +40,7 @@ html.auth-locked body{background:#F3F6F8!important;padding:0!important}
 #mApp .ma-brand .ag-out span{display:none}
 #mApp .ma-brand .ag-out{width:42px;justify-content:center;padding:0}
 #agPreview{position:fixed;left:50%;transform:translateX(-50%);top:calc(6px + env(safe-area-inset-top,0px));z-index:2000;background:#FBF1DE;color:#6B4307;border:1px solid #EBD3A6;border-radius:999px;padding:6px 12px;font:600 11.5px 'IBM Plex Sans',system-ui,sans-serif;max-width:calc(100% - 24px);text-align:center;box-shadow:0 4px 14px rgba(16,42,67,.12);pointer-events:none;opacity:.95}
-@media all{#agPreview{top:auto;bottom:calc(76px + env(safe-area-inset-bottom,0px))}}
+@media (max-width:760px){#agPreview{top:auto;bottom:calc(76px + env(safe-area-inset-bottom,0px))}}
 
 #authGate .ag-help{margin:14px 0 0;font-size:12.5px;color:#7A8A97;line-height:1.5}
 
@@ -4615,7 +4615,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 </style>
 <style id="mobile-app">/* ==== IGMCRI mobile app shell (phones only, <=760px) ==== */
 #mApp{display:none}
-@media all{
+@media (max-width:760px){
   html,body{background:var(--tb-paper)!important;overflow-x:hidden}
   body{padding:0!important}
   html body.surgery-logged-in #dashboardPage,html body #dashboardPage{display:none!important}
@@ -4749,23 +4749,10 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   #mApp .ma-duty b{display:block;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--tb-ink-3)}
   #mApp .ma-duty small{display:block;color:var(--tb-ink-2);font-size:12.5px}
 
-/* ==== desktop / tablet: same app, wider layout ==== */
+/* ==== desktop: roster / admin panels open over the desktop dashboard ==== */
 @media (min-width:761px){
-  #mApp .ma-wrap{max-width:1180px;margin-left:auto;margin-right:auto;padding-left:24px;padding-right:24px}
-  #mApp header.ma-head{border-radius:0 0 22px 22px;padding-top:20px;padding-bottom:22px}
-  #mApp main.ma-wrap{padding-top:6px}
-  #mApp .ma-tiles{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
-  #mApp .ma-nav{left:50%;right:auto;transform:translateX(-50%);bottom:14px;width:min(640px,calc(100% - 32px));border:1px solid var(--tb-line);border-radius:18px;box-shadow:0 12px 30px rgba(16,42,67,.18);padding:6px}
-  #mApp{padding-bottom:110px}
   html.sh-open body::after{content:"";position:fixed;inset:0;background:rgba(11,34,48,.45);z-index:940}
   #maSheet{left:auto!important;width:min(980px,100%);box-shadow:-18px 0 40px rgba(11,34,48,.25);border-radius:18px 0 0 18px}
-}
-@media (min-width:1000px){
-  #mApp section[data-view="home"].on{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);column-gap:28px;align-items:start}
-  #mApp section[data-view="home"] > .ma-sec{grid-column:1}
-  #mApp section[data-view="home"] > .ma-sec:nth-child(2){grid-column:2;grid-row:1 / span 6}
-  #mApp section[data-view="home"] .ma-cal button{min-height:54px;font-size:14.5px}
-  #mApp section[data-view="registers"].on,#mApp section[data-view="modules"].on,#mApp section[data-view="schedule"].on{max-width:900px;margin:0 auto}
 }
 </style>
 <style id="admin-app">/* ==== Admin sheets + new home/menu widgets (phone) ==== */
@@ -5003,6 +4990,16 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 
   #maSheet .ro-diff{background:#FFF4E0;border:1px solid #F0C987;border-radius:14px;padding:12px;margin:10px 0;font-size:13.5px}
   #maSheet .ro-diff ul{margin:6px 0 10px;padding-left:18px}
+
+/* desktop dashboard: today's duty strip */
+#dpDuty{display:flex;align-items:center;gap:14px;width:calc(100% - 0px);margin:12px 0;background:var(--tb-card,#fff);border:1px solid var(--tb-line,#dce8ee);border-left:5px solid var(--tb-scrub,#087f93);border-radius:14px;padding:12px 16px;font:inherit;color:var(--tb-ink,#102a43);cursor:pointer;text-align:left}
+#dpDuty:hover{border-color:var(--tb-scrub,#087f93)}
+#dpDuty .u{width:42px;height:42px;border-radius:11px;background:var(--tb-ink,#102a43);color:#fff;display:grid;place-items:center;font-weight:700;flex:none}
+#dpDuty .l{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--tb-scrub,#087f93);flex:none}
+#dpDuty .n{font-weight:700;flex:1;min-width:0}
+#dpDuty .s{color:var(--tb-ink-3,#658091);flex:none}
+#dpDuty .go{font-weight:700;color:var(--tb-scrub,#087f93);flex:none}
+@media (max-width:760px){#dpDuty{display:none}}
 </style>
 <script>/* Theatre Board layout tweaks: move KPI strip under the title, add an IST date block. */
 (function(){
@@ -5109,7 +5106,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     if(!s){
       s=document.createElement('div');s.id='maSheet';s.setAttribute('role','dialog');s.setAttribute('aria-modal','true');
       s.innerHTML='<div class="sh-top"><button type="button" class="sh-back" aria-label="Back"><i class="fas fa-arrow-left"></i></button><h2 class="sh-title"></h2><span class="sh-act"></span></div><div class="sh-body"></div>';
-      (document.getElementById('mApp')||document.body).appendChild(s);
+      document.body.appendChild(s);
       s.querySelector('.sh-back').addEventListener('click',back);
       s.addEventListener('click',onSheetClick);
       s.addEventListener('input',onSheetInput);
@@ -5993,5 +5990,23 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     window.addEventListener('storage',renderAll);
   }
   if(document.readyState==='complete')init();else window.addEventListener('load',init);
+})();
+</script>
+<script>/* desktop dashboard: Duty roster opens the roster panel; today's duty strip */
+(function(){
+  function hook(){
+    if(typeof window.openModule==='function'&&!window.openModule.__ro){var o=window.openModule;var w=function(id){if(id==='dutyRoster'&&window.MAdmin){MAdmin.open('roster',{});return;}return o.apply(this,arguments);};w.__ro=1;window.openModule=w;}
+  }
+  function strip(){
+    var dp=document.getElementById('dashboardPage');if(!dp||!window.MAdmin||!MAdmin.dutyOn)return;
+    var el=document.getElementById('dpDuty');
+    if(!el){el=document.createElement('button');el.type='button';el.id='dpDuty';el.onclick=function(){MAdmin.open('roster',{});};
+      var anchor=dp.querySelector('.dash-header');if(anchor&&anchor.parentNode)anchor.parentNode.insertBefore(el,anchor.nextSibling);else dp.insertBefore(el,dp.firstChild);}
+    var t=new Date(),ds=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'),d=MAdmin.dutyOn(ds);
+    var e=function(v){return String(v||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+    el.innerHTML=d?'<span class="u">'+e(d.unit)+'</span><span class="l">On duty today</span><span class="n">'+e([d.jr,d.duty].filter(Boolean).join(' · '))+'</span><span class="s">On call: '+e(d.senior||'—')+'</span><span class="go">Duty roster ›</span>':'<span class="u">🗓</span><span class="l">Duty roster</span><span class="n">See this month’s roster</span><span class="go">Open ›</span>';
+  }
+  window.addEventListener('load',function(){hook();strip();setInterval(strip,60000);setTimeout(strip,2500);});
+  var r=window.MApp&&MApp.refresh;
 })();
 </script>
