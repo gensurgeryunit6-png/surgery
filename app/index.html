@@ -5026,6 +5026,10 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   #maSheet .rd-sub{font-size:12.5px;color:var(--tb-ink-3);margin:4px 0 0 46px}
   #maSheet .rd-split{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;margin:2px 0 6px}
   #maSheet .rd-split b{color:var(--tb-scrub)}
+
+  #maSheet .nfc-url{font-family:var(--tb-mono);font-size:12.5px;background:var(--tb-paper);border-radius:9px;padding:9px 10px;margin:10px 0 4px;word-break:break-all;user-select:all}
+  #maSheet .nfc-steps{margin:0;padding-left:20px;font-size:13.5px;line-height:1.55}
+  #maSheet .rd-dl a.sh-btn{text-decoration:none;flex:1 1 0;justify-content:center}
 </style>
 <script>/* Theatre Board layout tweaks: move KPI strip under the title, add an IST date block. */
 (function(){
@@ -5764,6 +5768,17 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     body+='<p class="sh-foot">Downloads are spreadsheet files (.csv) that open in Excel or Google Sheets. '+(signed?'':'Downloading needs sign-in, because the files contain patient details. ')+'Dressing and Library entries are made through their QR codes; Endoscopy (EGD, colonoscopy) and USG can also be entered here on the desktop. Counts update live from the register spreadsheet.</p><div class="sh-msg" role="status"></div>';
     return {title:'Register dashboard',body:body};
   };
+
+  /* ---------- NFC tag links (Dressing register) ---------- */
+  SCREENS.nfc=function(){
+    var base=location.origin+location.pathname.replace(/[^\/]*$/,'')+'Dressing_Register.html';
+    if(/^file:|claude/.test(location.href))base='https://gensurgeryunit6-png.github.io/surgery/app/Dressing_Register.html';
+    var tags=[['FSW','Female Surgical Ward'],['MSW','Male Surgical Ward']];
+    var row=function(t){var url=base+'?ward='+t[0]+'&src=nfc';return '<div class="rd-card"><div class="rd-top"><span class="sh-ic"><i class="fas fa-wifi"></i></span><b>Dressing · '+t[1]+' ('+t[0]+')</b></div><div class="nfc-url" id="nfc_'+t[0]+'">'+esc(url)+'</div><div class="rd-dl"><button type="button" class="sh-btn small primary" data-copy="nfc_'+t[0]+'"><i class="fas fa-copy"></i> Copy link</button><a class="sh-btn small" href="'+esc(url)+'" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i> Test</a></div></div>';};
+    var body='<p class="sh-foot" style="margin-top:0">One sticker per ward. Tapping it opens the dressing form with the ward already selected and the PG remembered on that phone; the PG only types the patient details.</p>'+tags.map(row).join('')+
+      '<div class="rd-card"><b style="display:block;margin-bottom:6px">Writing a tag (about 2 minutes)</b><ol class="nfc-steps"><li>Buy NTAG215 (or NTAG213) NFC stickers; use “on-metal” stickers for metal surfaces.</li><li>Install the free <b>NFC Tools</b> app (Android or iPhone).</li><li>Tap <b>Copy link</b> above for the ward.</li><li>In NFC Tools: <b>Write → Add a record → URL</b>, paste the link, tap <b>Write</b>, hold the phone on the sticker.</li><li>Test it with another phone. Then <b>Other → Lock tag</b> so nobody can rewrite it (locking is permanent).</li></ol><p class="sh-foot" style="margin:6px 0 0">Android: NFC must be on in Settings. iPhone XS or newer reads tags automatically when unlocked. Keep the QR code beside the sticker for phones without NFC.</p></div><div class="sh-msg" role="status"></div>';
+    return {title:'NFC tags · Dressing',body:body};
+  };
   /* ---------- events ---------- */
   function onSheetClick(e){
     var b=e.target.closest('button');if(!b)return;
@@ -5775,6 +5790,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     if(b.dataset.rofresh){genMonth(b.dataset.rofresh,false);rerender();msg('Started again from the units.',true);return;}
     if(b.dataset.rostat){var mo=R().months[b.dataset.m];mo.status=b.dataset.rostat;mo.updated=new Date().toISOString();mo.by=currentUser();logChange('Duty roster',b.dataset.rostat==='final'?'Finalise':'Reopen',b.dataset.m,'','','');save();rosterPush('M'+b.dataset.m);rerender();msg(b.dataset.rostat==='final'?(window.IGMCRI_USER?'Marked final. It now shows on the website.':'Marked final on this device. Sign in to publish it to the website.'):'Reopened as draft.',true);return;}
     if(b.dataset.rosync){var D=rosterDiffs();D.forEach(function(x){rosterFollow(x.p,x.p.unit,true);logChange('Duty roster','Move',dr(x.h.nm),x.h.u,x.p.unit,'From unit allocation');});save();rosterPush('setup');refreshDrafts();rerender();msg(D.length+' moved. Draft rosters updated.',true);return;}
+    if(b.dataset.copy){var tx=(document.getElementById(b.dataset.copy)||{}).textContent||'';var ok=function(){msg('Link copied. Paste it into NFC Tools.',true);};
+      if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(tx).then(ok,function(){var r=document.createRange();r.selectNodeContents(document.getElementById(b.dataset.copy));var se=getSelection();se.removeAllRanges();se.addRange(r);msg('Link selected — copy it.',true);});else{var r2=document.createRange();r2.selectNodeContents(document.getElementById(b.dataset.copy));var s2=getSelection();s2.removeAllRanges();s2.addRange(r2);msg('Link selected — copy it.',true);}return;}
     if(b.dataset.rdl){
       if(!window.IGMCRI_USER){msg('Sign in to download — the files contain patient details.');if(window.IGMCRI_SIGNIN){close();IGMCRI_SIGNIN();}return;}
       var pr=b.dataset.rdl.split('|'),ks=pr[0]==='*'?REGS.map(function(x){return x.k;}):[pr[0]];b.disabled=true;var old=b.innerHTML;b.innerHTML='<i class="fas fa-spinner fa-spin"></i> Preparing…';
@@ -6032,7 +6049,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 
   var MENU=[
     {t:'Downloads',ic:'fa-download',items:[['a','downloads','fa-download','All downloads'],['a','docCheck','fa-book-open','Annual department report',{doc:'annual'}],['a','docCheck','fa-university','University inspection (COA)',{doc:'coa'}]]},
-    {t:'Clinical management',ic:'fa-procedures',items:[['a','regdash','fa-chart-bar','Register dashboard (live counts & downloads)'],['a','roster','fa-clipboard-list','Duty roster'],['m','inventory','fa-box-open','Supplies & stock'],['m','outwardLetterRegister','fa-envelope-open-text','Outward letter register']]},
+    {t:'Clinical management',ic:'fa-procedures',items:[['a','regdash','fa-chart-bar','Register dashboard (live counts & downloads)'],['a','nfc','fa-wifi','NFC tags · Dressing register'],['a','roster','fa-clipboard-list','Duty roster'],['m','inventory','fa-box-open','Supplies & stock'],['m','outwardLetterRegister','fa-envelope-open-text','Outward letter register']]},
     {t:'Department administration',ic:'fa-sitemap',items:[['a','personnel','fa-address-book','Personnel directory'],['a','personEdit','fa-user-plus','Add personnel'],['a','units','fa-th','Unit allocation (S1–S6)'],['a','cadre','fa-layer-group','Cadre strength'],['a','calendar','fa-calendar-check','Department calendar & leave'],['a','entList','fa-user-nurse','Interns',{ent:'interns'}],['a','entList','fa-tools','Equipment inventory',{ent:'equipment'}],['a','entList','fa-clinic-medical','Special clinics',{ent:'clinics'}],['a','entList','fa-hospital','Department facilities',{ent:'facility'}]]},
     {t:'Academics',ic:'fa-graduation-cap',items:[['a','myRecord','fa-id-badge','My record'],['a','personnel','fa-user-md','Faculty profiles',{cat:'faculty'}],['a','acadList','fa-book','Publications',{type:'publication'}],['a','acadList','fa-users','Conferences',{type:'conference'}],['a','acadList','fa-chalkboard-teacher','CME & workshops',{type:'cme'}],['a','acadList','fa-flask','Research projects',{type:'research'}],['a','acadList','fa-vial','ICMR projects',{type:'research',icmr:1}],['a','acadList','fa-award','Awards',{type:'award'}],['a','acadList','fa-chalkboard','Academic activities',{type:'activity'}],['m','academicSchedule','fa-calendar-alt','PG activities & teaching schedule'],['m','universityExams','fa-file-signature','Examination documents'],['m','faculty','fa-folder-open','Faculty files'],['m','postgraduates','fa-folder','PG files']]},
     {t:'Document generation',ic:'fa-file-alt',items:[['a','downloads','fa-download','Downloads (all reports)'],['a','docCheck','fa-university','Pondicherry University COA',{doc:'coa'}],['a','docCheck','fa-file-medical','NMC Form B – staff',{doc:'nmc'}],['a','docCheck','fa-book-open','Annual department report',{doc:'annual'}]]},

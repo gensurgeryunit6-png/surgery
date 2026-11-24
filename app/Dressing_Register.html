@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta name="igmcri-build" content="1795530468">
+<meta name="igmcri-build" content="1795531809">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#102A43">
@@ -59,6 +59,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--teal);outline-of
 .pending button{margin-left:auto;border:1px solid #E3C88F;background:#fff;border-radius:9px;padding:8px 12px;font:inherit;font-size:13px;font-weight:600;color:#6B4307;min-height:40px}
 .foot{color:var(--ink-3);font-size:12px;line-height:1.5;margin:16px 4px 0;text-align:center}
 .req{color:var(--ink-3);font-size:12px;margin:0 0 10px}
+.tagbn{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;background:#E6F4F1;border:1px solid #B7E0D8;border-radius:12px;padding:10px 12px;margin:0 0 12px}.tagbn span{font-size:12.5px;color:#0B6B5E;font-weight:700}.tagbn b{font-size:15px}
+.pgnote{font-size:12.5px;color:var(--ink-3);margin-top:6px}.pgnote button{border:0;background:none;color:#0B6B5E;font:inherit;font-weight:700;text-decoration:underline;cursor:pointer;padding:4px 0}
 .list{margin-top:14px}
 .book{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:10px 0;border-bottom:1px solid #EDF1F4}
 .book:last-child{border-bottom:0}
@@ -193,6 +195,14 @@ function resetPatient(){['name','age','sex'].forEach(id=>$(id).value='');}
 liveList('dressing_procedure',$('proc'),["I&D", "Saline Dressing", "Wound Debridement", "Suture Removal", "Suturing", "Glue Application", "Intralesional Steroid Injection", "Foreign Body Removal", "Ray Amputation", "Other \u2013 Specify"]);
 liveList('postgraduate',$('pg'),["Dr. Vijay Raj", "Dr. Kanimozhi", "Dr. Lokesh", "Dr. Juliya Rose", "Dr. Mohammed Ameen Anjum", "Dr. Sai Prasanna Jandhyala", "Dr. Sai Narendiran", "Dr. Gayathri", "Dr. Swathika", "Dr. Neha Jaju", "Dr. Sundara Mugilan", "Dr. Harshitha"]);
 try{const u=localStorage.getItem('igmcri-last-unit');if(u)$('unit').value=u;const p=localStorage.getItem('igmcri-last-pg');if(p)setTimeout(()=>{$('pg').value=p;},50);}catch(e){}
+/* NFC / tag links: ?ward=FSW|MSW&unit=1-6&src=nfc preset the form; the PG is remembered on this phone */
+const TAG=(()=>{const q=new URLSearchParams(location.search),w=(q.get('ward')||'').toUpperCase(),u=q.get('unit')||'';return {ward:/^(FSW|MSW)$/.test(w)?w:'',unit:/^[1-6]$/.test(u)?u:'',nfc:q.get('src')==='nfc'};})();
+const WARDNAME={FSW:'Female Surgical Ward',MSW:'Male Surgical Ward'};
+function applyTag(){if(TAG.ward){const r=document.querySelector('input[name=ward][value="'+TAG.ward+'"]');if(r)r.checked=true;}if(TAG.unit)$('unit').value=TAG.unit;}
+applyTag();
+if(TAG.ward||TAG.nfc){const bn=document.createElement('div');bn.className='tagbn';bn.innerHTML='<span>'+(TAG.nfc?'📳 Tapped in':'🔗 Opened from link')+'</span><b>'+(TAG.ward?WARDNAME[TAG.ward]+' ('+TAG.ward+')':'Dressing register')+'</b>';$('f').insertBefore(bn,$('f').firstChild);}
+setTimeout(()=>{try{$('name').focus();}catch(e){}},250);
+setTimeout(()=>{const pg=$('pg');if(pg&&pg.value){const w=document.createElement('div');w.className='pgnote';w.innerHTML='Entering as <b>'+pg.value.replace(/</g,'&lt;')+'</b> · <button type="button" id="pgChange">Not you? Change</button>';pg.parentNode.appendChild(w);pg.classList.add('pgset');$('pgChange').onclick=()=>{pg.value='';pg.classList.remove('pgset');w.remove();try{localStorage.removeItem('igmcri-last-pg');}catch(e){}pg.focus();};}},400);
 $('proc').addEventListener('change',()=>{const o=$('proc').value.startsWith('Other');$('otherWrap').classList.toggle('hide',!o);if(o)$('other').focus();});
 $('f').addEventListener('submit',e=>{e.preventDefault();clearBad();const miss=[];
   const row=patient(miss);
@@ -205,7 +215,7 @@ $('f').addEventListener('submit',e=>{e.preventDefault();clearBad();const miss=[]
   if(miss.length){miss.forEach(markBad);show('err','Please complete the highlighted fields.');const first=$(miss[0]);if(first)first.focus();return;}
   try{localStorage.setItem('igmcri-last-unit',$('unit').value);localStorage.setItem('igmcri-last-pg',row.postgraduate);}catch(e){}
   submitRow(row,$('go'),(ok,r)=>{doneScreen(ok,r,'Dressing entry saved',r.patient_name+' · '+(r.procedure_other||r.procedure)+' · Unit '+r.unit+' · '+r.ward);
-    resetPatient();$('dx').value='';$('proc').value='';$('other').value='';$('otherWrap').classList.add('hide');document.querySelectorAll('input[name=ward]').forEach(x=>x.checked=false);});
+    resetPatient();$('dx').value='';$('proc').value='';$('other').value='';$('otherWrap').classList.add('hide');document.querySelectorAll('input[name=ward]').forEach(x=>x.checked=false);applyTag();});
 });
 
 </script>
