@@ -4752,7 +4752,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 
 /* ==== desktop: roster / admin panels open over the desktop dashboard ==== */
 @media (min-width:761px){
-  html.sh-open body::after{content:"";position:fixed;inset:0;background:rgba(11,34,48,.45);z-index:940}
+  html.sh-open body::after{content:"";position:fixed;inset:0;background:rgba(11,34,48,.45);z-index:190;pointer-events:none}
   #maSheet{left:auto!important;width:min(980px,100%);box-shadow:-18px 0 40px rgba(11,34,48,.25);border-radius:18px 0 0 18px}
 }
 </style>
@@ -5664,7 +5664,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     return clash&&t[1]?cap(t[0])+' '+cap(t[1]):cap(t[0]);}
   function rosterDiffs(){var out=[];load().personnel.forEach(function(p){if(!isActive(p)||!p.unit)return;var h=rosterFind(p.name);if(h&&h.u!==p.unit)out.push({p:p,h:h});else if(!h&&rosterColFor(p.designation)&&!rosterExcluded(p.name))out.push({p:p,h:{u:'—',nm:shortFor(p)}});});return out;}
   function pushUnit(sheetId,u){if(sheetId&&window.IGMCRI_API&&window.IGMCRI_USER)window.IGMCRI_API('setUnit',{id:sheetId,unit:String(u||'').replace(/^S/i,'')}).catch(function(){});}
-  function diffBanner(){var D=rosterDiffs();if(!D.length)return '';return '<div class="ro-diff"><b>'+D.length+' unit change'+(D.length>1?'s':'')+' not yet in the roster</b><ul>'+D.map(function(x){return '<li>'+esc(dr(x.h.nm))+(x.h.u==='—'?': not on the roster yet → '+esc(x.p.unit):': roster '+x.h.u+' → unit allocation '+esc(x.p.unit))+'</li>';}).join('')+'</ul><button type="button" class="sh-btn primary wide" data-rosync="1"><i class="fas fa-sync"></i> Update roster to match unit allocation</button></div>';}
+  function diffBanner(){return '';var D=rosterDiffs();if(!D.length)return '';return '<div class="ro-diff"><b>'+D.length+' unit change'+(D.length>1?'s':'')+' not yet in the roster</b><ul>'+D.map(function(x){return '<li>'+esc(dr(x.h.nm))+(x.h.u==='—'?': not on the roster yet → '+esc(x.p.unit):': roster '+x.h.u+' → unit allocation '+esc(x.p.unit))+'</li>';}).join('')+'</ul><button type="button" class="sh-btn primary wide" data-rosync="1"><i class="fas fa-sync"></i> Update roster to match unit allocation</button></div>';}
   function rosterDoc(m,rows){return rosterTable(m,false,rows)+RSIGN;}
   function rosterExport(kind,m,rows){
     var html='<html><head><meta charset="utf-8"><title>Duty roster '+m+'</title><style>body{font-family:"Times New Roman",serif;color:#000}'+RO_CSS+'@page{size:A4;margin:12mm}</style></head><body>'+rosterDoc(m,rows)+'</body></html>',name='Duty_Roster_'+MONTHS[+m.slice(5,7)-1]+'_'+m.slice(0,4);
@@ -5760,9 +5760,9 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
       var next={name:name,designation:des,unit:unit,phone:[r['Mobile'],r['Alt mobile']].filter(Boolean).join(', '),email:r['Email']||'',status:status};
       if(!p){p={id:uid('P'),created:new Date().toISOString(),statusHistory:[{status:status,date:today(),note:'From department contact list'}],unitHistory:unit?[{unit:unit,from:today()}]:[]};d.personnel.push(p);added++;}
       if(!unit){var hist=(p.unitHistory||[]).filter(function(h){return h.unit;}),lastU=p.unit||(hist.length?hist[hist.length-1].unit:'');
-        if(lastU){next.unit=lastU;if(!p.unit){p.unit=lastU;var lh=hist[hist.length-1];if(lh&&lh.to)delete lh.to;rosterFollow(p,lastU);}pushUnit(r['ID'],lastU);}}
+        if(lastU){next.unit=lastU;if(!p.unit){p.unit=lastU;var lh=hist[hist.length-1];if(lh&&lh.to)delete lh.to;}pushUnit(r['ID'],lastU);}}
       var diffs=[];Object.keys(next).forEach(function(k){if(String(p[k]||'')!==String(next[k]||''))diffs.push(k);});
-      if(p.unit!==next.unit&&p.unit!==undefined&&diffs.indexOf('unit')>=0){(p.unitHistory=p.unitHistory||[]).forEach(function(h){if(!h.to)h.to=today();});if(next.unit)p.unitHistory.push({unit:next.unit,from:today()});var _pp=p,_nu=next.unit;setTimeout(function(){rosterFollow(_pp,_nu);},0);}
+      if(p.unit!==next.unit&&p.unit!==undefined&&diffs.indexOf('unit')>=0){(p.unitHistory=p.unitHistory||[]).forEach(function(h){if(!h.to)h.to=today();});if(next.unit)p.unitHistory.push({unit:next.unit,from:today()});}
       if(diffs.indexOf('status')>=0&&p.status)(p.statusHistory=p.statusHistory||[]).push({status:next.status,date:today(),note:'Updated in spreadsheet'});
       Object.keys(next).forEach(function(k){p[k]=next[k];});p.sheetId=r['ID'];if(role)p.role=role;
       if(diffs.length){p.updated=new Date().toISOString();changed++;}
@@ -5778,9 +5778,10 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     importPersonnel:importPersonnel,
     cadre:cadre,
     calendarOn:function(ds){return load().calendar.filter(function(e){return e.date<=ds&&(e.endDate||e.date)>=ds;});},
-    dutyFor:function(ds){var d=window.MAdmin.dutyOn(ds);if(d)return d;var u=unitFor(ds);return {unit:u,jr:fill(u,'jr',0),duty:fill(u,'duty',0),senior:fill(u,'senior',0),planned:true};},
+    close:function(){close();},
+    dutyFor:function(ds){var d=window.MAdmin.dutyOn(ds);if(d)return d;if(!window.IGMCRI_USER&&!window.IGMCRI_PREVIEW)return null;var u=unitFor(ds);return {unit:u,jr:fill(u,'jr',0),duty:fill(u,'duty',0),senior:fill(u,'senior',0),planned:true};},
     unitFor:function(ds){return unitFor(ds);},
-    dutyOn:function(ds){var m=ds.slice(0,7),mo=load().roster&&load().roster.months&&load().roster.months[m],i=+ds.slice(8,10)-1,r;if(mo&&window.IGMCRI_USER)r=mo.rows[i];else{if(!(m in PUB))pubFetch(m,function(){if(window.MApp&&MApp.refresh)MApp.refresh();});r=PUB[m]&&PUB[m][i];if(!r&&mo)r=mo.rows[i];}return r?{unit:r.unit,jr:r.jr,duty:r.duty,senior:r.senior}:null;},
+    dutyOn:function(ds){var m=ds.slice(0,7),mo=load().roster&&load().roster.months&&load().roster.months[m],i=+ds.slice(8,10)-1,r;if(mo&&window.IGMCRI_USER)r=mo.rows[i];else{if(!(m in PUB))pubFetch(m,function(){if(window.MApp&&MApp.refresh)MApp.refresh();});r=PUB[m]&&PUB[m][i];}return r?{unit:r.unit,jr:r.jr,duty:r.duty,senior:r.senior}:null;},
     leaveToday:function(){var t=today();return load().calendar.filter(function(e){return CAL_CATS[e.category]==='Leave'&&e.date<=t&&(e.endDate||e.date)>=t;}).map(function(e){return {name:pname(e.personId)||e.title,until:fmtDate(e.endDate||e.date),cat:e.category};});},
     counts:function(){var d=load();return {personnel:d.personnel.filter(isActive).length,past:d.personnel.filter(function(p){return !isActive(p);}).length,interns:d.interns.filter(function(i){return i.status!=='Completed';}).length,pubs:d.academic.filter(function(r){return r.type==='publication';}).length,log:d.log.length};},
     renderDirectoryInto:function(el){var o=SCREENS.personnel({cat:'faculty'});el.innerHTML=o.body;}
@@ -6219,6 +6220,7 @@ html.dk-on #maSheet{z-index:200}
     d.addEventListener('focusin',onHover);
     d.addEventListener('mouseleave',function(){hidePop();});
     document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeMenu();hidePop();}});
+    document.addEventListener('mousedown',function(e){var h=document.documentElement;if(h.classList.contains('sh-open')&&h.classList.contains('dk-on')&&!e.target.closest('#maSheet')&&!e.target.closest('#modalOverlay')&&!e.target.closest('#authGate')&&window.MAdmin&&MAdmin.close){var sh=document.getElementById('maSheet');if(sh&&e.clientX<sh.getBoundingClientRect().left){e.preventDefault();MAdmin.close();}}},true);
     document.addEventListener('click',function(e){if(st.menu&&!e.target.closest('#dkMenu')&&!e.target.closest('[data-dk^="menu:"]'))closeMenu();if(st.pin&&!e.target.closest('[data-day]')&&!e.target.closest('#dkPop'))hidePop();});
   }
 
@@ -6275,6 +6277,7 @@ html.dk-on #maSheet{z-index:200}
     var dt=new Date(ds+'T12:00:00');
     var html='<div class="dk-ph"><b>'+esc(dt.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'}))+'</b>'+(du?'<span class="dk-unit">'+esc(du.unit)+'</span>':'')+'</div>';
     h.forEach(function(x){html+='<div class="dk-hol '+x.type.toLowerCase()+'">'+esc(x.name)+' · '+(x.type==='PH'?'Public holiday':'Restricted holiday')+'</div>';});
+    if(!du)html+='<div class="dk-note">Duty roster for this month is not published yet.</div>';
     if(du)html+='<dl class="dk-fac"><dt>JR / PG</dt><dd>'+esc(du.jr||'—')+'</dd><dt>SR / faculty on duty</dt><dd>'+esc(du.duty||'—')+'</dd><dt>Senior faculty on call</dt><dd>'+esc(du.senior||'—')+'</dd></dl>'+(du.planned?'<div class="dk-note">From the unit rota · roster not published for this month</div>':'');
     if(E.length)html+='<div class="dk-psec">Sessions</div>'+E.map(function(x){return '<div class="dk-pev"><span class="tag '+(x.audience==='PG'?'pg':'ug')+'">'+esc(x.audience)+' '+esc(x.time)+'</span><span><b>'+esc(short(x.title,70))+'</b>'+(x.meta?'<small>'+esc(x.meta)+'</small>':'')+'</span></div>';}).join('');
     if(lv.length)html+='<div class="dk-psec">Leave &amp; events</div>'+lv.map(function(x){return '<div class="dk-pev"><span>'+esc(x.title||x.category)+'</span></div>';}).join('');
@@ -6316,7 +6319,7 @@ html.dk-on #maSheet{z-index:200}
   /* ---------- left cards ---------- */
   function renderCards(){
     var t=iso(new Date()),du=window.MAdmin&&MAdmin.dutyFor?MAdmin.dutyFor(t):null,el=document.getElementById('dkDuty');
-    el.innerHTML='<span class="u">'+esc(du?du.unit:'—')+'</span><span class="tx"><span class="lb">On duty today'+(du&&du.planned?' · from unit rota':'')+'</span><b>'+esc(du?[du.jr,du.duty].filter(Boolean).join(' · '):'Roster not set')+'</b><small>On call: '+esc(du&&du.senior||'—')+'</small></span><i class="fas fa-chevron-right"></i>';
+    el.innerHTML='<span class="u">'+esc(du?du.unit:'—')+'</span><span class="tx"><span class="lb">On duty today'+(du&&du.planned?' · from unit rota':'')+'</span><b>'+esc(du?[du.jr,du.duty].filter(Boolean).join(' · '):'This month’s roster is not published yet')+'</b><small>On call: '+esc(du&&du.senior||'—')+'</small></span><i class="fas fa-chevron-right"></i>';
     var lv=window.MAdmin&&MAdmin.leaveToday?MAdmin.leaveToday():[],H=(window.IGMCRI_HOLIDAYS||[]).filter(function(x){return x.date>=t;})[0];
     document.getElementById('dkLeave').innerHTML='<span class="lb">On leave</span><b>'+(lv.length?esc(lv.map(function(x){return x.name;}).join(', ')):'No one on leave')+'</b><small>'+(H?'Next holiday: '+esc(H.name)+(H.type==='RH'?' (RH)':'')+', '+esc(new Date(H.date+'T12:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'})):'')+'</small>';
     var C=(window.MApp&&MApp.counts)?MApp.counts():[];
