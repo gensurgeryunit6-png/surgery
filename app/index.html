@@ -5001,6 +5001,23 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 #dpDuty .s{color:var(--tb-ink-3,#658091);flex:none}
 #dpDuty .go{font-weight:700;color:var(--tb-scrub,#087f93);flex:none}
 @media (max-width:760px){#dpDuty{display:none}}
+
+  #maSheet .rd-head{display:flex;align-items:center;gap:10px;margin:2px 0 10px}
+  #maSheet .rd-live{display:inline-flex;align-items:center;gap:7px;font-weight:800;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#C2410C}
+  #maSheet .rd-live i{width:9px;height:9px;border-radius:50%;background:#EF4444;box-shadow:0 0 0 0 rgba(239,68,68,.6);animation:rdp 1.6s infinite}
+  @keyframes rdp{70%{box-shadow:0 0 0 9px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}
+  #maSheet .rd-head small{color:var(--tb-ink-3)}
+  #maSheet .rd-card{background:var(--tb-card);border:1px solid var(--tb-line);border-radius:14px;padding:13px 14px;margin-bottom:10px}
+  #maSheet .rd-top{display:flex;align-items:center;gap:10px}
+  #maSheet .rd-top b{flex:1;font-size:15.5px}
+  #maSheet .rd-dash{font-size:13px;font-weight:700;color:var(--tb-scrub);text-decoration:none}
+  #maSheet .rd-nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:8px;margin:12px 0 6px}
+  #maSheet .rd-nums div{background:var(--tb-paper);border-radius:10px;padding:8px;text-align:center}
+  #maSheet .rd-nums b{display:block;font-family:var(--tb-mono);font-size:24px}
+  #maSheet .rd-nums small{color:var(--tb-ink-3);font-size:11.5px}
+  #maSheet .rd-last{font-size:12.5px;color:var(--tb-ink-3)}
+  #maSheet .rd-dl{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  #maSheet .rd-dl .sh-btn{flex:1 1 0;justify-content:center;min-width:96px}
 </style>
 <script>/* Theatre Board layout tweaks: move KPI strip under the title, add an IST date block. */
 (function(){
@@ -5695,6 +5712,51 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     }).catch(function(){done&&done();});
   }
 
+
+  /* ---------- Register dashboard: live counts + one-click downloads (entry forms stay separate, on QR codes) ---------- */
+  var REGS=[
+    {k:'endoscopy',n:'Endoscopy register',ic:'fa-microscope',how:'rows'},
+    {k:'usg',n:'USG register',ic:'fa-heartbeat',how:'rows'},
+    {k:'dressing',n:'Dressing register',ic:'fa-notes-medical',how:'rows'},
+    {k:'library',n:'Library loans',ic:'fa-book',how:'loans'},
+    {k:'egd',n:'EGD reports',ic:'fa-file-medical',how:'egd',dash:'EGD_Reports.html'}
+  ];
+  var CNT={data:null,at:0,busy:false};
+  function countsFetch(force){
+    var api=(window.IGMCRI_CONFIG&&window.IGMCRI_CONFIG.api)||'';if(!api||CNT.busy)return;if(!force&&Date.now()-CNT.at<25000)return;
+    CNT.busy=true;fetch(api+'?action=counts&t='+Date.now()).then(function(r){return r.json();}).then(function(j){CNT.busy=false;CNT.at=Date.now();if(j&&j.ok){var sig=JSON.stringify(j.counts);if(sig!==JSON.stringify(CNT.data)){CNT.data=j.counts;window.IGMCRI_COUNTS=j.counts;if(window.MApp&&MApp.refresh)MApp.refresh();if(stack.length&&stack[stack.length-1].screen==='regdash')rerender();}}})
+      .catch(function(){CNT.busy=false;CNT.at=Date.now();});
+  }
+  setInterval(function(){if(!document.hidden)countsFetch(false);},30000);
+  window.addEventListener('load',function(){setTimeout(function(){countsFetch(true);},800);});
+  function csvOf(rows){
+    if(!rows.length)return '';var keys=[];rows.forEach(function(r){Object.keys(r).forEach(function(k){if(keys.indexOf(k)<0)keys.push(k);});});
+    var q=function(v){if(v==null)v='';if(typeof v==='object')v=Array.isArray(v)?v.length+(v.length===1?' item':' items'):Object.keys(v).filter(function(x){return v[x];}).join('; ');v=String(v);if(/^[=+\-@]/.test(v))v="'"+v;return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+    return [keys.map(q).join(',')].concat(rows.map(function(r){return keys.map(function(k){return q(r[k]);}).join(',');})).join('\r\n');
+  }
+  function saveCsv(name,csv){var b=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'}),l=document.createElement('a');l.href=URL.createObjectURL(b);l.download=name+'.csv';document.body.appendChild(l);l.click();l.remove();setTimeout(function(){URL.revokeObjectURL(l.href);},3000);}
+  function regDownload(k,range){
+    var R=REGS.filter(function(x){return x.k===k;})[0];if(!R)return Promise.resolve(0);
+    var t=today(),from=range==='today'?t:range==='month'?t.slice(0,7)+'-01':'',to=range==='all'?'':t;
+    var inR=function(d){d=String(d||'').slice(0,10);return (!from||d>=from)&&(!to||d<=to);};
+    var p=R.how==='rows'?window.IGMCRI_API('rows',{register:k,from:from,to:to}).then(function(j){if(!j.ok)throw j;return j.rows;})
+      :R.how==='loans'?window.IGMCRI_API('loans').then(function(j){if(!j.ok)throw j;return (j.loans||[]).filter(function(r){return inR(r['Issue date']);});})
+      :window.IGMCRI_API('egdList').then(function(j){if(!j.ok)throw j;return (j.reports||[]).filter(function(r){return inR(r.date);}).map(function(r){var o={};Object.keys(r).forEach(function(x){if(x!=='share_key'&&x!=='shareKey')o[x]=r[x];});return o;});});
+    return p.then(function(rows){if(!rows.length)return 0;saveCsv(R.n.replace(/\s+/g,'_')+'_'+(range==='all'?'all':range==='month'?t.slice(0,7):t),csvOf(rows));logChange('Registers','Download',R.n,'',range,rows.length+' rows');save();return rows.length;});
+  }
+  SCREENS.regdash=function(){
+    countsFetch(false);
+    var C=CNT.data,signed=!!window.IGMCRI_USER,n=function(x){return x==null?'—':x;};
+    var body='<div class="rd-head"><span class="rd-live"><i></i>Live</span><small>'+(C?'Updated '+new Date(CNT.at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})+' · refreshes every 30 s':'Loading counts…')+'</small></div>';
+    body+=REGS.map(function(R){var c=C&&C[R.k]||{};
+      return '<div class="rd-card"><div class="rd-top"><span class="sh-ic"><i class="fas '+R.ic+'"></i></span><b>'+esc(R.n)+'</b>'+(R.dash?'<a class="rd-dash" href="'+R.dash+'">Open dashboard ›</a>':'')+'</div>'+
+        '<div class="rd-nums"><div><b>'+n(c.today)+'</b><small>Today</small></div><div><b>'+n(c.month)+'</b><small>This month</small></div><div><b>'+n(c.total)+'</b><small>All time</small></div>'+(R.k==='library'?'<div><b>'+n(c.issued)+'</b><small>Books out</small></div>':'')+'</div>'+
+        '<div class="rd-last">'+(c.last?'Last entry: '+esc(new Date(c.last+'T12:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})):'No entries yet')+'</div>'+
+        '<div class="rd-dl"><button type="button" class="sh-btn small" data-rdl="'+R.k+'|today"><i class="fas fa-download"></i> Today</button><button type="button" class="sh-btn small" data-rdl="'+R.k+'|month"><i class="fas fa-download"></i> This month</button><button type="button" class="sh-btn small primary" data-rdl="'+R.k+'|all"><i class="fas fa-file-excel"></i> Download all</button></div></div>';}).join('');
+    body+='<button type="button" class="sh-btn primary wide" data-rdl="*|all" style="margin-top:6px"><i class="fas fa-file-download"></i> Download every register (all entries)</button>';
+    body+='<p class="sh-foot">Downloads are spreadsheet files (.csv) that open in Excel or Google Sheets. '+(signed?'':'Downloading needs sign-in, because the files contain patient details. ')+'Entries are made only through the QR forms; the counts update live from the register spreadsheet.</p><div class="sh-msg" role="status"></div>';
+    return {title:'Register dashboard',body:body};
+  };
   /* ---------- events ---------- */
   function onSheetClick(e){
     var b=e.target.closest('button');if(!b)return;
@@ -5706,6 +5768,12 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     if(b.dataset.rofresh){genMonth(b.dataset.rofresh,false);rerender();msg('Started again from the units.',true);return;}
     if(b.dataset.rostat){var mo=R().months[b.dataset.m];mo.status=b.dataset.rostat;mo.updated=new Date().toISOString();mo.by=currentUser();logChange('Duty roster',b.dataset.rostat==='final'?'Finalise':'Reopen',b.dataset.m,'','','');save();rosterPush('M'+b.dataset.m);rerender();msg(b.dataset.rostat==='final'?(window.IGMCRI_USER?'Marked final. It now shows on the website.':'Marked final on this device. Sign in to publish it to the website.'):'Reopened as draft.',true);return;}
     if(b.dataset.rosync){var D=rosterDiffs();D.forEach(function(x){rosterFollow(x.p,x.p.unit,true);logChange('Duty roster','Move',dr(x.h.nm),x.h.u,x.p.unit,'From unit allocation');});save();rosterPush('setup');refreshDrafts();rerender();msg(D.length+' moved. Draft rosters updated.',true);return;}
+    if(b.dataset.rdl){
+      if(!window.IGMCRI_USER){msg('Sign in to download — the files contain patient details.');if(window.IGMCRI_SIGNIN){close();IGMCRI_SIGNIN();}return;}
+      var pr=b.dataset.rdl.split('|'),ks=pr[0]==='*'?REGS.map(function(x){return x.k;}):[pr[0]];b.disabled=true;var old=b.innerHTML;b.innerHTML='<i class="fas fa-spinner fa-spin"></i> Preparing…';
+      ks.reduce(function(pp,k){return pp.then(function(acc){return regDownload(k,pr[1]).then(function(c){acc.push(c);return acc;});});},Promise.resolve([])).then(function(cs){b.disabled=false;b.innerHTML=old;var tot=cs.reduce(function(a,c){return a+c;},0);msg(tot?tot+' entr'+(tot===1?'y':'ies')+' downloaded.':'No entries for that period.',!!tot);})
+        .catch(function(e){b.disabled=false;b.innerHTML=old;msg(e&&e.error==='not_signed_in'?'Please sign in again.':'Download failed. Check the connection and try again.');});
+      return;}
     if(b.dataset.roexp){rosterExport(b.dataset.roexp,b.dataset.m,b.dataset.pub?PUB[b.dataset.m]:null);return;}
     if(b.dataset.rosignin){close();if(window.IGMCRI_SIGNIN)window.IGMCRI_SIGNIN();return;}
     if(b.dataset.force){savePerson(top.arg,true);return;}
@@ -5801,6 +5869,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     cadre:cadre,
     calendarOn:function(ds){return load().calendar.filter(function(e){return e.date<=ds&&(e.endDate||e.date)>=ds;});},
     close:function(){close();},
+    counts:function(){return CNT.data;},
     dutyFor:function(ds){var d=window.MAdmin.dutyOn(ds);if(d)return d;if(!window.IGMCRI_USER&&!window.IGMCRI_PREVIEW)return null;var u=unitFor(ds);return {unit:u,jr:fill(u,'jr',0),duty:fill(u,'duty',0),senior:fill(u,'senior',0),planned:true};},
     unitFor:function(ds){return unitFor(ds);},
     dutyOn:function(ds){var m=ds.slice(0,7),mo=load().roster&&load().roster.months&&load().roster.months[m],i=+ds.slice(8,10)-1,r;if(mo&&window.IGMCRI_USER)r=mo.rows[i];else{if(!(m in PUB))pubFetch(m,function(){if(window.MApp&&MApp.refresh)MApp.refresh();});r=PUB[m]&&PUB[m][i];}return r?{unit:r.unit,jr:r.jr,duty:r.duty,senior:r.senior}:null;},
@@ -5824,12 +5893,12 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   var tagTxt=function(a){return a==='REVIEW'?'CHECK':(a||'');};
 
   var REGISTERS=[
-    {id:'endoscopyRegister',name:'Endoscopy',icon:'fa-microscope',key:'gs_endoscopy_register_v3',stat:'endoscopy'},
-    {id:'dressingRoom',name:'Dressing',icon:'fa-notes-medical',key:'gs_dressing_register_v3',stat:'dressing'},
-    {id:'ultrasonogram',name:'USG',icon:'fa-heartbeat',key:'gs_usg_register_v3',stat:'usg'},
-    {id:'outwardLetterRegister',name:'Outward letters',icon:'fa-envelope-open-text',key:'gs_outward_register_v3'},
-    {id:'dutyRoster',name:'Duty roster',icon:'fa-clipboard-list'},
-    {id:'universityExams',name:'University exams',icon:'fa-graduation-cap'}
+    {id:'regdash',name:'Endoscopy',icon:'fa-microscope',stat:'endoscopy'},
+    {id:'regdash',name:'USG',icon:'fa-heartbeat',stat:'usg'},
+    {id:'regdash',name:'Dressing',icon:'fa-notes-medical',stat:'dressing'},
+    {id:'regdash',name:'Library',icon:'fa-book',stat:'library'},
+    {id:'regdash',name:'EGD reports',icon:'fa-file-medical',stat:'egd'},
+    {id:'dutyRoster',name:'Duty roster',icon:'fa-clipboard-list'}
   ];
   var BATCH_SIZE={'2022':186,'2023':180,'2024':178};
   var state={view:'home',batch:'2022',range:'week',people:'faculty'};
@@ -5847,7 +5916,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
           '<div class="ma-sec"><div class="ma-label"><h2>UG attendance</h2><span id="maAttSession">Today</span></div><div class="ma-att" id="maAtt"></div></div>'+
         '</section>'+
         '<section data-view="modules"><h2 class="ma-page-title">Modules</h2><div id="maModules"></div></section>'+
-        '<section data-view="registers"><h2 class="ma-page-title">Registers</h2><div class="ma-label"><h2>Live counts</h2><span>Entries today</span></div><div class="ma-tiles" id="maRegTiles"></div><div class="ma-label" style="margin-top:18px"><h2>Entry forms</h2><span>QR forms</span></div><div class="ma-list" id="maForms"></div></section>'+'<section data-view="schedule"><h2 class="ma-page-title">Live sessions</h2><div class="ma-seg" id="maRange"></div><div id="maAgenda"></div><button class="ma-btn" type="button" data-open="academicSchedule"><i class="fas fa-calendar-alt"></i>Open full academic schedule</button></section>'+
+        '<section data-view="registers"><h2 class="ma-page-title">Registers</h2><div class="ma-label"><h2>Live counts</h2><span>Entries today</span></div><div class="ma-tiles" id="maRegTiles"></div><div class="ma-label" style="margin-top:18px"><h2>Dashboards</h2><span>Entries &amp; downloads</span></div><div class="ma-list" id="maForms"></div></section>'+'<section data-view="schedule"><h2 class="ma-page-title">Live sessions</h2><div class="ma-seg" id="maRange"></div><div id="maAgenda"></div><button class="ma-btn" type="button" data-open="academicSchedule"><i class="fas fa-calendar-alt"></i>Open full academic schedule</button></section>'+
         '<section data-view="people"><h2 class="ma-page-title">Personnel</h2><div id="maPeople"></div></section>'+
       '</main>'+
       '<nav class="ma-nav" aria-label="App navigation">'+
@@ -5864,6 +5933,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     if(b.dataset.cal&&window.MAdmin){MAdmin.open('calendar',{m:b.dataset.cal.slice(0,7),d:b.dataset.cal});return;}
     if(b.dataset.admin&&window.MAdmin){var ar={};try{ar=JSON.parse(b.dataset.arg||'{}');}catch(x){}MAdmin.open(b.dataset.admin,ar);return;}
     if(b.dataset.open==='dutyRoster'&&window.MAdmin){MAdmin.open('roster',{});return;}
+    if(b.dataset.open==='regdash'&&window.MAdmin){MAdmin.open('regdash',{});return;}
     if(b.dataset.open){open(b.dataset.open);return;}
     if(b.dataset.batch){state.batch=b.dataset.batch;try{localStorage.setItem('ma-batch',state.batch);}catch(err){}renderAtt();return;}
     if(b.dataset.range){state.range=b.dataset.range;renderAgenda();return;}
@@ -5900,16 +5970,16 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 
   function renderTiles(){
     var tilesHtml=REGISTERS.map(function(r){
-      var st=window.IGMCRI_STATS&&r.stat&&window.IGMCRI_STATS[r.stat];
-      var c=st?st.today:(r.key?todayCount(r.key):null);
+      var lc=window.IGMCRI_COUNTS&&r.stat&&window.IGMCRI_COUNTS[r.stat],st=window.IGMCRI_STATS&&r.stat&&window.IGMCRI_STATS[r.stat];
+      var c=lc?lc.today:st?st.today:(r.stat?'–':null);
       return '<button type="button" class="ma-tile" data-open="'+r.id+'"><div class="top"><span class="ic"><i class="fas '+r.icon+'"></i></span>'+
-        (c===null?'':'<span class="cnt'+(c?'':' zero')+'">'+c+'</span>')+'</div><div><div class="nm">'+esc(r.name)+'</div><div class="sb">'+(c===null?'Open':(c===1?'1 entry today':c+' entries today'))+'</div></div></button>';
+        (c===null?'':'<span class="cnt'+(c?'':' zero')+'">'+c+'</span>')+'</div><div><div class="nm">'+esc(r.name)+'</div><div class="sb">'+(c===null?'Open':c==='–'?'Loading…':(c===1?'1 entry today':c+' entries today'))+'</div></div></button>';
     }).join('');
     ['maTiles','maRegTiles'].forEach(function(id){var el=document.getElementById(id);if(el)el.innerHTML=tilesHtml;});
   }
 
-  var FORMS=[['Endoscopy_Register.html','fa-microscope','Endoscopy register','Scan-in entry form'],['USG_Register.html','fa-heartbeat','USG register','Scan-in entry form'],['Dressing_Register.html','fa-notes-medical','Dressing register','Scan-in entry form'],['Library_Register.html','fa-book','Library register','Issue & return'],['EGD_Report_Form.html','fa-file-medical','New EGD report','Checklist, findings, photos'],['EGD_Reports.html','fa-folder-open','EGD reports','View, print, QR'],['QR_Codes.html','fa-qrcode','QR labels','Print register QR codes']];
-  function renderForms(){var el=document.getElementById('maForms');if(!el)return;el.innerHTML=FORMS.map(function(f){return '<a class="ma-row" href="'+f[0]+'" style="text-decoration:none;color:inherit"><span class="ic"><i class="fas '+f[1]+'"></i></span><span><strong>'+f[2]+'</strong><small>'+f[3]+'</small></span><i class="fas fa-chevron-right chev"></i></a>';}).join('');}
+  var FORMS=[['#regdash','fa-chart-bar','Register dashboard','Live counts · download entries'],['EGD_Reports.html','fa-folder-open','EGD reports dashboard','View, print, QR'],['QR_Codes.html','fa-qrcode','QR labels','Print the entry-form QR codes']];
+  function renderForms(){var el=document.getElementById('maForms');if(!el)return;el.innerHTML=FORMS.map(function(f){if(f[0]==='#regdash')return '<button type="button" class="ma-row" data-open="regdash"><span class="ic"><i class="fas '+f[1]+'"></i></span><span><strong>'+f[2]+'</strong><small>'+f[3]+'</small></span><i class="fas fa-chevron-right chev"></i></button>';return '<a class="ma-row" href="'+f[0]+'" style="text-decoration:none;color:inherit"><span class="ic"><i class="fas '+f[1]+'"></i></span><span><strong>'+f[2]+'</strong><small>'+f[3]+'</small></span><i class="fas fa-chevron-right chev"></i></a>';}).join('');}
   function renderCal(){
     var el=document.getElementById('maCal');if(!el)return;
     var n=new Date(),y=n.getFullYear(),m=n.getMonth(),t=iso(n),ms=y+'-'+pad(m+1),first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();
@@ -5956,7 +6026,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 
   var MENU=[
     {t:'Downloads',ic:'fa-download',items:[['a','downloads','fa-download','All downloads'],['a','docCheck','fa-book-open','Annual department report',{doc:'annual'}],['a','docCheck','fa-university','University inspection (COA)',{doc:'coa'}]]},
-    {t:'Clinical management',ic:'fa-procedures',items:[['m','dressingRoom','fa-notes-medical','Dressing register'],['m','ultrasonogram','fa-heartbeat','USG register'],['m','endoscopyRegister','fa-microscope','Endoscopy register'],['a','roster','fa-clipboard-list','Duty roster'],['m','inventory','fa-box-open','Supplies & stock'],['m','outwardLetterRegister','fa-envelope-open-text','Outward letter register']]},
+    {t:'Clinical management',ic:'fa-procedures',items:[['a','regdash','fa-chart-bar','Register dashboard (live counts & downloads)'],['a','roster','fa-clipboard-list','Duty roster'],['m','inventory','fa-box-open','Supplies & stock'],['m','outwardLetterRegister','fa-envelope-open-text','Outward letter register']]},
     {t:'Department administration',ic:'fa-sitemap',items:[['a','personnel','fa-address-book','Personnel directory'],['a','personEdit','fa-user-plus','Add personnel'],['a','units','fa-th','Unit allocation (S1–S6)'],['a','cadre','fa-layer-group','Cadre strength'],['a','calendar','fa-calendar-check','Department calendar & leave'],['a','entList','fa-user-nurse','Interns',{ent:'interns'}],['a','entList','fa-tools','Equipment inventory',{ent:'equipment'}],['a','entList','fa-clinic-medical','Special clinics',{ent:'clinics'}],['a','entList','fa-hospital','Department facilities',{ent:'facility'}]]},
     {t:'Academics',ic:'fa-graduation-cap',items:[['a','myRecord','fa-id-badge','My record'],['a','personnel','fa-user-md','Faculty profiles',{cat:'faculty'}],['a','acadList','fa-book','Publications',{type:'publication'}],['a','acadList','fa-users','Conferences',{type:'conference'}],['a','acadList','fa-chalkboard-teacher','CME & workshops',{type:'cme'}],['a','acadList','fa-flask','Research projects',{type:'research'}],['a','acadList','fa-vial','ICMR projects',{type:'research',icmr:1}],['a','acadList','fa-award','Awards',{type:'award'}],['a','acadList','fa-chalkboard','Academic activities',{type:'activity'}],['m','academicSchedule','fa-calendar-alt','PG activities & teaching schedule'],['m','universityExams','fa-file-signature','Examination documents'],['m','faculty','fa-folder-open','Faculty files'],['m','postgraduates','fa-folder','PG files']]},
     {t:'Document generation',ic:'fa-file-alt',items:[['a','downloads','fa-download','Downloads (all reports)'],['a','docCheck','fa-university','Pondicherry University COA',{doc:'coa'}],['a','docCheck','fa-file-medical','NMC Form B – staff',{doc:'nmc'}],['a','docCheck','fa-book-open','Annual department report',{doc:'annual'}]]},
@@ -6007,7 +6077,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     }catch(e){if(window.console)console.warn('mobile app render',e);}
   }
 
-  window.MApp={refresh:function(){renderAll();if(window.Desk)Desk.render();},MENU:MENU,FORMS:FORMS,events:events,attendance:attendance,batches:Object.keys(BATCH_SIZE),counts:function(){return REGISTERS.filter(function(r){return r.stat;}).map(function(r){var st=window.IGMCRI_STATS&&window.IGMCRI_STATS[r.stat];return {name:r.name,id:r.id,today:st?st.today:todayCount(r.key),live:!!st};});}};
+  window.MApp={refresh:function(){renderAll();if(window.Desk)Desk.render();},MENU:MENU,FORMS:FORMS,events:events,attendance:attendance,batches:Object.keys(BATCH_SIZE),counts:function(){return REGISTERS.filter(function(r){return r.stat;}).map(function(r){var lc=window.IGMCRI_COUNTS&&window.IGMCRI_COUNTS[r.stat];return {name:r.name,id:r.id,stat:r.stat,today:lc?lc.today:'–',month:lc?lc.month:'–',live:!!lc};});}};
   function init(){
     var hr=function(){if(location.hash==='#roster'&&window.MAdmin){history.replaceState(null,'',location.pathname);MAdmin.open('roster',{});}};setTimeout(hr,400);window.addEventListener('hashchange',hr);
     if(document.getElementById('mApp'))return;
@@ -6186,6 +6256,7 @@ html.dk-on #maSheet{z-index:200}
 #dDesk .dk-calbtn button:hover,#dDesk .dk-batch button:hover{border-color:#16224A!important;color:#16224A!important}
 #dDesk .dk-calbtn button.on,#dDesk .dk-batch button.on{color:#fff!important}
 #dDesk .dk-sign{background:#fff!important;color:#16224A!important}
+#dDesk .dk-ldot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#EF4444;margin-right:6px;animation:dkpulse 1.6s infinite}
 }
 @keyframes dkecg{from{stroke-dashoffset:1400}to{stroke-dashoffset:0}}
 @keyframes dkpulse{0%{box-shadow:0 0 0 0 rgba(251,113,133,.75)}70%{box-shadow:0 0 0 12px rgba(251,113,133,0)}100%{box-shadow:0 0 0 0 rgba(251,113,133,0)}}
@@ -6222,7 +6293,7 @@ html.dk-on #maSheet{z-index:200}
     var d=document.createElement('div');d.id='dDesk';
     d.innerHTML=
       '<div class="dk-top" role="banner"><div class="dk-brand">'+HEART+'<div><b>IGMC &amp; RI · Surgery</b><small>Department of General Surgery, Puducherry</small></div></div>'+
-      '<nav class="dk-nav" aria-label="Main"><button type="button" class="on" data-dk="home">Home</button><button type="button" data-dk="menu:regs" aria-haspopup="true">Registers</button><button type="button" data-dk="menu:acad" aria-haspopup="true">Academics</button><button type="button" data-dk="roster">Duty roster</button><button type="button" data-dk="downloads">Downloads</button><button type="button" data-dk="menu:admin" aria-haspopup="true">Admin</button></nav>'+
+      '<nav class="dk-nav" aria-label="Main"><button type="button" class="on" data-dk="home">Home</button><button type="button" data-dk="regdash">Registers</button><button type="button" data-dk="menu:acad" aria-haspopup="true">Academics</button><button type="button" data-dk="roster">Duty roster</button><button type="button" data-dk="downloads">Downloads</button><button type="button" data-dk="menu:admin" aria-haspopup="true">Admin</button></nav>'+
       '<span class="dk-clock" id="dkClock"></span><button type="button" class="dk-sign" id="dkSign"></button></div>'+
       '<div class="dk-menu" id="dkMenu" hidden></div>'+
       '<main class="dk-main"><div class="dk-left">'+
@@ -6231,7 +6302,7 @@ html.dk-on #maSheet{z-index:200}
         '<button type="button" class="dk-duty" id="dkDuty" data-dk="roster"></button>'+
         '<div class="dk-two"><div class="dk-card" id="dkLeave"></div><div class="dk-card dk-counts" id="dkCounts"></div></div>'+
         '<section class="dk-card dk-att" id="dkAtt" aria-label="UG attendance"></section>'+
-        '<div class="dk-links"><button type="button" data-dk="menu:regs">Registers &amp; QR forms ›</button><a href="EGD_Reports.html">EGD reports ›</a><button type="button" data-dk="downloads">Downloads ›</button><a href="https://gensurgeryunit6-png.github.io/test1/UG_Attendance_Student.html" target="_blank" rel="noopener">Mark UG attendance ›</a></div>'+
+        '<div class="dk-links"><button type="button" data-dk="regdash">Register dashboard ›</button><a href="EGD_Reports.html">EGD reports ›</a><button type="button" data-dk="downloads">Downloads ›</button><button type="button" data-dk="roster">Duty roster ›</button></div>'+
       '</div><section class="dk-cal" aria-label="Department calendar"><div class="dk-calhead"><h2 id="dkMonth"></h2><div class="dk-calbtn"><button type="button" data-dk="prev" aria-label="Previous">‹</button><button type="button" data-dk="today">Today</button><button type="button" data-dk="next" aria-label="Next">›</button><button type="button" data-dk="view:month" id="dkVm">Month</button><button type="button" data-dk="view:week" id="dkVw">Week</button></div></div>'+
         '<div class="dk-legend"><span><b class="ug"></b>UG session</span><span><b class="pg"></b>PG session</span><span><b class="ph"></b>Public holiday</span><span><b class="rh"></b>Restricted holiday</span><span><b class="un"></b>Duty unit</span><span class="hint">Hover or click a date for faculty on duty</span></div>'+
         '<div class="dk-grid" id="dkGrid"></div></section></main>'+
@@ -6258,7 +6329,7 @@ html.dk-on #maSheet{z-index:200}
     var col=function(t,items){return '<div class="dk-mcol"><h3>'+esc(t)+'</h3>'+items.map(item).join('')+'</div>';};
     if(kind==='regs')return col('QR entry forms',F.map(function(f){return ['h',f[0],f[1],f[2]];}))+col('Register logs & clinical',sec('Clinical management').items);
     if(kind==='acad')return col('Academics',sec('Academics').items.slice(0,6))+col('More academics',sec('Academics').items.slice(6).concat([['h','https://gensurgeryunit6-png.github.io/test1/academic.html','fa-external-link-alt','Full academic timetable']]));
-    return col('Department administration',sec('Department administration').items)+col('Documents',sec('Document generation').items)+col('Admin & security',sec('Admin & security').items);
+    return col('Registers',[['a','regdash','fa-chart-bar','Register dashboard'],['h','EGD_Reports.html','fa-folder-open','EGD reports dashboard'],['h','QR_Codes.html','fa-qrcode','QR labels (print)']].concat(sec('Clinical management').items.filter(function(x){return x[1]!=='regdash'&&x[1]!=='roster';})))+col('Department administration',sec('Department administration').items)+col('Documents',sec('Document generation').items)+col('Admin & security',sec('Admin & security').items);
   }
   function openMenu(kind,btn){
     var m=document.getElementById('dkMenu');
@@ -6284,6 +6355,7 @@ html.dk-on #maSheet{z-index:200}
     if(k==='home'){window.scrollTo({top:0,behavior:'smooth'});return;}
     if(k==='roster'&&window.MAdmin){MAdmin.open('roster',{});return;}
     if(k==='downloads'&&window.MAdmin){MAdmin.open('downloads',{});return;}
+    if(k==='regdash'&&window.MAdmin){MAdmin.open('regdash',{});return;}
     if(k==='prev'||k==='next'){var dir=k==='prev'?-1:1;if(st.view==='week'){st.anchor=new Date(st.anchor.getTime()+dir*7*864e5);}else{var d=new Date(st.y,st.m+dir,1);st.y=d.getFullYear();st.m=d.getMonth();}renderCal();return;}
     if(k==='today'){var n=new Date();st.y=n.getFullYear();st.m=n.getMonth();st.anchor=n;renderCal();return;}
     if(k.indexOf('view:')===0){st.view=k.slice(5);var n2=new Date();if(st.view==='week')st.anchor=(st.y===n2.getFullYear()&&st.m===n2.getMonth())?n2:new Date(st.y,st.m,1);renderCal();return;}
@@ -6345,7 +6417,8 @@ html.dk-on #maSheet{z-index:200}
     var lv=window.MAdmin&&MAdmin.leaveToday?MAdmin.leaveToday():[],H=(window.IGMCRI_HOLIDAYS||[]).filter(function(x){return x.date>=t;})[0];
     document.getElementById('dkLeave').innerHTML='<span class="lb">On leave</span><b>'+(lv.length?esc(lv.map(function(x){return x.name;}).join(', ')):'No one on leave')+'</b><small>'+(H?'Next holiday: '+esc(H.name)+(H.type==='RH'?' (RH)':'')+', '+esc(new Date(H.date+'T12:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'})):'')+'</small>';
     var C=(window.MApp&&MApp.counts)?MApp.counts():[];
-    document.getElementById('dkCounts').innerHTML=C.map(function(c){return '<button type="button" data-mod="'+c.id+'"><b>'+esc(c.today)+'</b><small>'+esc(c.name)+'</small></button>';}).join('')+'<span class="dk-cnote">'+(C.some(function(c){return c.live;})?'Live · entries today':'Today on this device · sign in for live counts')+'</span>';
+    C=C.filter(function(c){return ['endoscopy','usg','dressing'].indexOf(c.stat)>=0;});
+    document.getElementById('dkCounts').innerHTML=C.map(function(c){return '<button type="button" data-dk="regdash"><b>'+esc(c.today)+'</b><small>'+esc(c.name)+'</small></button>';}).join('')+'<span class="dk-cnote">'+(C.some(function(c){return c.live;})?'<i class="dk-ldot"></i>Live · patients registered today':'Loading live counts…')+'</span>';
     var sg=document.getElementById('dkSign');sg.innerHTML=window.IGMCRI_USER?'<i class="fas fa-sign-out-alt"></i> Sign out':'<i class="fas fa-sign-in-alt"></i> Sign in';sg.title=window.IGMCRI_USER||'Sign in for patient records and editing';
   }
   function renderAtt(){
