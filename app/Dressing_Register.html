@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta name="igmcri-build" content="1795531809">
+<meta name="igmcri-build" content="1795532829">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#102A43">
@@ -140,6 +140,20 @@ function liveList(listName,sel,fallback,keepFirst){
   fill(sel,fallback);
   getLists().then(l=>{const v=l[listName];if(Array.isArray(v)&&v.length){const cur=sel.value;sel.length=keepFirst||1;fill(sel,v);sel.value=cur;}});
 }
+/* Prefill: a link preset (?unit=3&faculty=..&proc=colonoscopy) wins over what this phone remembers. */
+const URLQ=new URLSearchParams(location.search);
+function setVal(id,v,addMissing){const s=$(id);if(!s||!v)return;if(s.tagName!=='SELECT'){if(!s.value)s.value=v;return;}
+  const lv=String(v).toLowerCase(),os=[...s.options];let o=os.find(x=>x.value.toLowerCase()===lv)||os.find(x=>x.value&&x.value.toLowerCase().includes(lv));
+  if(!o&&addMissing&&String(v).length>2){o=new Option(v,v);s.add(o,s.options[s.options.length-1]&&s.options[s.options.length-1].value==='__other'?s.options.length-1:null);}
+  if(o&&s.value!==o.value){s.value=o.value;s.dispatchEvent(new Event('change'));}}
+function remember(key,ids,addable){
+  const apply=()=>{let m={};try{m=JSON.parse(localStorage.getItem(key)||'{}')}catch(e){}
+    ids.forEach(id=>setVal(id,URLQ.get(id)||m[id],(addable||[]).includes(id)));};
+  apply();getLists().then(()=>setTimeout(apply,30));
+  return {apply,save:()=>{const m={};ids.forEach(id=>{const e=$(id);if(e&&e.value&&e.value!=='__other')m[id]=e.value;});try{localStorage.setItem(key,JSON.stringify(m))}catch(e){}}};
+}
+function enteringAs(txt){let n=$('asNote');if(!n){n=document.createElement('p');n.id='asNote';n.className='req';n.style.margin='0 0 8px';const f=$('f');f.insertBefore(n,f.children[1]);}
+  n.innerHTML=txt?'Prefilled for you: <b>'+esc(txt)+'</b> · change any field if needed':'';}
 /* Offline-safe sending: entries wait on this phone only until the server accepts them, then are removed. */
 const QKEY='igmcri-queue-'+TABLE;
 function q(){try{return JSON.parse(localStorage.getItem(QKEY)||'[]')}catch(e){return []}}

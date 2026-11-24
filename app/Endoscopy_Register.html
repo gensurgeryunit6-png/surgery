@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta name="igmcri-build" content="1795531809">
+<meta name="igmcri-build" content="1795532829">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#102A43">
@@ -59,6 +59,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--teal);outline-of
 .pending button{margin-left:auto;border:1px solid #E3C88F;background:#fff;border-radius:9px;padding:8px 12px;font:inherit;font-size:13px;font-weight:600;color:#6B4307;min-height:40px}
 .foot{color:var(--ink-3);font-size:12px;line-height:1.5;margin:16px 4px 0;text-align:center}
 .req{color:var(--ink-3);font-size:12px;margin:0 0 10px}
+.tagbn{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;background:#E6F4F1;border:1px solid #B7E0D8;border-radius:12px;padding:10px 12px;margin:0 0 12px}.tagbn span{font-size:12.5px;color:#0B6B5E;font-weight:700}.tagbn b{font-size:15px}
+.pgnote{font-size:12.5px;color:var(--ink-3);margin-top:6px}.pgnote button{border:0;background:none;color:#0B6B5E;font:inherit;font-weight:700;text-decoration:underline;cursor:pointer;padding:4px 0}
 .list{margin-top:14px}
 .book{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:10px 0;border-bottom:1px solid #EDF1F4}
 .book:last-child{border-bottom:0}
@@ -146,6 +148,20 @@ function liveList(listName,sel,fallback,keepFirst){
   fill(sel,fallback);
   getLists().then(l=>{const v=l[listName];if(Array.isArray(v)&&v.length){const cur=sel.value;sel.length=keepFirst||1;fill(sel,v);sel.value=cur;}});
 }
+/* Prefill: a link preset (?unit=3&faculty=..&proc=colonoscopy) wins over what this phone remembers. */
+const URLQ=new URLSearchParams(location.search);
+function setVal(id,v,addMissing){const s=$(id);if(!s||!v)return;if(s.tagName!=='SELECT'){if(!s.value)s.value=v;return;}
+  const lv=String(v).toLowerCase(),os=[...s.options];let o=os.find(x=>x.value.toLowerCase()===lv)||os.find(x=>x.value&&x.value.toLowerCase().includes(lv));
+  if(!o&&addMissing&&String(v).length>2){o=new Option(v,v);s.add(o,s.options[s.options.length-1]&&s.options[s.options.length-1].value==='__other'?s.options.length-1:null);}
+  if(o&&s.value!==o.value){s.value=o.value;s.dispatchEvent(new Event('change'));}}
+function remember(key,ids,addable){
+  const apply=()=>{let m={};try{m=JSON.parse(localStorage.getItem(key)||'{}')}catch(e){}
+    ids.forEach(id=>setVal(id,URLQ.get(id)||m[id],(addable||[]).includes(id)));};
+  apply();getLists().then(()=>setTimeout(apply,30));
+  return {apply,save:()=>{const m={};ids.forEach(id=>{const e=$(id);if(e&&e.value&&e.value!=='__other')m[id]=e.value;});try{localStorage.setItem(key,JSON.stringify(m))}catch(e){}}};
+}
+function enteringAs(txt){let n=$('asNote');if(!n){n=document.createElement('p');n.id='asNote';n.className='req';n.style.margin='0 0 8px';const f=$('f');f.insertBefore(n,f.children[1]);}
+  n.innerHTML=txt?'Prefilled for you: <b>'+esc(txt)+'</b> · change any field if needed':'';}
 /* Offline-safe sending: entries wait on this phone only until the server accepts them, then are removed. */
 const QKEY='igmcri-queue-'+TABLE;
 function q(){try{return JSON.parse(localStorage.getItem(QKEY)||'[]')}catch(e){return []}}
@@ -201,7 +217,11 @@ function resetPatient(){['name','age','sex'].forEach(id=>$(id).value='');}
 liveList('endoscopy_procedure',$('proc'),["Upper GI endoscopy (OGD)", "Colonoscopy", "Flexible sigmoidoscopy", "Variceal banding", "Sclerotherapy", "Oesophageal dilatation", "PEG insertion", "Polypectomy", "Foreign body removal", "Other \u2013 Specify"]);
 liveList('faculty',$('faculty'),["Dr. Simon Dasiah", "Dr. Ashley Solomon C.", "Dr. Basavanandswami", "Dr. Mima Maychet Sangma", "Dr. Ganesan", "Dr. Ray", "Dr. Sri Vengadesh", "Dr. Kapil Baliga", "Dr. Selvakumaran", "Dr. Jawahar", "Dr. Vijay Ganapathy", "Dr. Indrajit", "Dr. Ramchandar", "Dr. Viswanathan", "Dr. Govardhanan", "Dr. Keerthi A.R.", "Dr. Elanchezhiyan (SR)", "Dr. Pradeep Raj (SR)", "Dr. Mohammed Adam (SR)"]);
 liveList('postgraduate',$('pg'),["Dr. Vijay Raj", "Dr. Kanimozhi", "Dr. Lokesh", "Dr. Juliya Rose", "Dr. Mohammed Ameen Anjum", "Dr. Sai Prasanna Jandhyala", "Dr. Sai Narendiran", "Dr. Gayathri", "Dr. Swathika", "Dr. Neha Jaju", "Dr. Sundara Mugilan", "Dr. Harshitha"]);
-try{const f=localStorage.getItem('igmcri-endo-faculty');if(f)setTimeout(()=>{$('faculty').value=f;},50);}catch(e){}
+try{const f=localStorage.getItem('igmcri-endo-faculty');if(f&&!localStorage.getItem('igmcri-endo-pre'))localStorage.setItem('igmcri-endo-pre',JSON.stringify({faculty:f}));}catch(e){}
+const PRE=remember('igmcri-endo-pre',URLQ.get('proc')?['unit','faculty','pg','proc']:['unit','faculty','pg'],['faculty','pg']);
+function note(){enteringAs([$('faculty').value,$('pg').value,$('unit').value?'Unit '+$('unit').value:'',URLQ.get('proc')?$('proc').value:''].filter(Boolean).join(' · '));}
+['faculty','pg','unit'].forEach(id=>$(id).addEventListener('change',note));setTimeout(note,60);getLists().then(()=>setTimeout(note,90));
+if(URLQ.get('proc')){const nb=document.querySelector('input[name=biopsy][value=No]'),nc=document.querySelector('input[name=comp][value=None]');if(nb)nb.checked=true;if(nc)nc.checked=true;}
 $('proc').addEventListener('change',()=>{const o=$('proc').value.startsWith('Other');$('otherWrap').classList.toggle('hide',!o);if(o)$('other').focus();});
 document.querySelectorAll('input[name=comp]').forEach(r=>r.addEventListener('change',()=>{const y=radio('comp')==='Yes';$('compWrap').classList.toggle('hide',!y);if(y)$('compText').focus();}));
 $('f').addEventListener('submit',e=>{e.preventDefault();clearBad();const miss=[];
@@ -217,10 +237,10 @@ $('f').addEventListener('submit',e=>{e.preventDefault();clearBad();const miss=[]
   row.faculty=$('faculty').value;if(!row.faculty)miss.push('faculty');
   row.postgraduate=$('pg').value||null;
   if(miss.length){miss.forEach(markBad);show('err','Please complete the highlighted fields.');const first=$(miss[0]);if(first)first.focus();return;}
-  try{localStorage.setItem('igmcri-endo-faculty',row.faculty);}catch(e){}
+  PRE.save();
   submitRow(row,$('go'),(ok,r)=>{doneScreen(ok,r,'Endoscopy entry saved',r.patient_name+' · '+(r.procedure_other||r.procedure)+' · '+r.faculty);
-    resetPatient();['ip','dx','other','findings','compText'].forEach(id=>$(id).value='');$('proc').value='';$('pg').value='';
-    document.querySelectorAll('input[name=biopsy],input[name=comp]').forEach(x=>x.checked=false);$('otherWrap').classList.add('hide');$('compWrap').classList.add('hide');});
+    resetPatient();['ip','dx','other','findings','compText'].forEach(id=>$(id).value='');$('proc').value='';
+    document.querySelectorAll('input[name=biopsy],input[name=comp]').forEach(x=>x.checked=false);$('otherWrap').classList.add('hide');$('compWrap').classList.add('hide');PRE.apply();note();$('name').focus();});
 });
 
 </script>

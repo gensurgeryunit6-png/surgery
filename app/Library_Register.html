@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta name="igmcri-build" content="1795531809">
+<meta name="igmcri-build" content="1795532829">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#102A43">
@@ -59,6 +59,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--teal);outline-of
 .pending button{margin-left:auto;border:1px solid #E3C88F;background:#fff;border-radius:9px;padding:8px 12px;font:inherit;font-size:13px;font-weight:600;color:#6B4307;min-height:40px}
 .foot{color:var(--ink-3);font-size:12px;line-height:1.5;margin:16px 4px 0;text-align:center}
 .req{color:var(--ink-3);font-size:12px;margin:0 0 10px}
+.tagbn{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;background:#E6F4F1;border:1px solid #B7E0D8;border-radius:12px;padding:10px 12px;margin:0 0 12px}.tagbn span{font-size:12.5px;color:#0B6B5E;font-weight:700}.tagbn b{font-size:15px}
+.pgnote{font-size:12.5px;color:var(--ink-3);margin-top:6px}.pgnote button{border:0;background:none;color:#0B6B5E;font:inherit;font-weight:700;text-decoration:underline;cursor:pointer;padding:4px 0}
 .list{margin-top:14px}
 .book{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:10px 0;border-bottom:1px solid #EDF1F4}
 .book:last-child{border-bottom:0}
@@ -140,6 +142,20 @@ function liveList(listName,sel,fallback,keepFirst){
   fill(sel,fallback);
   getLists().then(l=>{const v=l[listName];if(Array.isArray(v)&&v.length){const cur=sel.value;sel.length=keepFirst||1;fill(sel,v);sel.value=cur;}});
 }
+/* Prefill: a link preset (?unit=3&faculty=..&proc=colonoscopy) wins over what this phone remembers. */
+const URLQ=new URLSearchParams(location.search);
+function setVal(id,v,addMissing){const s=$(id);if(!s||!v)return;if(s.tagName!=='SELECT'){if(!s.value)s.value=v;return;}
+  const lv=String(v).toLowerCase(),os=[...s.options];let o=os.find(x=>x.value.toLowerCase()===lv)||os.find(x=>x.value&&x.value.toLowerCase().includes(lv));
+  if(!o&&addMissing&&String(v).length>2){o=new Option(v,v);s.add(o,s.options[s.options.length-1]&&s.options[s.options.length-1].value==='__other'?s.options.length-1:null);}
+  if(o&&s.value!==o.value){s.value=o.value;s.dispatchEvent(new Event('change'));}}
+function remember(key,ids,addable){
+  const apply=()=>{let m={};try{m=JSON.parse(localStorage.getItem(key)||'{}')}catch(e){}
+    ids.forEach(id=>setVal(id,URLQ.get(id)||m[id],(addable||[]).includes(id)));};
+  apply();getLists().then(()=>setTimeout(apply,30));
+  return {apply,save:()=>{const m={};ids.forEach(id=>{const e=$(id);if(e&&e.value&&e.value!=='__other')m[id]=e.value;});try{localStorage.setItem(key,JSON.stringify(m))}catch(e){}}};
+}
+function enteringAs(txt){let n=$('asNote');if(!n){n=document.createElement('p');n.id='asNote';n.className='req';n.style.margin='0 0 8px';const f=$('f');f.insertBefore(n,f.children[1]);}
+  n.innerHTML=txt?'Prefilled for you: <b>'+esc(txt)+'</b> · change any field if needed':'';}
 /* Offline-safe sending: entries wait on this phone only until the server accepts them, then are removed. */
 const QKEY='igmcri-queue-'+TABLE;
 function q(){try{return JSON.parse(localStorage.getItem(QKEY)||'[]')}catch(e){return []}}
@@ -194,6 +210,10 @@ who.addEventListener('change',()=>{const o=who.value==='__other';$('whoOtherWrap
 function plus14(d){const x=new Date(d+'T12:00:00');x.setDate(x.getDate()+14);return x.toISOString().slice(0,10);}
 const t0=ist().date;$('issue').value=t0;$('issue').max=t0;$('due').value=plus14(t0);
 $('issue').addEventListener('change',()=>{if($('issue').value)$('due').value=plus14($('issue').value);});
+const PRE=remember('igmcri-lib-pre',['who','desig'],[]);
+try{const m=JSON.parse(localStorage.getItem('igmcri-lib-pre')||'{}');if(m.whoName&&!$('whoOther').value){if(!who.value){who.value='__other';who.dispatchEvent(new Event('change'));}$('whoOther').value=m.whoName;}}catch(e){}
+function note(){const n=who.value==='__other'?$('whoOther').value:who.value;enteringAs(n?n+($('desig').value?' · '+$('desig').value:''):'');}
+who.addEventListener('change',note);$('desig').addEventListener('change',note);setTimeout(note,60);getLists().then(()=>setTimeout(note,90));
 let BOOKS=[];
 function bookLabel(b){return b.title+(b.volume?' · Vol '+b.volume:'')+(b.edition?' · Ed '+b.edition:'')+' — '+b.author;}
 function renderAvail(){
@@ -231,6 +251,7 @@ $('f').addEventListener('submit',async e=>{e.preventDefault();clearBad();const m
     const b=BOOKS.find(x=>x.book_id===book)||{};
     const fake={client_ref:(j.ref||ref()),entry_date:issue,entry_time:ist().time};
     doneScreen(true,fake,'Book issued',bookLabel(b)+' · to '+name+' · return by '+new Date((j.due_date||$('due').value)+'T12:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}));
+    PRE.save();try{if(who.value==='__other'){const m=JSON.parse(localStorage.getItem('igmcri-lib-pre')||'{}');m.whoName=name;localStorage.setItem('igmcri-lib-pre',JSON.stringify(m));}}catch(e){}
     $('book').value='';$('remarks').value='';await loadBooks();
   }catch(err){show('err','The library register could not be reached. Nothing was saved; please try again when online.');}
   finally{btn.disabled=false;btn.textContent='Issue book';}
