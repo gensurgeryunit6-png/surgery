@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta name="igmcri-build" content="1795533173">
+<meta name="igmcri-build" content="1795533926">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#102A43">
@@ -2722,6 +2722,7 @@ $('again').textContent='Start a new report';
 $('again').addEventListener('click',()=>{$('f').reset();document.querySelectorAll('#ckPanel input').forEach(x=>{if(x.type==='checkbox'||x.type==='radio')x.checked=false;else x.value='';});document.querySelectorAll('#ckPanel select').forEach(x=>x.selectedIndex=0);ckState();PH=[];renderPh();['sitesWrap','compWrap'].forEach(id=>$(id).classList.add('hide'));updChip();LAST=null;});
 
 </script>
-<script src="dock.js"></script>
+<script id="formver">(function(){try{var m=document.querySelector('meta[name="igmcri-build"]');if(!m||!window.fetch)return;var base=/\/app\//.test(location.pathname)?'':'app/';
+fetch(base+'version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){if(j&&j.v&&j.v!==m.content){var k='igmcri-reloaded-'+j.v;try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1');}catch(e){}location.reload();}}).catch(function(){});}catch(e){}})();</script>
 </body>
 </html>
