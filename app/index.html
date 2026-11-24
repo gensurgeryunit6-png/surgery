@@ -5683,10 +5683,11 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
       window.IGMCRI_API('rosterSave',{key:key,data:JSON.stringify(data),status:key==='setup'?'':data.status}).catch(function(){});
     },1200);
   }
+  var pullOk=false;
   function rosterPull(done){
     if(!window.IGMCRI_API||!window.IGMCRI_USER){done&&done();return;}
     window.IGMCRI_API('rosterLoad').then(function(j){
-      if(j&&j.ok&&j.items){var r=R(),ch=0;Object.keys(j.items).forEach(function(k){var it=j.items[k],v;try{v=JSON.parse(it.data);}catch(e){return;}
+      if(j&&j.ok&&j.items){pullOk=!!j.items.setup;var r=R(),ch=0;Object.keys(j.items).forEach(function(k){var it=j.items[k],v;try{v=JSON.parse(it.data);}catch(e){return;}
         if(k==='setup'){if(!r.setup.updated||(v.updated||'')>r.setup.updated){r.setup=v;ch++;}}
         else if(k[0]==='M'){var m=k.slice(1),cur=r.months[m];if(!cur||(v.updated||'')>(cur.updated||'')){r.months[m]=v;ch++;}}});
         if(ch)save();}
@@ -5771,7 +5772,28 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     return changed;
   }
 
-  window.addEventListener('load',function(){setTimeout(function(){if(window.IGMCRI_USER)rosterPull(function(){if(window.MApp&&MApp.refresh)MApp.refresh();});},1500);});
+  /* one-time data corrections, applied once after the first admin sign-in (recorded in setup.fixes) */
+  var FIXES=[{id:'keerthi-s3-2026-11',name:'Keerthi',from:'S2',to:'S3',col:'duty'}];
+  function applyFixes(){
+    var S=R().setup,done=S.fixes||[],changed=[];
+    FIXES.forEach(function(f){
+      if(done.indexOf(f.id)>=0)return;
+      ['S1','S2','S3','S4','S5','S6'].forEach(function(u){S.units[u][f.col]=(S.units[u][f.col]||[]).filter(function(x){return !rosterIs(f.name,x)&&!rosterIs(x,f.name);});});
+      S.units[f.to][f.col].push(f.name);
+      Object.keys(R().months).forEach(function(m){
+        if(m<'2026-11')return;var mo=R().months[m],c=0;
+        mo.rows.forEach(function(r){
+          var parts=String(r[f.col]||'').split(' / ').filter(Boolean),has=parts.some(function(x){return rosterIs(f.name,x.replace(/^Dr\.?\s*/,''));});
+          if(r.unit===f.to&&!has){parts.push(dr(f.name));r[f.col]=parts.join(' / ');c++;}
+          if(r.unit!==f.to&&has){r[f.col]=parts.filter(function(x){return !rosterIs(f.name,x.replace(/^Dr\.?\s*/,''));}).join(' / ');c++;}
+        });
+        if(c){mo.updated=new Date().toISOString();changed.push('M'+m);}
+      });
+      done.push(f.id);logChange('Duty roster','Correction',dr(f.name),f.from,f.to,'Unit 3 as per department');
+    });
+    if(changed.length||done.length!==(S.fixes||[]).length){S.fixes=done;S.updated=new Date().toISOString();save();rosterPush('setup');changed.forEach(function(k){rosterPush(k);});}
+  }
+  window.addEventListener('load',function(){setTimeout(function(){if(window.IGMCRI_USER)rosterPull(function(){if(pullOk)applyFixes();if(window.MApp&&MApp.refresh)MApp.refresh();});},1500);});
   /* ---------- public API for the app shell ---------- */
   window.MAdmin={
     open:function(screen,arg){stack=[];push(screen,arg);},
