@@ -19,14 +19,9 @@ fetch(base+'version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){ret
   var fmt=function(k,o){return new Date(k+'T12:00:00').toLocaleDateString('en-IN',o||{weekday:'short',day:'numeric',month:'short'});};
 
   var REG=[
-    ['Endoscopy_Register.html','🔬','Endoscopy register','Scan-in entry'],
-    ['USG_Register.html','📡','USG register','Scan-in entry'],
-    ['Dressing_Register.html','🩹','Dressing register','Scan-in entry'],
-    ['Library_Register.html','📚','Library register','Issue & return'],
-    ['EGD_Report_Form.html','📝','New EGD report','Checklist, findings, photos'],
+    ['./#regdash','📊','Register dashboard','Totals · view & download entries'],
     ['EGD_Reports.html','🗂️','EGD reports','Sign in · view & print'],
-    ['./#roster','🗓️','Duty roster','This month · who is on duty'],
-    ['QR_Codes.html','▦','QR labels','Print register QR codes']
+    ['./#roster','🗓️','Duty roster','This month · who is on duty']
   ];
 
   var css='#igDock{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:3003;display:flex;gap:2px;background:#0f2f40;border:1px solid #ffffff22;border-radius:20px;padding:6px;box-shadow:0 10px 30px #0b2a3a55;width:min(520px,calc(100% - 20px));font-family:"Segoe UI",system-ui,sans-serif}'+

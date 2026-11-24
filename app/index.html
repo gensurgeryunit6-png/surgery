@@ -2892,7 +2892,7 @@ body.surgery-logged-in #dashboardPage{display:block!important}
             <div class="btn-group" style="margin-top:0">
               <button class="btn-success" onclick="printStandaloneLog('${moduleId}')"><i class="fas fa-print"></i> Print</button>
               <button class="btn-secondary" onclick="downloadStandaloneCSV('${moduleId}')"><i class="fas fa-download"></i> Download CSV</button>
-              <button class="btn-secondary" onclick="window.open('${openPage}','_blank')"><i class="fas fa-edit"></i> Open Entry Form</button>
+              
               <button class="btn-secondary" onclick="setLogToday('${moduleId}')"><i class="fas fa-calendar-day"></i> Today</button>
             </div>
             <div style="font-size:.8rem;color:#64748b;margin:10px 0">${count} record(s) in selected date range · newest entries shown first</div>
@@ -2954,7 +2954,7 @@ body.surgery-logged-in #dashboardPage{display:block!important}
           <div class="btn-group" style="margin-top:0">
             <button class="btn-success" onclick="printEndoscopyLog()"><i class="fas fa-print"></i> Print</button>
             <button class="btn-secondary" onclick="downloadEndoscopyCSV()"><i class="fas fa-download"></i> Download CSV</button>
-            <button class="btn-secondary" onclick="window.open('Endoscopy_Register.html','_blank')"><i class="fas fa-edit"></i> Open Entry Form</button>
+            
             <button class="btn-secondary" onclick="renderEndoscopyLog()"><i class="fas fa-sync"></i> Refresh</button>
           </div>
           <div style="font-size:.8rem;color:#64748b;margin:10px 0">${rows.length} record(s) in selected date range · newest entries shown first</div>
@@ -5021,6 +5021,10 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 
   #maSheet .rd-new{display:inline-flex;align-items:center;gap:6px;background:var(--tb-scrub);color:#fff;text-decoration:none;font-weight:700;font-size:13px;border-radius:9px;padding:7px 11px}
   #maSheet .rd-qr{font-size:12px;color:var(--tb-ink-3);display:inline-flex;gap:5px;align-items:center}
+  #maSheet .rv-wrap{overflow:auto;max-height:62vh;border:1px solid var(--tb-line);border-radius:10px;background:var(--tb-card)}
+  #maSheet table.rv{border-collapse:collapse;font-size:12.5px;min-width:100%}
+  #maSheet table.rv th{position:sticky;top:0;background:var(--tb-paper,#f3f6f8);text-align:left;padding:7px 9px;font-weight:700;white-space:nowrap;border-bottom:1px solid var(--tb-line)}
+  #maSheet table.rv td{padding:6px 9px;border-bottom:1px solid var(--tb-line);vertical-align:top;max-width:260px}
   #maSheet .rd-dash{margin-left:4px}
 
   #maSheet .rd-sub{font-size:12.5px;color:var(--tb-ink-3);margin:4px 0 0 46px}
@@ -5729,13 +5733,13 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   var REGS=[
     {k:'dressing',n:'Dressing register',ic:'fa-notes-medical',how:'rows'},
     {k:'library',n:'Library register',ic:'fa-book',how:'loans'},
-    {k:'endoscopy',n:'Endoscopy register',sub:'EGD (OGD) · colonoscopy · other endoscopy',ic:'fa-microscope',how:'rows',entry:'Endoscopy_Register.html',entryLabel:'New endoscopy entry',dash:'EGD_Reports.html',dashLabel:'EGD reports ›'},
-    {k:'usg',n:'USG register',ic:'fa-heartbeat',how:'rows',entry:'USG_Register.html',entryLabel:'New USG entry'}
+    {k:'endoscopy',n:'Endoscopy register',sub:'EGD (OGD) · colonoscopy · other endoscopy',ic:'fa-microscope',how:'rows'},
+    {k:'usg',n:'USG register',ic:'fa-heartbeat',how:'rows'}
   ];
   var CNT={data:null,at:0,busy:false};
   function countsFetch(force){
     var api=(window.IGMCRI_CONFIG&&window.IGMCRI_CONFIG.api)||'';if(!api||CNT.busy)return;if(!force&&Date.now()-CNT.at<25000)return;
-    CNT.busy=true;fetch(api+'?action=counts&t='+Date.now()).then(function(r){return r.json();}).then(function(j){CNT.busy=false;CNT.at=Date.now();if(j&&j.ok){var sig=JSON.stringify(j.counts);if(sig!==JSON.stringify(CNT.data)){CNT.data=j.counts;window.IGMCRI_COUNTS=j.counts;if(window.MApp&&MApp.refresh)MApp.refresh();if(stack.length&&stack[stack.length-1].screen==='regdash')rerender();}}})
+    CNT.busy=true;fetch(api+'?action=counts&t='+Date.now()).then(function(r){return r.json();}).then(function(j){CNT.busy=false;CNT.at=Date.now();if(j&&j.ok){var sig=JSON.stringify(j.counts);if(sig!==JSON.stringify(CNT.data)){CNT.data=j.counts;window.IGMCRI_COUNTS=j.counts;RV={};if(window.MApp&&MApp.refresh)MApp.refresh();if(stack.length&&stack[stack.length-1].screen==='regdash')rerender();}}})
       .catch(function(){CNT.busy=false;CNT.at=Date.now();});
   }
   setInterval(function(){if(!document.hidden)countsFetch(false);},30000);
@@ -5760,15 +5764,43 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     var C=CNT.data,signed=!!window.IGMCRI_USER,n=function(x){return x==null?'—':x;};
     var body='<div class="rd-head"><span class="rd-live"><i></i>Live</span><small>'+(C?'Updated '+new Date(CNT.at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})+' · refreshes every 30 s':'Loading counts…')+'</small></div>';
     body+=REGS.map(function(R){var c=C&&C[R.k]||{};
-      return '<div class="rd-card"><div class="rd-top"><span class="sh-ic"><i class="fas '+R.ic+'"></i></span><b>'+esc(R.n)+'</b>'+(R.entry?'<a class="rd-new" href="'+R.entry+'" target="_blank" rel="noopener"><i class="fas fa-plus"></i> '+R.entryLabel+'</a>':'<span class="rd-qr"><i class="fas fa-qrcode"></i> QR entry</span>')+(R.dash?'<a class="rd-dash" href="'+R.dash+'">'+(R.dashLabel||'Dashboard ›')+'</a>':'')+'</div>'+(R.sub?'<div class="rd-sub">'+esc(R.sub)+'</div>':'')+
+      return '<div class="rd-card"><div class="rd-top"><span class="sh-ic"><i class="fas '+R.ic+'"></i></span><b>'+esc(R.n)+'</b></div>'+(R.sub?'<div class="rd-sub">'+esc(R.sub)+'</div>':'')+
         '<div class="rd-nums"><div><b>'+n(c.today)+'</b><small>Today</small></div><div><b>'+n(c.month)+'</b><small>This month</small></div><div><b>'+n(c.total)+'</b><small>All time</small></div>'+(R.k==='library'?'<div><b>'+n(c.issued)+'</b><small>Books out</small></div>':'')+'</div>'+(c.split?'<div class="rd-split"><span><b>EGD</b> '+c.split.today.egd+' today · '+c.split.month.egd+' this month</span><span><b>Colonoscopy</b> '+c.split.today.colono+' today · '+c.split.month.colono+' this month</span>'+(c.split.month.other?'<span><b>Other</b> '+c.split.today.other+' today · '+c.split.month.other+' this month</span>':'')+'</div>':'')+
         '<div class="rd-last">'+(c.last?'Last entry: '+esc(new Date(c.last+'T12:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})):'No entries yet')+'</div>'+
-        '<div class="rd-dl"><button type="button" class="sh-btn small" data-rdl="'+R.k+'|today"><i class="fas fa-download"></i> Today</button><button type="button" class="sh-btn small" data-rdl="'+R.k+'|month"><i class="fas fa-download"></i> This month</button><button type="button" class="sh-btn small primary" data-rdl="'+R.k+'|all"><i class="fas fa-file-excel"></i> Download all</button></div></div>';}).join('');
+        '<div class="rd-dl"><button type="button" class="sh-btn small" data-go="regview" data-arg=\''+JSON.stringify({k:R.k,r:'month'})+'\'><i class="fas fa-table"></i> View entries</button><button type="button" class="sh-btn small" data-rdl="'+R.k+'|today"><i class="fas fa-download"></i> Today</button><button type="button" class="sh-btn small" data-rdl="'+R.k+'|month"><i class="fas fa-download"></i> This month</button><button type="button" class="sh-btn small primary" data-rdl="'+R.k+'|all"><i class="fas fa-file-excel"></i> Download all</button></div></div>';}).join('');
     body+='<button type="button" class="sh-btn primary wide" data-rdl="*|all" style="margin-top:6px"><i class="fas fa-file-download"></i> Download every register (all entries)</button>';
-    body+='<p class="sh-foot">Downloads are spreadsheet files (.csv) that open in Excel or Google Sheets. '+(signed?'':'Downloading needs sign-in, because the files contain patient details. ')+'Dressing and Library entries are made through their QR codes; Endoscopy (EGD, colonoscopy) and USG can also be entered here on the desktop. Counts update live from the register spreadsheet.</p><div class="sh-msg" role="status"></div>';
+    body+='<p class="sh-foot">Downloads are spreadsheet files (.csv) that open in Excel or Google Sheets. '+(signed?'':'Downloading needs sign-in, because the files contain patient details. ')+'Entries are made only on the separate register forms; this page shows what has been entered. Counts update live from the register spreadsheet.</p><div class="sh-msg" role="status"></div>';
     return {title:'Register dashboard',body:body};
   };
 
+
+  /* ---------- View entered data (signed-in only) ---------- */
+  var RV={};
+  function regRows(k,range){
+    var R=REGS.filter(function(x){return x.k===k;})[0],t=today(),from=range==='today'?t:range==='month'?t.slice(0,7)+'-01':'',to=range==='all'?'':t;
+    var inR=function(d){d=String(d||'').slice(0,10);return (!from||d>=from)&&(!to||d<=to);};
+    return R.how==='loans'?window.IGMCRI_API('loans').then(function(j){if(!j.ok)throw j;return (j.loans||[]).filter(function(r){return inR(r['Issue date']);});})
+      :window.IGMCRI_API('rows',{register:k,from:from,to:to}).then(function(j){if(!j.ok)throw j;return j.rows||[];});
+  }
+  SCREENS.regview=function(a){
+    var R=REGS.filter(function(x){return x.k===a.k;})[0]||REGS[0],r=a.r||'month',key=R.k+'|'+r,st=RV[key];
+    var tabs='<div class="rd-dl" style="margin:0 0 10px">'+[['today','Today'],['month','This month'],['all','All']].map(function(x){return '<button type="button" class="sh-btn small'+(x[0]===r?' primary':'')+'" data-go="regview" data-replace="1" data-arg=\''+JSON.stringify({k:R.k,r:x[0]})+'\'>'+x[1]+'</button>';}).join('')+'<button type="button" class="sh-btn small" data-rdl="'+R.k+'|'+r+'"><i class="fas fa-download"></i> Download</button></div>';
+    if(!window.IGMCRI_USER)return {title:R.n,body:'<p class="sh-foot">Entries contain patient details, so they are visible only after sign-in.</p><button type="button" class="sh-btn primary wide" data-rosignin="1">Sign in with Google</button>'};
+    if(!st){RV[key]={busy:true};regRows(R.k,r).then(function(rows){RV[key]={rows:rows};rerender();}).catch(function(e){RV[key]={err:(e&&e.error)||'failed'};rerender();});st=RV[key];}
+    var body=tabs;
+    if(st.busy)body+='<p class="sh-foot">Loading entries…</p>';
+    else if(st.err){delete RV[key];body+='<p class="sh-foot">Could not load entries ('+esc(st.err==='not_signed_in'?'please sign in again':'check the connection')+').</p>';}
+    else if(!st.rows.length)body+='<p class="sh-foot">No entries for this period.</p>';
+    else{
+      var hide=/^(client_ref|id|row|share_?key|token)$/i,keys=[];st.rows.forEach(function(o){Object.keys(o).forEach(function(x){if(!hide.test(x)&&keys.indexOf(x)<0)keys.push(x);});});
+      var lab=function(x){return String(x).replace(/_/g,' ').replace(/^./,function(c){return c.toUpperCase();});};
+      var cell=function(v){if(v==null)return '';if(typeof v==='object')v=Array.isArray(v)?v.join(', '):JSON.stringify(v);if(v===true)return 'Yes';if(v===false)return 'No';return esc(v);};
+      var rows=st.rows.slice().reverse();
+      body+='<p class="sh-foot" style="margin:0 0 6px">'+rows.length+' entr'+(rows.length===1?'y':'ies')+' · newest first</p><div class="rv-wrap"><table class="rv"><thead><tr><th>#</th>'+keys.map(function(x){return '<th>'+esc(lab(x))+'</th>';}).join('')+'</tr></thead><tbody>'+
+        rows.map(function(o,i){return '<tr><td>'+(rows.length-i)+'</td>'+keys.map(function(x){return '<td>'+cell(o[x])+'</td>';}).join('')+'</tr>';}).join('')+'</tbody></table></div>';
+    }
+    return {title:R.n+' · entries',body:body};
+  };
   /* ---------- NFC tag links (Dressing register) ---------- */
   SCREENS.nfc=function(){
     var base=location.origin+location.pathname.replace(/[^\/]*$/,'')+'Dressing_Register.html';
@@ -6001,7 +6033,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     ['maTiles','maRegTiles'].forEach(function(id){var el=document.getElementById(id);if(el)el.innerHTML=tilesHtml;});
   }
 
-  var FORMS=[['#regdash','fa-chart-bar','Register dashboard','Live counts · download entries'],['EGD_Reports.html','fa-folder-open','EGD reports dashboard','View, print, QR'],['QR_Codes.html','fa-qrcode','QR labels','Print the entry-form QR codes']];
+  var FORMS=[['#regdash','fa-chart-bar','Register dashboard','Totals · view & download entries'],['EGD_Reports.html','fa-folder-open','EGD reports dashboard','View, print, QR']];
   function renderForms(){var el=document.getElementById('maForms');if(!el)return;el.innerHTML=FORMS.map(function(f){if(f[0]==='#regdash')return '<button type="button" class="ma-row" data-open="regdash"><span class="ic"><i class="fas '+f[1]+'"></i></span><span><strong>'+f[2]+'</strong><small>'+f[3]+'</small></span><i class="fas fa-chevron-right chev"></i></button>';return '<a class="ma-row" href="'+f[0]+'" style="text-decoration:none;color:inherit"><span class="ic"><i class="fas '+f[1]+'"></i></span><span><strong>'+f[2]+'</strong><small>'+f[3]+'</small></span><i class="fas fa-chevron-right chev"></i></a>';}).join('');}
   function renderCal(){
     var el=document.getElementById('maCal');if(!el)return;
@@ -6102,7 +6134,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 
   window.MApp={refresh:function(){renderAll();if(window.Desk)Desk.render();},MENU:MENU,FORMS:FORMS,events:events,attendance:attendance,batches:Object.keys(BATCH_SIZE),counts:function(){return REGISTERS.filter(function(r){return r.stat;}).map(function(r){var lc=window.IGMCRI_COUNTS&&window.IGMCRI_COUNTS[r.stat];return {name:r.name,id:r.id,stat:r.stat,today:lc?lc.today:'–',month:lc?lc.month:'–',live:!!lc};});}};
   function init(){
-    var hr=function(){if(location.hash==='#roster'&&window.MAdmin){history.replaceState(null,'',location.pathname);MAdmin.open('roster',{});}};setTimeout(hr,400);window.addEventListener('hashchange',hr);
+    var hr=function(){var h=location.hash.slice(1);if((h==='roster'||h==='regdash')&&window.MAdmin){history.replaceState(null,'',location.pathname);MAdmin.open(h,{});}};setTimeout(hr,400);window.addEventListener('hashchange',hr);
     if(document.getElementById('mApp'))return;
     shell();clock();renderAll();
     setInterval(clock,15000);
@@ -6330,7 +6362,7 @@ html.dk-on #maSheet{z-index:200}
         '<button type="button" class="dk-duty" id="dkDuty" data-dk="roster"></button>'+
         '<div class="dk-two"><div class="dk-card" id="dkLeave"></div><div class="dk-card dk-counts" id="dkCounts"></div></div>'+
         '<section class="dk-card dk-att" id="dkAtt" aria-label="UG attendance"></section>'+
-        '<div class="dk-links"><a class="new" href="Endoscopy_Register.html" target="_blank" rel="noopener">+ New endoscopy entry</a><a class="new" href="USG_Register.html" target="_blank" rel="noopener">+ New USG entry</a><button type="button" data-dk="regdash">Register dashboard ›</button><button type="button" data-dk="downloads">Downloads ›</button></div>'+
+        '<div class="dk-links"><button type="button" data-dk="regdash">Register dashboard ›</button><button type="button" data-dk="downloads">Downloads ›</button></div>'+
       '</div><section class="dk-cal" aria-label="Department calendar"><div class="dk-calhead"><h2 id="dkMonth"></h2><div class="dk-calbtn"><button type="button" data-dk="prev" aria-label="Previous">‹</button><button type="button" data-dk="today">Today</button><button type="button" data-dk="next" aria-label="Next">›</button><button type="button" data-dk="view:month" id="dkVm">Month</button><button type="button" data-dk="view:week" id="dkVw">Week</button></div></div>'+
         '<div class="dk-legend"><span><b class="ug"></b>UG session</span><span><b class="pg"></b>PG session</span><span><b class="ph"></b>Public holiday</span><span><b class="rh"></b>Restricted holiday</span><span><b class="un"></b>Duty unit</span><span class="hint">Hover or click a date for faculty on duty</span></div>'+
         '<div class="dk-grid" id="dkGrid"></div></section></main>'+
@@ -6355,9 +6387,9 @@ html.dk-on #maSheet{z-index:200}
     var M=(window.MApp&&MApp.MENU)||[],F=(window.MApp&&MApp.FORMS)||[];
     var sec=function(t){return M.filter(function(x){return x.t===t;})[0]||{items:[]};};
     var col=function(t,items){return '<div class="dk-mcol"><h3>'+esc(t)+'</h3>'+items.map(item).join('')+'</div>';};
-    if(kind==='regs')return col('QR entry forms',F.map(function(f){return ['h',f[0],f[1],f[2]];}))+col('Register logs & clinical',sec('Clinical management').items);
+    if(kind==='regs')return col('Registers',F.map(function(f){return ['h',f[0],f[1],f[2]];}))+col('Register logs & clinical',sec('Clinical management').items);
     if(kind==='acad')return col('Academics',sec('Academics').items.slice(0,6))+col('More academics',sec('Academics').items.slice(6).concat([['h','https://gensurgeryunit6-png.github.io/test1/academic.html','fa-external-link-alt','Full academic timetable']]));
-    return col('Registers',[['a','regdash','fa-chart-bar','Register dashboard'],['h','Endoscopy_Register.html','fa-plus','New endoscopy entry'],['h','USG_Register.html','fa-plus','New USG entry'],['h','EGD_Reports.html','fa-folder-open','EGD reports (reporting)'],['h','QR_Codes.html','fa-qrcode','QR labels (print)']].concat(sec('Clinical management').items.filter(function(x){return x[1]!=='regdash'&&x[1]!=='roster';})))+col('Department administration',sec('Department administration').items)+col('Documents',sec('Document generation').items)+col('Admin & security',sec('Admin & security').items);
+    return col('Registers',[['a','regdash','fa-chart-bar','Register dashboard'],['h','EGD_Reports.html','fa-folder-open','EGD reports (reporting)']].concat(sec('Clinical management').items.filter(function(x){return x[1]!=='regdash'&&x[1]!=='roster';})))+col('Department administration',sec('Department administration').items)+col('Documents',sec('Document generation').items)+col('Admin & security',sec('Admin & security').items);
   }
   function openMenu(kind,btn){
     var m=document.getElementById('dkMenu');
