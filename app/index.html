@@ -5018,6 +5018,10 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   #maSheet .rd-last{font-size:12.5px;color:var(--tb-ink-3)}
   #maSheet .rd-dl{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
   #maSheet .rd-dl .sh-btn{flex:1 1 0;justify-content:center;min-width:96px}
+
+  #maSheet .rd-new{display:inline-flex;align-items:center;gap:6px;background:var(--tb-scrub);color:#fff;text-decoration:none;font-weight:700;font-size:13px;border-radius:9px;padding:7px 11px}
+  #maSheet .rd-qr{font-size:12px;color:var(--tb-ink-3);display:inline-flex;gap:5px;align-items:center}
+  #maSheet .rd-dash{margin-left:4px}
 </style>
 <script>/* Theatre Board layout tweaks: move KPI strip under the title, add an IST date block. */
 (function(){
@@ -5715,11 +5719,11 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 
   /* ---------- Register dashboard: live counts + one-click downloads (entry forms stay separate, on QR codes) ---------- */
   var REGS=[
-    {k:'endoscopy',n:'Endoscopy register',ic:'fa-microscope',how:'rows'},
-    {k:'usg',n:'USG register',ic:'fa-heartbeat',how:'rows'},
     {k:'dressing',n:'Dressing register',ic:'fa-notes-medical',how:'rows'},
-    {k:'library',n:'Library loans',ic:'fa-book',how:'loans'},
-    {k:'egd',n:'EGD reports',ic:'fa-file-medical',how:'egd',dash:'EGD_Reports.html'}
+    {k:'library',n:'Library register',ic:'fa-book',how:'loans'},
+    {k:'endoscopy',n:'Endoscopy register',ic:'fa-microscope',how:'rows'},
+    {k:'egd',n:'EGD reports',ic:'fa-file-medical',how:'egd',dash:'EGD_Reports.html',entry:'EGD_Report_Form.html',entryLabel:'New EGD report'},
+    {k:'usg',n:'USG register',ic:'fa-heartbeat',how:'rows',entry:'USG_Register.html',entryLabel:'New USG entry'}
   ];
   var CNT={data:null,at:0,busy:false};
   function countsFetch(force){
@@ -5749,12 +5753,12 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     var C=CNT.data,signed=!!window.IGMCRI_USER,n=function(x){return x==null?'—':x;};
     var body='<div class="rd-head"><span class="rd-live"><i></i>Live</span><small>'+(C?'Updated '+new Date(CNT.at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})+' · refreshes every 30 s':'Loading counts…')+'</small></div>';
     body+=REGS.map(function(R){var c=C&&C[R.k]||{};
-      return '<div class="rd-card"><div class="rd-top"><span class="sh-ic"><i class="fas '+R.ic+'"></i></span><b>'+esc(R.n)+'</b>'+(R.dash?'<a class="rd-dash" href="'+R.dash+'">Open dashboard ›</a>':'')+'</div>'+
+      return '<div class="rd-card"><div class="rd-top"><span class="sh-ic"><i class="fas '+R.ic+'"></i></span><b>'+esc(R.n)+'</b>'+(R.entry?'<a class="rd-new" href="'+R.entry+'" target="_blank" rel="noopener"><i class="fas fa-plus"></i> '+R.entryLabel+'</a>':'<span class="rd-qr"><i class="fas fa-qrcode"></i> QR entry</span>')+(R.dash?'<a class="rd-dash" href="'+R.dash+'">Dashboard ›</a>':'')+'</div>'+
         '<div class="rd-nums"><div><b>'+n(c.today)+'</b><small>Today</small></div><div><b>'+n(c.month)+'</b><small>This month</small></div><div><b>'+n(c.total)+'</b><small>All time</small></div>'+(R.k==='library'?'<div><b>'+n(c.issued)+'</b><small>Books out</small></div>':'')+'</div>'+
         '<div class="rd-last">'+(c.last?'Last entry: '+esc(new Date(c.last+'T12:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})):'No entries yet')+'</div>'+
         '<div class="rd-dl"><button type="button" class="sh-btn small" data-rdl="'+R.k+'|today"><i class="fas fa-download"></i> Today</button><button type="button" class="sh-btn small" data-rdl="'+R.k+'|month"><i class="fas fa-download"></i> This month</button><button type="button" class="sh-btn small primary" data-rdl="'+R.k+'|all"><i class="fas fa-file-excel"></i> Download all</button></div></div>';}).join('');
     body+='<button type="button" class="sh-btn primary wide" data-rdl="*|all" style="margin-top:6px"><i class="fas fa-file-download"></i> Download every register (all entries)</button>';
-    body+='<p class="sh-foot">Downloads are spreadsheet files (.csv) that open in Excel or Google Sheets. '+(signed?'':'Downloading needs sign-in, because the files contain patient details. ')+'Entries are made only through the QR forms; the counts update live from the register spreadsheet.</p><div class="sh-msg" role="status"></div>';
+    body+='<p class="sh-foot">Downloads are spreadsheet files (.csv) that open in Excel or Google Sheets. '+(signed?'':'Downloading needs sign-in, because the files contain patient details. ')+'Dressing, Library and Endoscopy entries are made through their QR codes; EGD and USG can also be entered here on the desktop. Counts update live from the register spreadsheet.</p><div class="sh-msg" role="status"></div>';
     return {title:'Register dashboard',body:body};
   };
   /* ---------- events ---------- */
@@ -5893,11 +5897,11 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   var tagTxt=function(a){return a==='REVIEW'?'CHECK':(a||'');};
 
   var REGISTERS=[
-    {id:'regdash',name:'Endoscopy',icon:'fa-microscope',stat:'endoscopy'},
-    {id:'regdash',name:'USG',icon:'fa-heartbeat',stat:'usg'},
     {id:'regdash',name:'Dressing',icon:'fa-notes-medical',stat:'dressing'},
     {id:'regdash',name:'Library',icon:'fa-book',stat:'library'},
-    {id:'regdash',name:'EGD reports',icon:'fa-file-medical',stat:'egd'},
+    {id:'regdash',name:'Endoscopy',icon:'fa-microscope',stat:'endoscopy'},
+    {id:'regdash',name:'EGD',icon:'fa-file-medical',stat:'egd'},
+    {id:'regdash',name:'USG',icon:'fa-heartbeat',stat:'usg'},
     {id:'dutyRoster',name:'Duty roster',icon:'fa-clipboard-list'}
   ];
   var BATCH_SIZE={'2022':186,'2023':180,'2024':178};
@@ -6256,6 +6260,11 @@ html.dk-on #maSheet{z-index:200}
 #dDesk .dk-calbtn button:hover,#dDesk .dk-batch button:hover{border-color:#16224A!important;color:#16224A!important}
 #dDesk .dk-calbtn button.on,#dDesk .dk-batch button.on{color:#fff!important}
 #dDesk .dk-sign{background:#fff!important;color:#16224A!important}
+#dDesk .dk-counts{grid-template-columns:repeat(4,minmax(0,1fr))}
+#dDesk .dk-two{grid-template-columns:minmax(0,.8fr) minmax(0,1.6fr)!important}
+#dDesk .dk-counts small{font-size:11px!important;overflow:hidden;text-overflow:ellipsis}
+#dDesk .dk-counts b{font-size:24px}
+#dDesk .dk-links a.new{background:#16224A!important;color:#fff!important;border-color:#16224A!important}
 #dDesk .dk-ldot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#EF4444;margin-right:6px;animation:dkpulse 1.6s infinite}
 }
 @keyframes dkecg{from{stroke-dashoffset:1400}to{stroke-dashoffset:0}}
@@ -6302,7 +6311,7 @@ html.dk-on #maSheet{z-index:200}
         '<button type="button" class="dk-duty" id="dkDuty" data-dk="roster"></button>'+
         '<div class="dk-two"><div class="dk-card" id="dkLeave"></div><div class="dk-card dk-counts" id="dkCounts"></div></div>'+
         '<section class="dk-card dk-att" id="dkAtt" aria-label="UG attendance"></section>'+
-        '<div class="dk-links"><button type="button" data-dk="regdash">Register dashboard ›</button><a href="EGD_Reports.html">EGD reports ›</a><button type="button" data-dk="downloads">Downloads ›</button><button type="button" data-dk="roster">Duty roster ›</button></div>'+
+        '<div class="dk-links"><a class="new" href="EGD_Report_Form.html" target="_blank" rel="noopener">+ New EGD report</a><a class="new" href="USG_Register.html" target="_blank" rel="noopener">+ New USG entry</a><button type="button" data-dk="regdash">Register dashboard ›</button><a href="EGD_Reports.html">EGD reports ›</a></div>'+
       '</div><section class="dk-cal" aria-label="Department calendar"><div class="dk-calhead"><h2 id="dkMonth"></h2><div class="dk-calbtn"><button type="button" data-dk="prev" aria-label="Previous">‹</button><button type="button" data-dk="today">Today</button><button type="button" data-dk="next" aria-label="Next">›</button><button type="button" data-dk="view:month" id="dkVm">Month</button><button type="button" data-dk="view:week" id="dkVw">Week</button></div></div>'+
         '<div class="dk-legend"><span><b class="ug"></b>UG session</span><span><b class="pg"></b>PG session</span><span><b class="ph"></b>Public holiday</span><span><b class="rh"></b>Restricted holiday</span><span><b class="un"></b>Duty unit</span><span class="hint">Hover or click a date for faculty on duty</span></div>'+
         '<div class="dk-grid" id="dkGrid"></div></section></main>'+
@@ -6329,7 +6338,7 @@ html.dk-on #maSheet{z-index:200}
     var col=function(t,items){return '<div class="dk-mcol"><h3>'+esc(t)+'</h3>'+items.map(item).join('')+'</div>';};
     if(kind==='regs')return col('QR entry forms',F.map(function(f){return ['h',f[0],f[1],f[2]];}))+col('Register logs & clinical',sec('Clinical management').items);
     if(kind==='acad')return col('Academics',sec('Academics').items.slice(0,6))+col('More academics',sec('Academics').items.slice(6).concat([['h','https://gensurgeryunit6-png.github.io/test1/academic.html','fa-external-link-alt','Full academic timetable']]));
-    return col('Registers',[['a','regdash','fa-chart-bar','Register dashboard'],['h','EGD_Reports.html','fa-folder-open','EGD reports dashboard'],['h','QR_Codes.html','fa-qrcode','QR labels (print)']].concat(sec('Clinical management').items.filter(function(x){return x[1]!=='regdash'&&x[1]!=='roster';})))+col('Department administration',sec('Department administration').items)+col('Documents',sec('Document generation').items)+col('Admin & security',sec('Admin & security').items);
+    return col('Registers',[['a','regdash','fa-chart-bar','Register dashboard'],['h','EGD_Report_Form.html','fa-plus','New EGD report'],['h','USG_Register.html','fa-plus','New USG entry'],['h','EGD_Reports.html','fa-folder-open','EGD reports dashboard'],['h','QR_Codes.html','fa-qrcode','QR labels (print)']].concat(sec('Clinical management').items.filter(function(x){return x[1]!=='regdash'&&x[1]!=='roster';})))+col('Department administration',sec('Department administration').items)+col('Documents',sec('Document generation').items)+col('Admin & security',sec('Admin & security').items);
   }
   function openMenu(kind,btn){
     var m=document.getElementById('dkMenu');
@@ -6417,8 +6426,8 @@ html.dk-on #maSheet{z-index:200}
     var lv=window.MAdmin&&MAdmin.leaveToday?MAdmin.leaveToday():[],H=(window.IGMCRI_HOLIDAYS||[]).filter(function(x){return x.date>=t;})[0];
     document.getElementById('dkLeave').innerHTML='<span class="lb">On leave</span><b>'+(lv.length?esc(lv.map(function(x){return x.name;}).join(', ')):'No one on leave')+'</b><small>'+(H?'Next holiday: '+esc(H.name)+(H.type==='RH'?' (RH)':'')+', '+esc(new Date(H.date+'T12:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'})):'')+'</small>';
     var C=(window.MApp&&MApp.counts)?MApp.counts():[];
-    C=C.filter(function(c){return ['endoscopy','usg','dressing'].indexOf(c.stat)>=0;});
-    document.getElementById('dkCounts').innerHTML=C.map(function(c){return '<button type="button" data-dk="regdash"><b>'+esc(c.today)+'</b><small>'+esc(c.name)+'</small></button>';}).join('')+'<span class="dk-cnote">'+(C.some(function(c){return c.live;})?'<i class="dk-ldot"></i>Live · patients registered today':'Loading live counts…')+'</span>';
+    var ord=['dressing','endoscopy','egd','usg'];C=C.filter(function(c){return ord.indexOf(c.stat)>=0;}).sort(function(a,b){return ord.indexOf(a.stat)-ord.indexOf(b.stat);});
+    document.getElementById('dkCounts').innerHTML=C.map(function(c){return '<button type="button" data-dk="regdash" title="'+esc(c.name)+' · today"><b>'+esc(c.today)+'</b><small>'+esc(c.stat==='endoscopy'?'Endo':c.name)+'</small></button>';}).join('')+'<span class="dk-cnote">'+(C.some(function(c){return c.live;})?'<i class="dk-ldot"></i>Live · patients registered today':'Loading live counts…')+'</span>';
     var sg=document.getElementById('dkSign');sg.innerHTML=window.IGMCRI_USER?'<i class="fas fa-sign-out-alt"></i> Sign out':'<i class="fas fa-sign-in-alt"></i> Sign in';sg.title=window.IGMCRI_USER||'Sign in for patient records and editing';
   }
   function renderAtt(){
