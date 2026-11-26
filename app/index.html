@@ -5017,6 +5017,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   #maSheet .rd-nums small{color:var(--tb-ink-3);font-size:11.5px}
   #maSheet .rd-range{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:10px}
   #maSheet .rd-range label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;font-weight:700;color:var(--tb-ink-3);flex:1 1 120px}
+  #maSheet .rd-range select{font:inherit;font-size:14px;padding:7px 8px;border:1px solid var(--tb-line);border-radius:9px;background:var(--tb-card);color:inherit;min-width:0}
   #maSheet .rd-range input{font:inherit;font-size:14px;padding:7px 8px;border:1px solid var(--tb-line);border-radius:9px;background:var(--tb-card);color:inherit;min-width:0}
   #maSheet .rd-range .sh-btn{flex:1 1 110px;justify-content:center}
   #maSheet .rd-today{margin-top:10px}#maSheet .rd-th{font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--tb-scrub);margin-bottom:5px}
@@ -5756,8 +5757,9 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     return [keys.map(q).join(',')].concat(rows.map(function(r){return keys.map(function(k){return q(r[k]);}).join(',');})).join('\r\n');
   }
   function saveCsv(name,csv){var b=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'}),l=document.createElement('a');l.href=URL.createObjectURL(b);l.download=name+'.csv';document.body.appendChild(l);l.click();l.remove();setTimeout(function(){URL.revokeObjectURL(l.href);},3000);}
-  function span(range){var t=today();if(range&&range.indexOf('~')>0){var a=range.split('~');return {from:a[0]||'',to:a[1]||'',tag:(a[0]||'start')+'_to_'+(a[1]||t)};}
+  function span(range){var t=today();if(range&&range.indexOf('~')>=0){var a=range.split('~');return {from:a[0]||'',to:a[1]||'',unit:a[2]||'',tag:(a[0]||'start')+'_to_'+(a[1]||t)+(a[2]?'_Unit'+a[2]:'')};}
     return {from:range==='today'?t:range==='month'?t.slice(0,7)+'-01':'',to:range==='all'?'':t,tag:range==='all'?'all':range==='month'?t.slice(0,7):t};}
+  function byUnit(k,rows,u){if(!u||k==='library')return rows;return rows.filter(function(r){return String(r.unit==null?'':r.unit).replace(/\D/g,'')===u;});}
   function regDownload(k,range){
     var R=REGS.filter(function(x){return x.k===k;})[0];if(!R)return Promise.resolve(0);
     var t=today(),sp=span(range),from=sp.from,to=sp.to;
@@ -5765,12 +5767,71 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     var p=R.how==='rows'?window.IGMCRI_API('rows',{register:k,from:from,to:to}).then(function(j){if(!j.ok)throw j;return j.rows;})
       :R.how==='loans'?window.IGMCRI_API('loans').then(function(j){if(!j.ok)throw j;return (j.loans||[]).filter(function(r){return inR(r['Issue date']);});})
       :window.IGMCRI_API('egdList').then(function(j){if(!j.ok)throw j;return (j.reports||[]).filter(function(r){return inR(r.date);}).map(function(r){var o={};Object.keys(r).forEach(function(x){if(x!=='share_key'&&x!=='shareKey')o[x]=r[x];});return o;});});
-    return p.then(function(rows){if(!rows.length)return 0;saveCsv(R.n.replace(/\s+/g,'_')+'_'+sp.tag,csvOf(rows));logChange('Registers','Download',R.n,'',range,rows.length+' rows');save();return rows.length;});
+    return p.then(function(rows){rows=byUnit(k,rows,sp.unit);if(!rows.length)return 0;saveCsv(R.n.replace(/\s+/g,'_')+'_'+sp.tag,csvOf(rows));logChange('Registers','Download',R.n,'',range,rows.length+' rows');save();return rows.length;});
   }
 
   /* from–to picker + today's entries on each register card */
-  function rangeRow(k,f0,t0){var t=today(),m=f0||t.slice(0,7)+'-01',id=k==='*'?'all':k;
-    return '<div class="rd-range"><label>From<input type="date" id="rdf_'+id+'" value="'+m+'" max="'+t+'"></label><label>To<input type="date" id="rdt_'+id+'" value="'+(t0||t)+'" max="'+t+'"></label><button type="button" class="sh-btn small primary" data-rdl="'+k+'|custom"><i class="fas fa-download"></i> Download</button></div>';}
+  function rangeRow(k,f0,t0,u0,viewOnly){var t=today(),m=f0||t.slice(0,7)+'-01',id=k==='*'?'all':k;
+    var us=k==='library'?'':'<label class="u">Unit<select id="rdu_'+id+'"><option value="">All units</option>'+[1,2,3,4,5,6].map(function(n){return '<option value="'+n+'"'+(String(u0||'')===String(n)?' selected':'')+'>Unit '+n+'</option>';}).join('')+'</select></label>';
+    var btns=viewOnly?'<button type="button" class="sh-btn small primary" data-rvr="'+k+'"><i class="fas fa-filter"></i> Show</button>':'<button type="button" class="sh-btn small primary" data-rdl="'+k+'|custom"><i class="fas fa-file-csv"></i> Excel (CSV)</button><button type="button" class="sh-btn small primary" data-rdp="'+k+'"><i class="fas fa-file-pdf"></i> PDF</button>';
+    return '<div class="rd-range"><label>From<input type="date" id="rdf_'+id+'" value="'+m+'" max="'+t+'"></label><label>To<input type="date" id="rdt_'+id+'" value="'+(t0||t)+'" max="'+t+'"></label>'+us+btns+'</div>';}
+  function pickRange(k){var id=k==='*'?'all':k,f=(document.getElementById('rdf_'+id)||{}).value||'',tt=(document.getElementById('rdt_'+id)||{}).value||'',u=(document.getElementById('rdu_'+id)||{}).value||'';
+    if(f&&tt&&f>tt)return null;return f+'~'+tt+'~'+u;}
+  /* PDF with IGMCRI header (jsPDF + autotable, loaded on first use) */
+  var PDFLIB=null;
+  function loadJs(srcs){return new Promise(function(res,rej){var i=0;(function nx(){if(i>=srcs.length)return rej(new Error('load'));var sc=document.createElement('script');sc.src=srcs[i++];sc.onload=res;sc.onerror=function(){sc.remove();nx();};document.head.appendChild(sc);})();});}
+  function pdfLib(){if(window.jspdf&&window.jspdf.jsPDF&&window.jspdf.jsPDF.API.autoTable)return Promise.resolve();
+    if(!PDFLIB)PDFLIB=loadJs(['https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js','https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'])
+      .then(function(){return loadJs(['https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js','https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js']);})
+      .catch(function(e){PDFLIB=null;throw e;});
+    return PDFLIB;}
+  var PCOLS=[['entry_date','Date'],['entry_time','Time'],['patient_name','Patient name'],['age','Age'],['sex','Sex'],['ip_number','IP/OP no.'],['unit','Unit'],['ward','Ward'],['diagnosis','Diagnosis'],['procedure','Procedure'],['region','Study'],['findings','Findings'],['impression','Impression'],['biopsy','Biopsy'],['complications','Complications'],['faculty','Faculty'],['postgraduate','PG']];
+  function pdfCols(rows){var have={};rows.forEach(function(o){Object.keys(o).forEach(function(x){have[x]=1;});});
+    var c=PCOLS.filter(function(x){return have[x[0]];});
+    if(c.length<3)c=Object.keys(have).filter(function(x){return !/^(client_ref|id|row|share_?key|token)$/i.test(x);}).map(function(x){return [x,x.replace(/_/g,' ').replace(/^./,function(z){return z.toUpperCase();})];});
+    return c;}
+  function pdfVal(o,c){var v=o[c];if((c==='procedure'||c==='region')&&o[c+'_other'])v=v+' – '+o[c+'_other'];if(v===true)return 'Yes';if(v===false)return 'No';if(v==null)return '';if(c==='entry_time')v=String(v).slice(0,5);
+    if(c==='entry_date'||/date/i.test(c)){var d=String(v).slice(0,10);if(/^\d{4}-\d{2}-\d{2}$/.test(d))return d.slice(8)+'-'+d.slice(5,7)+'-'+d.slice(0,4);}
+    if(typeof v==='object')v=Array.isArray(v)?v.join(', '):JSON.stringify(v);return String(v);}
+  function fmtD(d){return d?d.slice(8)+'-'+d.slice(5,7)+'-'+d.slice(0,4):'';}
+  function regPdf(ks,range){
+    var sp=span(range);
+    return pdfLib().then(function(){
+      return ks.reduce(function(pp,k){return pp.then(function(acc){return regRows(k,range).then(function(rows){acc.push({k:k,rows:rows});return acc;});});},Promise.resolve([]));
+    }).then(function(sets){
+      var tot=sets.reduce(function(a,x){return a+x.rows.length;},0);if(!tot)return 0;
+      var J=window.jspdf.jsPDF,doc=new J({orientation:'landscape',unit:'mm',format:'a4'}),W=doc.internal.pageSize.getWidth(),first=true;
+      var period=(sp.from||sp.to)?(sp.from?fmtD(sp.from):'Start')+' to '+fmtD(sp.to||today()):'All entries';
+      var head=function(title,count){
+        doc.setDrawColor(14,124,134);doc.setLineWidth(0.8);
+        doc.setTextColor(15,47,64);doc.setFont('helvetica','bold');doc.setFontSize(14);doc.text('INDIRA GANDHI MEDICAL COLLEGE & RESEARCH INSTITUTE',W/2,14,{align:'center'});
+        doc.setFont('helvetica','normal');doc.setFontSize(10.5);doc.text('(Government of Puducherry Institution) · Kathirkamam, Puducherry – 605 009',W/2,19.5,{align:'center'});
+        doc.setFont('helvetica','bold');doc.setFontSize(12);doc.text('DEPARTMENT OF GENERAL SURGERY',W/2,25.5,{align:'center'});
+        doc.line(12,29,W-12,29);
+        doc.setFontSize(13);doc.setTextColor(14,124,134);doc.text(title.toUpperCase(),12,36);
+        doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(60,70,80);
+        doc.text('Period: '+period+(sp.unit&&title.indexOf('Library')<0?'   ·   Unit '+sp.unit:'')+'   ·   '+count+' entr'+(count===1?'y':'ies'),W-12,36,{align:'right'});
+      };
+      sets.forEach(function(st){
+        var R=REGS.filter(function(x){return x.k===st.k;})[0];if(!st.rows.length&&ks.length>1)return;
+        if(!first)doc.addPage();first=false;
+        var rows=st.rows.slice().sort(function(a,b){return String((a.entry_date||'')+(a.entry_time||'')).localeCompare(String((b.entry_date||'')+(b.entry_time||'')));});
+        var cols=pdfCols(rows);
+        head(R.n,rows.length);
+        doc.autoTable({startY:40,margin:{left:12,right:12,top:40},head:[['S.No'].concat(cols.map(function(c){return c[1];}))],
+          body:rows.map(function(o,i){return [String(i+1)].concat(cols.map(function(c){return pdfVal(o,c[0]);}));}),
+          styles:{fontSize:8,cellPadding:1.6,overflow:'linebreak',valign:'top',lineColor:[200,210,215],lineWidth:0.1},
+          headStyles:{fillColor:[232,243,245],textColor:[15,47,64],fontStyle:'bold'},alternateRowStyles:{fillColor:[248,251,252]},
+          columnStyles:{0:{cellWidth:10}},
+          didDrawPage:function(d){if(d.pageNumber>1&&d.cursor&&d.settings.startY!==40){}}});
+      });
+      var n=doc.internal.getNumberOfPages(),stamp=new Date().toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+      for(var i=1;i<=n;i++){doc.setPage(i);var H=doc.internal.pageSize.getHeight();doc.setFontSize(8);doc.setTextColor(110,120,130);
+        doc.text('Generated '+stamp+(window.IGMCRI_USER&&IGMCRI_USER.email?' by '+IGMCRI_USER.email:'')+' · Confidential – contains patient details',12,H-7);doc.text('Page '+i+' of '+n,W-12,H-7,{align:'right'});}
+      var nm=(ks.length>1?'All_registers':REGS.filter(function(x){return x.k===ks[0];})[0].n.replace(/\s+/g,'_'))+'_'+sp.tag+'.pdf';
+      doc.save(nm);logChange('Registers','Download PDF',ks.join(','),'',range,tot+' rows');save();return tot;
+    });
+  }
   var TCOLS=[['entry_time','Time'],['Issue time','Time'],['patient_name','Patient'],['Borrower','Borrower'],['Name','Name'],['age','Age'],['sex','Sex'],['unit','Unit'],['ward','Ward'],['procedure','Procedure'],['region','Study'],['Book','Book'],['Title','Book'],['faculty','Faculty'],['postgraduate','PG'],['Designation','Designation'],['Status','Status']];
   function todayHtml(R){
     if(!window.IGMCRI_USER)return '';
@@ -5810,11 +5871,11 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     var R=REGS.filter(function(x){return x.k===k;})[0],sp=span(range),from=sp.from,to=sp.to;
     var inR=function(d){d=String(d||'').slice(0,10);return (!from||d>=from)&&(!to||d<=to);};
     return R.how==='loans'?window.IGMCRI_API('loans').then(function(j){if(!j.ok)throw j;return (j.loans||[]).filter(function(r){return inR(r['Issue date']);});})
-      :window.IGMCRI_API('rows',{register:k,from:from,to:to}).then(function(j){if(!j.ok)throw j;return j.rows||[];});
+      :window.IGMCRI_API('rows',{register:k,from:from,to:to}).then(function(j){if(!j.ok)throw j;return byUnit(k,j.rows||[],sp.unit);});
   }
   SCREENS.regview=function(a){
     var R=REGS.filter(function(x){return x.k===a.k;})[0]||REGS[0],r=a.r||'month',key=R.k+'|'+r,st=RV[key];
-    var tabs='<div class="rd-dl" style="margin:0 0 10px">'+[['today','Today'],['month','This month'],['all','All']].map(function(x){return '<button type="button" class="sh-btn small'+(x[0]===r?' primary':'')+'" data-go="regview" data-replace="1" data-arg=\''+JSON.stringify({k:R.k,r:x[0]})+'\'>'+x[1]+'</button>';}).join('')+'<button type="button" class="sh-btn small" data-rdl="'+R.k+'|'+r+'"><i class="fas fa-download"></i> Download</button></div>'+rangeRow(R.k,r.indexOf('~')>0?r.split('~')[0]:'',r.indexOf('~')>0?r.split('~')[1]:'').replace('data-rdl="'+R.k+'|custom"','data-rvr="'+R.k+'"').replace('fa-download"></i> Download','fa-filter"></i> Show');
+    var tabs='<div class="rd-dl" style="margin:0 0 10px">'+[['today','Today'],['month','This month'],['all','All']].map(function(x){return '<button type="button" class="sh-btn small'+(x[0]===r?' primary':'')+'" data-go="regview" data-replace="1" data-arg=\''+JSON.stringify({k:R.k,r:x[0]})+'\'>'+x[1]+'</button>';}).join('')+'<button type="button" class="sh-btn small" data-rdl="'+R.k+'|'+r+'"><i class="fas fa-download"></i> Download</button></div>'+rangeRow(R.k,r.indexOf('~')>=0?r.split('~')[0]:'',r.indexOf('~')>=0?r.split('~')[1]:'',r.indexOf('~')>=0?r.split('~')[2]:'',true);
     if(!window.IGMCRI_USER)return {title:R.n,body:'<p class="sh-foot">Entries contain patient details, so they are visible only after sign-in.</p><button type="button" class="sh-btn primary wide" data-rosignin="1">Sign in with Google</button>'};
     if(!st){RV[key]={busy:true};regRows(R.k,r).then(function(rows){RV[key]={rows:rows};rerender();}).catch(function(e){RV[key]={err:(e&&e.error)||'failed'};rerender();});st=RV[key];}
     var body=tabs;
@@ -5854,10 +5915,17 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     if(b.dataset.rosync){var D=rosterDiffs();D.forEach(function(x){rosterFollow(x.p,x.p.unit,true);logChange('Duty roster','Move',dr(x.h.nm),x.h.u,x.p.unit,'From unit allocation');});save();rosterPush('setup');refreshDrafts();rerender();msg(D.length+' moved. Draft rosters updated.',true);return;}
     if(b.dataset.copy){var tx=(document.getElementById(b.dataset.copy)||{}).textContent||'';var ok=function(){msg('Link copied. Paste it into NFC Tools.',true);};
       if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(tx).then(ok,function(){var r=document.createRange();r.selectNodeContents(document.getElementById(b.dataset.copy));var se=getSelection();se.removeAllRanges();se.addRange(r);msg('Link selected — copy it.',true);});else{var r2=document.createRange();r2.selectNodeContents(document.getElementById(b.dataset.copy));var s2=getSelection();s2.removeAllRanges();s2.addRange(r2);msg('Link selected — copy it.',true);}return;}
-    if(b.dataset.rvr){var vf=(document.getElementById('rdf_'+b.dataset.rvr)||{}).value||'',vt=(document.getElementById('rdt_'+b.dataset.rvr)||{}).value||'';if(vf&&vt&&vf>vt){msg('The From date is after the To date.');return;}replace('regview',{k:b.dataset.rvr,r:vf+'~'+vt});return;}
+    if(b.dataset.rvr){var vr=pickRange(b.dataset.rvr);if(vr==null){msg('The From date is after the To date.');return;}replace('regview',{k:b.dataset.rvr,r:vr});return;}
+    if(b.dataset.rdp){
+      if(!window.IGMCRI_USER){msg('Sign in to download — the files contain patient details.');if(window.IGMCRI_SIGNIN){close();IGMCRI_SIGNIN();}return;}
+      var pk2=pickRange(b.dataset.rdp);if(pk2==null){msg('The From date is after the To date.');return;}
+      var ks2=b.dataset.rdp==='*'?REGS.map(function(x){return x.k;}):[b.dataset.rdp],old2=b.innerHTML;b.disabled=true;b.innerHTML='<i class="fas fa-spinner fa-spin"></i> Making PDF…';
+      regPdf(ks2,pk2).then(function(t){b.disabled=false;b.innerHTML=old2;msg(t?'PDF downloaded ('+t+' entr'+(t===1?'y':'ies')+').':'No entries for that period'+(pk2.split('~')[2]?' and unit':'')+'.',!!t);})
+        .catch(function(e){b.disabled=false;b.innerHTML=old2;msg(e&&e.error==='not_signed_in'?'Please sign in again.':'PDF could not be made. Check the internet connection and try again.');});
+      return;}
     if(b.dataset.rdl){
       if(!window.IGMCRI_USER){msg('Sign in to download — the files contain patient details.');if(window.IGMCRI_SIGNIN){close();IGMCRI_SIGNIN();}return;}
-      var pr=b.dataset.rdl.split('|'),ks=pr[0]==='*'?REGS.map(function(x){return x.k;}):[pr[0]];if(pr[1]==='custom'){var fid=pr[0]==='*'?'all':pr[0],f=(document.getElementById('rdf_'+fid)||{}).value||'',tt=(document.getElementById('rdt_'+fid)||{}).value||'';if(f&&tt&&f>tt){msg('The From date is after the To date.');return;}pr[1]=f+'~'+tt;}b.disabled=true;var old=b.innerHTML;b.innerHTML='<i class="fas fa-spinner fa-spin"></i> Preparing…';
+      var pr=b.dataset.rdl.split('|'),ks=pr[0]==='*'?REGS.map(function(x){return x.k;}):[pr[0]];if(pr[1]==='custom'){var pk=pickRange(pr[0]);if(pk==null){msg('The From date is after the To date.');return;}pr[1]=pk;}b.disabled=true;var old=b.innerHTML;b.innerHTML='<i class="fas fa-spinner fa-spin"></i> Preparing…';
       ks.reduce(function(pp,k){return pp.then(function(acc){return regDownload(k,pr[1]).then(function(c){acc.push(c);return acc;});});},Promise.resolve([])).then(function(cs){b.disabled=false;b.innerHTML=old;var tot=cs.reduce(function(a,c){return a+c;},0);msg(tot?tot+' entr'+(tot===1?'y':'ies')+' downloaded.':'No entries for that period.',!!tot);})
         .catch(function(e){b.disabled=false;b.innerHTML=old;msg(e&&e.error==='not_signed_in'?'Please sign in again.':'Download failed. Check the connection and try again.');});
       return;}
