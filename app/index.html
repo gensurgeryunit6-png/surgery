@@ -4841,7 +4841,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   #maSheet .sh-actions .sh-btn{flex:1 1 140px}
   #maSheet .sh-btn{border:1px solid var(--tb-line);background:var(--tb-card);color:var(--tb-ink);border-radius:10px;padding:11px 14px;font-weight:600;font-size:14px;min-height:46px;display:inline-flex;align-items:center;justify-content:center;gap:7px;cursor:pointer}
   #maSheet .sh-btn i{color:var(--tb-scrub)}
-  #maSheet .sh-btn.primary{background:var(--tb-ink);border-color:var(--tb-ink);color:#fff}
+  #maSheet .sh-btn.primary{background:var(--tb-ink);border-color:var(--tb-ink);color:#fff!important}
   #maSheet .sh-btn.primary i{color:#7FE0D6}
   #maSheet .sh-btn.danger{color:#A4321A;border-color:#EBC9BF}
   #maSheet .sh-btn.danger.wide{margin-top:8px}
@@ -5015,6 +5015,12 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   #maSheet .rd-nums div{background:var(--tb-paper);border-radius:10px;padding:8px;text-align:center}
   #maSheet .rd-nums b{display:block;font-family:var(--tb-mono);font-size:24px}
   #maSheet .rd-nums small{color:var(--tb-ink-3);font-size:11.5px}
+  #maSheet .rd-range{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:10px}
+  #maSheet .rd-range label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;font-weight:700;color:var(--tb-ink-3);flex:1 1 120px}
+  #maSheet .rd-range input{font:inherit;font-size:14px;padding:7px 8px;border:1px solid var(--tb-line);border-radius:9px;background:var(--tb-card);color:inherit;min-width:0}
+  #maSheet .rd-range .sh-btn{flex:1 1 110px;justify-content:center}
+  #maSheet .rd-today{margin-top:10px}#maSheet .rd-th{font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--tb-scrub);margin-bottom:5px}
+  #maSheet .rd-none{font-size:12.5px;color:var(--tb-ink-3);margin:0}#maSheet .rd-tw{max-height:260px}
   #maSheet .rd-last{font-size:12.5px;color:var(--tb-ink-3)}
   #maSheet .rd-dl{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
   #maSheet .rd-dl .sh-btn{flex:1 1 0;justify-content:center;min-width:96px}
@@ -5750,14 +5756,37 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     return [keys.map(q).join(',')].concat(rows.map(function(r){return keys.map(function(k){return q(r[k]);}).join(',');})).join('\r\n');
   }
   function saveCsv(name,csv){var b=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'}),l=document.createElement('a');l.href=URL.createObjectURL(b);l.download=name+'.csv';document.body.appendChild(l);l.click();l.remove();setTimeout(function(){URL.revokeObjectURL(l.href);},3000);}
+  function span(range){var t=today();if(range&&range.indexOf('~')>0){var a=range.split('~');return {from:a[0]||'',to:a[1]||'',tag:(a[0]||'start')+'_to_'+(a[1]||t)};}
+    return {from:range==='today'?t:range==='month'?t.slice(0,7)+'-01':'',to:range==='all'?'':t,tag:range==='all'?'all':range==='month'?t.slice(0,7):t};}
   function regDownload(k,range){
     var R=REGS.filter(function(x){return x.k===k;})[0];if(!R)return Promise.resolve(0);
-    var t=today(),from=range==='today'?t:range==='month'?t.slice(0,7)+'-01':'',to=range==='all'?'':t;
+    var t=today(),sp=span(range),from=sp.from,to=sp.to;
     var inR=function(d){d=String(d||'').slice(0,10);return (!from||d>=from)&&(!to||d<=to);};
     var p=R.how==='rows'?window.IGMCRI_API('rows',{register:k,from:from,to:to}).then(function(j){if(!j.ok)throw j;return j.rows;})
       :R.how==='loans'?window.IGMCRI_API('loans').then(function(j){if(!j.ok)throw j;return (j.loans||[]).filter(function(r){return inR(r['Issue date']);});})
       :window.IGMCRI_API('egdList').then(function(j){if(!j.ok)throw j;return (j.reports||[]).filter(function(r){return inR(r.date);}).map(function(r){var o={};Object.keys(r).forEach(function(x){if(x!=='share_key'&&x!=='shareKey')o[x]=r[x];});return o;});});
-    return p.then(function(rows){if(!rows.length)return 0;saveCsv(R.n.replace(/\s+/g,'_')+'_'+(range==='all'?'all':range==='month'?t.slice(0,7):t),csvOf(rows));logChange('Registers','Download',R.n,'',range,rows.length+' rows');save();return rows.length;});
+    return p.then(function(rows){if(!rows.length)return 0;saveCsv(R.n.replace(/\s+/g,'_')+'_'+sp.tag,csvOf(rows));logChange('Registers','Download',R.n,'',range,rows.length+' rows');save();return rows.length;});
+  }
+
+  /* from–to picker + today's entries on each register card */
+  function rangeRow(k,f0,t0){var t=today(),m=f0||t.slice(0,7)+'-01',id=k==='*'?'all':k;
+    return '<div class="rd-range"><label>From<input type="date" id="rdf_'+id+'" value="'+m+'" max="'+t+'"></label><label>To<input type="date" id="rdt_'+id+'" value="'+(t0||t)+'" max="'+t+'"></label><button type="button" class="sh-btn small primary" data-rdl="'+k+'|custom"><i class="fas fa-download"></i> Download</button></div>';}
+  var TCOLS=[['entry_time','Time'],['Issue time','Time'],['patient_name','Patient'],['Borrower','Borrower'],['Name','Name'],['age','Age'],['sex','Sex'],['unit','Unit'],['ward','Ward'],['procedure','Procedure'],['region','Study'],['Book','Book'],['Title','Book'],['faculty','Faculty'],['postgraduate','PG'],['Designation','Designation'],['Status','Status']];
+  function todayHtml(R){
+    if(!window.IGMCRI_USER)return '';
+    var key=R.k+'|today',st=RV[key];
+    if(!st){RV[key]={busy:true};regRows(R.k,'today').then(function(rows){RV[key]={rows:rows};if(stack.length&&stack[stack.length-1].screen==='regdash')rerender();}).catch(function(e){RV[key]={err:1};});st=RV[key];}
+    var h='<div class="rd-today"><div class="rd-th">Today\'s entries</div>';
+    if(st.busy)return h+'<p class="rd-none">Loading…</p></div>';
+    if(st.err){delete RV[key];return h+'<p class="rd-none">Could not load today\'s entries.</p></div>';}
+    if(!st.rows.length)return h+'<p class="rd-none">No entries yet today.</p></div>';
+    var have={},cols=[];st.rows.forEach(function(o){Object.keys(o).forEach(function(x){have[x]=1;});});
+    TCOLS.forEach(function(c){if(have[c[0]]&&!cols.some(function(z){return z[1]===c[1];}))cols.push(c);});
+    if(cols.length<2)cols=Object.keys(have).filter(function(x){return !/^(client_ref|id|row|share_?key|token|entry_date)$/i.test(x);}).slice(0,6).map(function(x){return [x,x.replace(/_/g,' ')];});
+    var val=function(o,c){var v=o[c];if((c==='procedure'||c==='region')&&o[c+'_other'])v=o[c+'_other'];if(v===true)return 'Yes';if(v===false)return 'No';if(c==='entry_time'&&v)v=String(v).slice(0,5);return esc(v==null?'':v);};
+    var rows=st.rows.slice().reverse();
+    return h+'<div class="rv-wrap rd-tw"><table class="rv"><thead><tr><th>#</th>'+cols.map(function(c){return '<th>'+esc(c[1])+'</th>';}).join('')+'</tr></thead><tbody>'+
+      rows.map(function(o,i){return '<tr><td>'+(rows.length-i)+'</td>'+cols.map(function(c){return '<td>'+val(o,c[0])+'</td>';}).join('')+'</tr>';}).join('')+'</tbody></table></div></div>';
   }
   SCREENS.regdash=function(){
     countsFetch(false);
@@ -5767,8 +5796,9 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
       return '<div class="rd-card"><div class="rd-top"><span class="sh-ic"><i class="fas '+R.ic+'"></i></span><b>'+esc(R.n)+'</b></div>'+(R.sub?'<div class="rd-sub">'+esc(R.sub)+'</div>':'')+
         '<div class="rd-nums"><div><b>'+n(c.today)+'</b><small>Today</small></div><div><b>'+n(c.month)+'</b><small>This month</small></div><div><b>'+n(c.total)+'</b><small>All time</small></div>'+(R.k==='library'?'<div><b>'+n(c.issued)+'</b><small>Books out</small></div>':'')+'</div>'+(c.split?'<div class="rd-split"><span><b>EGD</b> '+c.split.today.egd+' today · '+c.split.month.egd+' this month</span><span><b>Colonoscopy</b> '+c.split.today.colono+' today · '+c.split.month.colono+' this month</span>'+(c.split.month.other?'<span><b>Other</b> '+c.split.today.other+' today · '+c.split.month.other+' this month</span>':'')+'</div>':'')+
         '<div class="rd-last">'+(c.last?'Last entry: '+esc(new Date(c.last+'T12:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})):'No entries yet')+'</div>'+
-        '<div class="rd-dl"><button type="button" class="sh-btn small" data-go="regview" data-arg=\''+JSON.stringify({k:R.k,r:'month'})+'\'><i class="fas fa-table"></i> View entries</button><button type="button" class="sh-btn small" data-rdl="'+R.k+'|today"><i class="fas fa-download"></i> Today</button><button type="button" class="sh-btn small" data-rdl="'+R.k+'|month"><i class="fas fa-download"></i> This month</button><button type="button" class="sh-btn small primary" data-rdl="'+R.k+'|all"><i class="fas fa-file-excel"></i> Download all</button></div></div>';}).join('');
-    body+='<button type="button" class="sh-btn primary wide" data-rdl="*|all" style="margin-top:6px"><i class="fas fa-file-download"></i> Download every register (all entries)</button>';
+        todayHtml(R)+rangeRow(R.k)+
+        '<div class="rd-dl"><button type="button" class="sh-btn small" data-go="regview" data-arg=\''+JSON.stringify({k:R.k,r:'month'})+'\'><i class="fas fa-table"></i> View entries</button><button type="button" class="sh-btn small" data-rdl="'+R.k+'|today"><i class="fas fa-download"></i> Today</button><button type="button" class="sh-btn small" data-rdl="'+R.k+'|month"><i class="fas fa-download"></i> This month</button><button type="button" class="sh-btn small" data-rdl="'+R.k+'|all"><i class="fas fa-file-excel"></i> All</button></div></div>';}).join('');
+    body+='<div class="rd-card"><b style="display:block;margin-bottom:6px">All registers together</b>'+rangeRow('*')+'<button type="button" class="sh-btn wide" data-rdl="*|all" style="margin-top:8px"><i class="fas fa-file-download"></i> Download every register (all entries)</button></div>';
     body+='<p class="sh-foot">Downloads are spreadsheet files (.csv) that open in Excel or Google Sheets. '+(signed?'':'Downloading needs sign-in, because the files contain patient details. ')+'Entries are made only on the separate register forms; this page shows what has been entered. Counts update live from the register spreadsheet.</p><div class="sh-msg" role="status"></div>';
     return {title:'Register dashboard',body:body};
   };
@@ -5777,14 +5807,14 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   /* ---------- View entered data (signed-in only) ---------- */
   var RV={};
   function regRows(k,range){
-    var R=REGS.filter(function(x){return x.k===k;})[0],t=today(),from=range==='today'?t:range==='month'?t.slice(0,7)+'-01':'',to=range==='all'?'':t;
+    var R=REGS.filter(function(x){return x.k===k;})[0],sp=span(range),from=sp.from,to=sp.to;
     var inR=function(d){d=String(d||'').slice(0,10);return (!from||d>=from)&&(!to||d<=to);};
     return R.how==='loans'?window.IGMCRI_API('loans').then(function(j){if(!j.ok)throw j;return (j.loans||[]).filter(function(r){return inR(r['Issue date']);});})
       :window.IGMCRI_API('rows',{register:k,from:from,to:to}).then(function(j){if(!j.ok)throw j;return j.rows||[];});
   }
   SCREENS.regview=function(a){
     var R=REGS.filter(function(x){return x.k===a.k;})[0]||REGS[0],r=a.r||'month',key=R.k+'|'+r,st=RV[key];
-    var tabs='<div class="rd-dl" style="margin:0 0 10px">'+[['today','Today'],['month','This month'],['all','All']].map(function(x){return '<button type="button" class="sh-btn small'+(x[0]===r?' primary':'')+'" data-go="regview" data-replace="1" data-arg=\''+JSON.stringify({k:R.k,r:x[0]})+'\'>'+x[1]+'</button>';}).join('')+'<button type="button" class="sh-btn small" data-rdl="'+R.k+'|'+r+'"><i class="fas fa-download"></i> Download</button></div>';
+    var tabs='<div class="rd-dl" style="margin:0 0 10px">'+[['today','Today'],['month','This month'],['all','All']].map(function(x){return '<button type="button" class="sh-btn small'+(x[0]===r?' primary':'')+'" data-go="regview" data-replace="1" data-arg=\''+JSON.stringify({k:R.k,r:x[0]})+'\'>'+x[1]+'</button>';}).join('')+'<button type="button" class="sh-btn small" data-rdl="'+R.k+'|'+r+'"><i class="fas fa-download"></i> Download</button></div>'+rangeRow(R.k,r.indexOf('~')>0?r.split('~')[0]:'',r.indexOf('~')>0?r.split('~')[1]:'').replace('data-rdl="'+R.k+'|custom"','data-rvr="'+R.k+'"').replace('fa-download"></i> Download','fa-filter"></i> Show');
     if(!window.IGMCRI_USER)return {title:R.n,body:'<p class="sh-foot">Entries contain patient details, so they are visible only after sign-in.</p><button type="button" class="sh-btn primary wide" data-rosignin="1">Sign in with Google</button>'};
     if(!st){RV[key]={busy:true};regRows(R.k,r).then(function(rows){RV[key]={rows:rows};rerender();}).catch(function(e){RV[key]={err:(e&&e.error)||'failed'};rerender();});st=RV[key];}
     var body=tabs;
@@ -5824,9 +5854,10 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     if(b.dataset.rosync){var D=rosterDiffs();D.forEach(function(x){rosterFollow(x.p,x.p.unit,true);logChange('Duty roster','Move',dr(x.h.nm),x.h.u,x.p.unit,'From unit allocation');});save();rosterPush('setup');refreshDrafts();rerender();msg(D.length+' moved. Draft rosters updated.',true);return;}
     if(b.dataset.copy){var tx=(document.getElementById(b.dataset.copy)||{}).textContent||'';var ok=function(){msg('Link copied. Paste it into NFC Tools.',true);};
       if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(tx).then(ok,function(){var r=document.createRange();r.selectNodeContents(document.getElementById(b.dataset.copy));var se=getSelection();se.removeAllRanges();se.addRange(r);msg('Link selected — copy it.',true);});else{var r2=document.createRange();r2.selectNodeContents(document.getElementById(b.dataset.copy));var s2=getSelection();s2.removeAllRanges();s2.addRange(r2);msg('Link selected — copy it.',true);}return;}
+    if(b.dataset.rvr){var vf=(document.getElementById('rdf_'+b.dataset.rvr)||{}).value||'',vt=(document.getElementById('rdt_'+b.dataset.rvr)||{}).value||'';if(vf&&vt&&vf>vt){msg('The From date is after the To date.');return;}replace('regview',{k:b.dataset.rvr,r:vf+'~'+vt});return;}
     if(b.dataset.rdl){
       if(!window.IGMCRI_USER){msg('Sign in to download — the files contain patient details.');if(window.IGMCRI_SIGNIN){close();IGMCRI_SIGNIN();}return;}
-      var pr=b.dataset.rdl.split('|'),ks=pr[0]==='*'?REGS.map(function(x){return x.k;}):[pr[0]];b.disabled=true;var old=b.innerHTML;b.innerHTML='<i class="fas fa-spinner fa-spin"></i> Preparing…';
+      var pr=b.dataset.rdl.split('|'),ks=pr[0]==='*'?REGS.map(function(x){return x.k;}):[pr[0]];if(pr[1]==='custom'){var fid=pr[0]==='*'?'all':pr[0],f=(document.getElementById('rdf_'+fid)||{}).value||'',tt=(document.getElementById('rdt_'+fid)||{}).value||'';if(f&&tt&&f>tt){msg('The From date is after the To date.');return;}pr[1]=f+'~'+tt;}b.disabled=true;var old=b.innerHTML;b.innerHTML='<i class="fas fa-spinner fa-spin"></i> Preparing…';
       ks.reduce(function(pp,k){return pp.then(function(acc){return regDownload(k,pr[1]).then(function(c){acc.push(c);return acc;});});},Promise.resolve([])).then(function(cs){b.disabled=false;b.innerHTML=old;var tot=cs.reduce(function(a,c){return a+c;},0);msg(tot?tot+' entr'+(tot===1?'y':'ies')+' downloaded.':'No entries for that period.',!!tot);})
         .catch(function(e){b.disabled=false;b.innerHTML=old;msg(e&&e.error==='not_signed_in'?'Please sign in again.':'Download failed. Check the connection and try again.');});
       return;}
