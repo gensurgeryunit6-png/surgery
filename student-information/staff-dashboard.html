@@ -20,7 +20,7 @@
   <div id="dashboard">
     <div class="topbar"><div><h2>Confidential student records</h2><p class="small" id="whoami">Signed-in department staff</p></div><div class="stack"><a id="approvalLink" href="approvals.html" style="display:none;background:#d4f1f4;color:#096578;border-radius:9px;padding:11px 13px;font-weight:750;text-decoration:none">Staff Approvals</a><button class="secondary" type="button" id="excelExportButton">Export to Excel (.xlsx)</button><button class="secondary" type="button" id="exportButton">Export all as CSV</button><button class="secondary" type="button" id="logoutButton">Sign out</button></div></div>
     <div class="panel">
-      <div class="toolbar"><div><label for="searchInput">Find by student name</label><input id="searchInput" placeholder="Search student name" /></div><div class="stack"><button class="secondary" type="button" id="searchButton">Search</button><button class="secondary" type="button" id="clearButton" title="Reset the search filter, not student records">Clear search</button></div></div>
+      <div class="toolbar"><div><label for="searchInput">Find by student name</label><input id="searchInput" placeholder="Search student name" /></div><div><label for="batchFilter">Filter by admission batch</label><select id="batchFilter" style="min-width:190px;padding:12px;border:1px solid #cee0e8;border-radius:9px;background:#fbfdff;font:inherit"><option value="">All batches</option></select></div><div class="stack"><button class="secondary" type="button" id="searchButton">Search</button><button class="secondary" type="button" id="clearButton" title="Reset the search and batch filters, not student records">Clear filters</button><button type="button" id="batchExcelButton" disabled>Download selected batch (.xlsx)</button></div></div>
       <p class="small" role="status" id="dataStatus"></p>
       <div class="table-wrap"><table aria-label="Student records"><thead><tr><th>Date</th><th>Student</th><th>Year</th><th>Student Mobile</th><th>Primary Parent / Guardian</th><th>Parent Mobile</th><th>Actions</th></tr></thead><tbody id="recordsBody"></tbody></table></div>
       <div class="paginator"><span id="pageInfo" class="small"></span><div class="stack"><button id="prevButton" class="secondary" type="button">Previous</button><button id="nextButton" class="secondary" type="button">Next</button></div></div>
@@ -32,9 +32,9 @@
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/+esm';
 const db=createClient('https://dtbpchspeirxvojfozld.supabase.co','sb_publishable_wy0O6mXoSZR2lDOQRikNpg_kaXvI8nb');
-const $=id=>document.getElementById(id), pageSize=50;let page=0,total=0,query='',rows=[],canDelete=false,activeDetail=null,loadSequence=0;
+const $=id=>document.getElementById(id), pageSize=50;let page=0,total=0,query='',rows=[],canDelete=false,activeDetail=null,loadSequence=0,batchOptionsLoaded=false;
 function status(message,isError=false){$('dataStatus').textContent=message;$('dataStatus').className=isError?'small error':'small';}
-async function refreshAuth(){const {data:{user}}=await db.auth.getUser();if(user?.app_metadata?.gs_student_intake_admin===true&&!recoveryLinkOpened){canDelete=user?.app_metadata?.gs_student_intake_approver===true;$('loginPanel').style.display='none';$('dashboard').style.display='block';$('approvalLink').style.display=user.app_metadata?.gs_student_intake_approver===true?'inline-block':'none';$('whoami').textContent=`Signed in as ${user.email}`;await loadRows();}else{canDelete=false;loadSequence++;$('loginPanel').style.display='block';$('dashboard').style.display='none';if(user&&!recoveryLinkOpened)await db.auth.signOut();}}
+async function refreshAuth(){const {data:{user}}=await db.auth.getUser();if(user?.app_metadata?.gs_student_intake_admin===true&&!recoveryLinkOpened){canDelete=user?.app_metadata?.gs_student_intake_approver===true;$('loginPanel').style.display='none';$('dashboard').style.display='block';$('approvalLink').style.display=user.app_metadata?.gs_student_intake_approver===true?'inline-block':'none';$('whoami').textContent=`Signed in as ${user.email}`;await loadBatchOptions();await loadRows();}else{canDelete=false;loadSequence++;$('loginPanel').style.display='block';$('dashboard').style.display='none';if(user&&!recoveryLinkOpened)await db.auth.signOut();}}
 $('showLogin').addEventListener('click',()=>{$('loginForm').classList.remove('hidden');$('signupForm').classList.add('hidden');$('showLogin').classList.remove('secondary');$('showSignup').classList.add('secondary');});
 $('showSignup').addEventListener('click',()=>{$('loginForm').classList.add('hidden');$('signupForm').classList.remove('hidden');$('showSignup').classList.remove('secondary');$('showLogin').classList.add('secondary');});
 $('signupForm').addEventListener('submit',async e=>{e.preventDefault();const msg=$('signupStatus'),btn=$('signupButton');msg.className='small';msg.textContent='Submitting registration…';const name=$('signupName').value.trim(),email=$('signupEmail').value.trim().toLowerCase(),password=$('signupPassword').value;if(password!==$('signupConfirm').value){msg.textContent='Passwords do not match.';msg.className='small error';return;}if(password.length<12){msg.textContent='Use at least 12 characters.';msg.className='small error';return;}btn.disabled=true;try{const {error}=await db.auth.signUp({email,password,options:{data:{full_name:name,requested_department:'General Surgery, IGMCRI'},emailRedirectTo:'https://gensurgeryunit6-png.github.io/surgery/student-information/staff-dashboard.html'}});if(error)throw error;await db.auth.signOut();msg.textContent='Registration submitted. If you receive a confirmation email, verify your address. Access remains pending until a department administrator approves your account. Contact the department administrator to request approval.';msg.className='small success';$('signupForm').reset();}catch(err){msg.textContent=err.message||'Unable to register.';msg.className='small error';}finally{btn.disabled=false;}});
@@ -73,13 +73,14 @@ $('logoutButton').addEventListener('click',async()=>{await db.auth.signOut();row
 
 async function loadRows(){
   const callId=++loadSequence;
-  const searchTerm=query,requestedPage=page;
+  const searchTerm=query,requestedPage=page,batch=$('batchFilter').value;
   status(searchTerm?'Searching student records…':'Loading all student records…');
   try{
     let request=db.from('gs_student_intake').select('*',{count:'exact'})
       .order('submitted_at',{ascending:false})
       .range(requestedPage*pageSize,(requestedPage+1)*pageSize-1);
     if(searchTerm)request=request.ilike('student_name','%'+searchTerm.replace(/[%,_()]/g,'')+'%');
+    if(batch)request=request.eq('admission_year',Number(batch));
     const {data,error,count}=await request;
     if(callId!==loadSequence)return;
     if(error)throw error;
@@ -129,7 +130,7 @@ async function loadRows(){
       td.textContent=searchTerm?'No matching students. Click Clear search to show all records.':'No student records have been submitted.';
       tr.append(td);tbody.append(tr);
     }
-    status(searchTerm?total+' record(s) match "'+searchTerm+'".':'Showing all '+total+' student record(s).');
+    status((batch?'Batch '+batch+' · ':'')+(searchTerm?total+' record(s) match "'+searchTerm+'".':'Showing '+(batch?'selected batch':'all')+' '+total+' student record(s).'));
     $('pageInfo').textContent='Page '+(total===0?0:page+1)+' · '+(total===0?0:page*pageSize+1)+'–'+Math.min(total,(page+1)*pageSize)+' of '+total;
     $('prevButton').disabled=page===0;
     $('nextButton').disabled=(page+1)*pageSize>=total;
@@ -145,12 +146,11 @@ $('searchButton').addEventListener('click',()=>{
 $('searchInput').addEventListener('keydown',event=>{
   if(event.key==='Enter'){event.preventDefault();$('searchButton').click();}
 });
+$('batchFilter').addEventListener('change',()=>{page=0;loadRows();$('batchExcelButton').disabled=!$('batchFilter').value;});
 $('clearButton').addEventListener('click',()=>{
-  // Reset search input and results; never deletes student data.
-  $('searchInput').value='';
-  query='';page=0;
-  loadRows();
-  $('searchInput').focus();
+  // Reset search and batch filters; never deletes student data.
+  $('searchInput').value='';$('batchFilter').value='';query='';page=0;
+  $('batchExcelButton').disabled=true;loadRows();$('searchInput').focus();
 });
 $('prevButton').addEventListener('click',()=>{if(page>0){page--;loadRows();}});
 $('nextButton').addEventListener('click',()=>{if((page+1)*pageSize<total){page++;loadRows();}});
@@ -213,6 +213,22 @@ $('deleteDetailButton').addEventListener('click',()=>{if(activeDetail)deleteReco
 $('closeDialog').addEventListener('click',()=>$('detailDialog').close());
 function cell(v){let s=displayValue(v);if(/^[\s\t\r\n]*[=+\-@]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';}
 
+async function loadBatchOptions(){
+  const select=$('batchFilter');
+  try{
+    const all=[];let offset=0;
+    while(true){
+      const {data,error}=await db.from('gs_student_intake').select('admission_year').range(offset,offset+499);
+      if(error)throw error;
+      const part=data||[];all.push(...part);
+      if(part.length<500)break;offset+=500;
+    }
+    const years=[...new Set(all.map(x=>x.admission_year).filter(x=>x!==null&&x!==undefined&&String(x).trim()!=='' ).map(String))].sort((a,b)=>Number(b)-Number(a));
+    for(const year of years){const option=document.createElement('option');option.value=year;option.textContent=year+' Batch';select.append(option);}
+    batchOptionsLoaded=true;
+  }catch(err){status('Could not load batch list: '+(err.message||'Check permissions.'),true);}
+}
+
 async function fetchAllForExport(){
   // Read every authorized record, not only the currently visible dashboard page.
   const all=[];
@@ -229,6 +245,31 @@ async function fetchAllForExport(){
   }
   return all;
 }
+$('batchExcelButton').addEventListener('click',async()=>{
+  const btn=$('batchExcelButton'),batch=$('batchFilter').value;
+  if(!batch){status('Select an admission batch first.',true);return;}
+  btn.disabled=true;btn.textContent='Preparing batch Excel…';
+  try{
+    if(!window.XLSX?.utils?.aoa_to_sheet)throw Error('Excel library did not load. Refresh the page and try again.');
+    const {data:{user},error:authError}=await db.auth.getUser();
+    if(authError||user?.app_metadata?.gs_student_intake_admin!==true)throw Error('Staff session expired. Sign in again.');
+    const all=await fetchAllForExport();
+    const selected=all.filter(item=>String(item.admission_year??'')===batch);
+    if(!selected.length)throw Error('No student records found for batch '+batch+'.');
+    const fields=['submitted_at',...Object.keys(descriptions).filter(k=>k!=='submitted_at')];
+    const header=fields.map(k=>descriptions[k]||k);
+    const values=selected.map(item=>fields.map(k=>k==='submitted_at'&&item[k]?new Date(item[k]).toLocaleString('en-IN'):displayValue(item[k])));
+    const sheet=window.XLSX.utils.aoa_to_sheet([header,...values]);
+    sheet['!cols']=fields.map((field,i)=>({wch:Math.min(Math.max(header[i].length+2,...values.slice(0,100).map(row=>String(row[i]||'').length+2),15),40)}));
+    if(selected.length)sheet['!autofilter']={ref:'A1:'+window.XLSX.utils.encode_cell({r:selected.length,c:fields.length-1})};
+    const book=window.XLSX.utils.book_new();book.Props={Title:'IGMCRI Student Batch '+batch,Subject:'Confidential student records',Author:'Department of General Surgery, IGMCRI'};
+    window.XLSX.utils.book_append_sheet(book,sheet,'Batch '+batch);
+    window.XLSX.writeFile(book,'IGMCRI_Student_Batch_'+batch+'_'+new Date().toISOString().slice(0,10)+'.xlsx',{bookType:'xlsx',compression:true});
+    status('Downloaded batch '+batch+': '+selected.length+' student record(s). Keep this file confidential.');
+  }catch(error){status(error.message||'Batch export failed.',true);console.error(error);}
+  finally{btn.disabled=!$('batchFilter').value;btn.textContent='Download selected batch (.xlsx)';}
+});
+
 $('excelExportButton').addEventListener('click',async()=>{
   const btn=$('excelExportButton');
   btn.disabled=true;
