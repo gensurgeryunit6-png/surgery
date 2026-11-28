@@ -5063,6 +5063,13 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   #maSheet .sh-btn[disabled]{opacity:.5;cursor:not-allowed}
   #maSheet .dc.vac-d{background:rgba(14,124,134,.12)}
   #maSheet .dc.vac-cw{box-shadow:inset 0 0 0 2px rgba(14,124,134,.5)}
+  #maSheet .vac-p{display:table;margin-top:4px;font-size:11.5px;font-weight:700;color:#0b5960;background:rgba(14,124,134,.12);border-radius:6px;padding:2px 7px}
+  #maSheet .vac-p.none{display:block;color:var(--tb-ink-3);background:transparent;padding-left:0;font-weight:500}
+  #maSheet .vac-p.na{color:#7a5600;background:#fff3d6}
+  #maSheet .vac-c{display:block;font-size:11.5px;color:var(--tb-ink-3);margin-top:3px;line-height:1.4}
+  #maSheet .vac-link{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:10px;font-size:12px}
+  #maSheet .vac-link span{flex:1 0 100%;font-weight:700;color:var(--tb-ink-3)}
+  #maSheet .vac-link input{flex:1 1 200px;min-width:0;font:inherit;font-size:12px;padding:6px 8px;border:1px solid var(--tb-line);border-radius:8px;background:var(--tb-paper,#f3f6f8);color:inherit}
 </style>
 <script>/* Theatre Board layout tweaks: move KPI strip under the title, add an IST date block. */
 (function(){
@@ -5588,13 +5595,13 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   function vacDoc(){var P=vacPlan(),F=vacFaculty(),V=window.IGMCRI_VACATION||{periods:[]},dd=function(d){return d.slice(8)+'.'+d.slice(5,7)+'.'+d.slice(0,4);};
     var per=function(k){var x=V.periods.filter(function(p){return p.kind===k;})[0];return x?dd(x.from)+' to '+dd(x.to):'';};
     var who=function(n){var p=F.filter(function(q){return q.name===n;})[0];return n?esc(n)+(p?', '+esc(desigOf(p)):''):'';};
-    var rows=[];F.forEach(function(p){var h=vacMatch(P.h1,p)?'v1':vacMatch(P.h2,p)?'v2':'';if(h)rows.push([p.name,desigOf(p),h==='v1'?'I half<br>'+per('v1'):'II half<br>'+per('v2'),h]);});
+    var rows=[];F.forEach(function(p){var h=vacMatch(P.h1,p)?'v1':vacMatch(P.h2,p)?'v2':'';if(h){var x=prefFor(p)||{};rows.push([p.name,desigOf(p),h==='v1'?'I half<br>'+per('v1'):'II half<br>'+per('v2'),h,[x['Vacation address'],x['Email'],[x['Phone'],x['Alt phone']].filter(Boolean).join(' / ')].filter(Boolean).map(esc).join('<br>')]);}});
     rows.sort(function(a,b){return a[3]===b[3]?0:a[3]<b[3]?-1:1;});
     return '<div class="doc-head"><div class="i1">INDIRA GANDHI MEDICAL COLLEGE &amp; RESEARCH INSTITUTE</div><div class="i3" style="text-decoration:underline">PUDUCHERRY</div></div>'+
       '<h3 class="doc-title">SCHEDULE FOR AVAILING VACATION</h3><p style="text-align:center;font-size:10pt">Winter vacation 2026 · '+esc(V.ref||'')+'</p>'+
       '<table class="doc-kv"><tr><td><b>Name of Department</b></td><td>:</td><td>General Surgery</td></tr><tr><td>Name and details of HOD/In-charge of Department during I half of vacation period</td><td>:</td><td>'+who(P.inc1)+'</td></tr><tr><td>Name and details of HOD/In-charge of Department during II half of vacation period</td><td>:</td><td>'+who(P.inc2)+'</td></tr></table>'+
       '<table class="doc-t"><thead><tr><th>Sl. No.</th><th>Name of Faculty</th><th>Designation</th><th>Period of vacation</th><th style="width:30%">Vacation address including e-mail, phone/Alternative phone number</th><th style="width:14%">Signature</th></tr></thead><tbody>'+
-      rows.map(function(r,i){return '<tr style="height:44px"><td>'+(i+1)+'</td><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td>'+r[2]+'</td><td></td><td></td></tr>';}).join('')+'</tbody></table>'+
+      rows.map(function(r,i){return '<tr style="height:44px"><td>'+(i+1)+'</td><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td>'+r[2]+'</td><td>'+(r[4]||'')+'</td><td></td></tr>';}).join('')+'</tbody></table>'+
       '<div class="doc-sign"><div>Date:</div><div style="text-align:right">Sign &amp; Seal<br><br>Professor &amp; Head<br>Department of General Surgery</div></div>';}
   function docHtml(a){if(a.doc==='holidays')return HEAD+docBody('holidays');if(a.doc==='vacation')return vacDoc();return (a.draft?'<div class="doc-draft">INCOMPLETE DRAFT – required information is missing</div>':'')+HEAD+docBody(a.doc,a.yr)+SIGN;}
   SCREENS.docPreview=function(a){
@@ -5724,6 +5731,31 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     if(P.inc2&&vacMatch(P.h2,{name:P.inc2}))out.push({k:'bad',t:'In-charge for II half ('+P.inc2+') is on vacation in II half'});
     return out;
   }
+
+  /* faculty preferences from the Vacation_Preference form (latest submission per faculty wins) */
+  var VP={};
+  function vacPrefs(){return load().vacPrefs||{};}
+  function prefFor(p){var m=vacPrefs();return m[p.name]||null;}
+  function vacPrefsLoad(cb){if(!window.IGMCRI_USER||!window.IGMCRI_API||VP.busy)return;VP.busy=1;
+    IGMCRI_API('vacPrefs').then(function(j){VP.busy=0;if(!j||!j.ok)throw j;var m={};(j.rows||[]).forEach(function(r){if(r['Faculty'])m[String(r['Faculty']).trim()]=r;});
+      var d=load();d.vacPrefs=m;save();VP.loaded=1;VP.err=0;cb&&cb();}).catch(function(){VP.busy=0;VP.err=1;VP.loaded=1;cb&&cb();});}
+  function unitOfP(p){var h=rosterFind(p.name);return h?h.u:(p.unit?'S'+String(p.unit).replace(/\D/g,''):'');}
+  function planFromPrefs(P){
+    var F=vacFaculty(),h={v1:[],v2:[]},flex={};
+    F.forEach(function(p){var x=prefFor(p),cur=vacMatch(P.h1,p)?'v1':vacMatch(P.h2,p)?'v2':'',w=cur;
+      if(x){w=x['Preference']==='I half'?'v1':x['Preference']==='II half'?'v2':'';flex[p.name]=String(x['Flexible'])==='Yes';}else flex[p.name]=true;
+      if(w)h[w].push(p.name);});
+    var other=function(k){return k==='v1'?'v2':'v1';},moved=[],stuck=[];
+    var covered=function(u,k){return F.some(function(p){return unitOfP(p)===u&&!rosterExcluded(p.name)&&h[k].indexOf(p.name)<0;});};
+    var hasFac=function(u){return F.some(function(p){return unitOfP(p)===u&&!rosterExcluded(p.name);});};
+    for(var pass=0;pass<3;pass++)UNITS.forEach(function(u){['v1','v2'].forEach(function(k){if(!hasFac(u)||covered(u,k))return;
+      var c=F.filter(function(p){return unitOfP(p)===u&&h[k].indexOf(p.name)>=0;});
+      c.sort(function(a,b){return (flex[b.name]?1:0)-(flex[a.name]?1:0)||(prefFor(a)?1:0)-(prefFor(b)?1:0);});
+      var pick=c.filter(function(p){var o=other(k);h[k].splice(h[k].indexOf(p.name),1);h[o].push(p.name);var ok=covered(u,o);h[o].splice(h[o].indexOf(p.name),1);h[k].push(p.name);return ok;})[0];
+      if(pick&&flex[pick.name]){h[k].splice(h[k].indexOf(pick.name),1);h[other(k)].push(pick.name);moved.push(pick.name+' → '+(k==='v1'?'II half':'I half'));}
+      else if(pick&&stuck.indexOf(u)<0)stuck.push('Unit '+u+' ('+(k==='v1'?'I half':'II half')+'): '+c.map(function(p){return p.name;}).join(', ')+' all asked for this half and are not flexible');});});
+    return {h1:h.v1,h2:h.v2,inc1:P.inc1,inc2:P.inc2,moved:moved,stuck:stuck};
+  }
   SCREENS.vacation=function(a){
     var V=window.IGMCRI_VACATION||{periods:[]},P=a.plan||(a.plan=JSON.parse(JSON.stringify(vacPlan()))),F=vacFaculty();
     var per=function(k){var x=V.periods.filter(function(p){return p.kind===k;})[0];return x?fmtDate(x.from)+(x.to!==x.from?' – '+fmtDate(x.to):''):'';};
@@ -5731,21 +5763,27 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     var cad=function(h){var c={};F.forEach(function(p){if(half(p)!==h&&!rosterExcluded(p.name)){var d=p.designation.replace(' & Head','');c[d]=(c[d]||0)+1;}});return ['Professor','Associate Professor','Assistant Professor'].map(function(d){return (c[d]||0)+' '+d.replace('Professor','Prof.').replace('Associate','Assoc.').replace('Assistant','Asst.');}).join(' · ');};
     var unitOf=function(p){var h=rosterFind(p.name);return h?h.u:(p.unit?'S'+String(p.unit).replace(/\D/g,''):'');};
     var iss=vacCheck(P),bad=iss.filter(function(x){return x.k==='bad';});
+    var nPref=F.filter(function(p){return prefFor(p);}).length,formUrl=new URL('Vacation_Preference.html',location.href).href;
+    var prefTxt=function(p){var x=prefFor(p);if(!x)return '<span class="vac-p none">No preference yet</span>';
+      var w=x['Preference'];return '<span class="vac-p'+(w==='Not availing'?' na':'')+'">Asked: '+esc(w)+(w!=='Not availing'&&String(x['Flexible'])==='Yes'?' · flexible':'')+'</span>'+
+        (x['Phone']||x['Email']||x['Vacation address']?'<span class="vac-c">'+esc([x['Phone'],x['Alt phone'],x['Email']].filter(Boolean).join(' · '))+(x['Vacation address']?'<br>'+esc(x['Vacation address']):'')+(String(x['Leaving HQ'])==='Yes'?' <b>(leaving HQ)</b>':'')+'</span>':'');};
+    var prefBox='<div class="sh-card vac-pref"><b>Faculty preferences</b><div class="sh-foot" style="margin:4px 0 8px">'+(VP.busy?'Loading the preference form replies…':VP.err?'Could not load replies — check the connection.':nPref+' of '+F.length+' faculty have sent their preference.')+(a.moved&&a.moved.length?'<br>Moved to keep units covered: '+esc(a.moved.join('; ')):'')+(a.stuck&&a.stuck.length?'<br><span style="color:#a01818">Needs your decision: '+esc(a.stuck.join('; '))+'</span>':'')+'</div>'+
+      '<div class="sh-actions"><button type="button" class="sh-btn primary" data-vacpref="1"'+(nPref?'':' disabled')+'><i class="fas fa-magic"></i> Use their preferences</button><button type="button" class="sh-btn" data-vacreload="1"><i class="fas fa-sync"></i> Refresh replies</button></div>'+
+      '<div class="vac-link"><span>Preference form for faculty</span><input readonly value="'+esc(formUrl)+'" aria-label="Preference form link"><button type="button" class="sh-btn small" data-copy="'+esc(formUrl)+'"><i class="fas fa-copy"></i> Copy</button><a class="sh-btn small wa" target="_blank" rel="noopener" href="https://wa.me/?text='+encodeURIComponent('Winter vacation 2026 (13–21 Dec / 23–31 Dec): please give your preferred half and vacation contact details here — '+formUrl)+'"><i class="fab fa-whatsapp"></i> WhatsApp</a></div></div>';
     var body='<div class="sh-card"><b>'+esc(V.title||'Winter vacation')+'</b><div class="sh-foot" style="margin:4px 0 0">I half '+per('v1')+' · common working day '+per('cw')+' · II half '+per('v2')+'<br>'+esc(V.ref||'')+'</div></div>'+
-      (P.proposed?'<p class="ro-note">This is a suggested split: every unit keeps a faculty member on duty in both halves, and each cadre stays nearly equal. Change anyone below, then press <b>Save plan</b>.</p>':'')+
+      prefBox+(P.proposed?'<p class="ro-note">This is a suggested split: every unit keeps a faculty member on duty in both halves, and each cadre stays nearly equal. Change anyone below, then press <b>Save plan</b>.</p>':'')+
       '<div class="vac-sum"><div><b>On duty · I half</b><small>'+cad('v1')+'</small></div><div><b>On duty · II half</b><small>'+cad('v2')+'</small></div></div>'+
       (iss.length?'<div class="vac-iss">'+iss.map(function(x){return '<div class="'+x.k+'"><i class="fas '+(x.k==='bad'?'fa-exclamation-triangle':'fa-info-circle')+'"></i> '+esc(x.t)+'</div>';}).join('')+'</div>':'<div class="vac-iss"><div class="ok"><i class="fas fa-check"></i> Every unit has faculty on duty in both halves.</div></div>')+
       '<div class="vac-list">'+F.map(function(p){var h=half(p),ex=rosterExcluded(p.name);
-        return '<div class="vac-row"><span class="vac-n"><b>'+esc(p.name)+'</b><small>'+esc(desigOf(p))+(unitOf(p)?' · Unit '+esc(unitOf(p)):'')+(ex?' · kept off roster':'')+'</small></span>'+
+        return '<div class="vac-row"><span class="vac-n"><b>'+esc(p.name)+'</b><small>'+esc(desigOf(p))+(unitOf(p)?' · Unit '+esc(unitOf(p)):'')+(ex?' · kept off roster':'')+'</small>'+prefTxt(p)+'</span>'+
           '<span class="vac-seg" role="group" aria-label="Vacation half for '+esc(p.name)+'">'+[['v1','I half'],['v2','II half'],['','Not availing']].map(function(o){return '<button type="button" class="'+(h===o[0]?'on':'')+'" data-vacset="'+esc(p.name)+'|'+o[0]+'">'+o[1]+'</button>';}).join('')+'</span></div>';}).join('')+'</div>';
     var incOpt=function(h,cur){return F.filter(function(p){return half(p)!==h;}).map(function(p){return '<option'+(p.name===cur?' selected':'')+'>'+esc(p.name)+'</option>';}).join('');};
     body+='<div class="sh-f"><label for="vacInc1">HOD / in-charge during I half</label><select id="vacInc1">'+incOpt('v1',P.inc1)+'</select></div><div class="sh-f"><label for="vacInc2">HOD / in-charge during II half</label><select id="vacInc2">'+incOpt('v2',P.inc2)+'</select></div>'+
-      '<button type="button" class="sh-btn primary wide" data-vacsave="1"'+(bad.length?' disabled':'')+'><i class="fas fa-save"></i> Save plan'+(bad.length?' (fix the warnings first)':'')+'</button>'+
-      '<button type="button" class="sh-btn wide" data-vacapply="2026-12"'+(P.proposed||a.dirty?' disabled':'')+'><i class="fas fa-clipboard-list"></i> Apply to December roster</button>'+
+      '<button type="button" class="sh-btn primary wide" data-vacsave="1"'+(bad.length?' disabled':'')+'><i class="fas fa-save"></i> '+(bad.length?'Save plan (fix the warnings first)':'Save plan and update December roster')+'</button>'+
       '<div class="sh-actions" style="margin-top:8px"><button type="button" class="sh-btn" data-dl=\''+esc(JSON.stringify({doc:'vacation'}))+'\' data-kind="doc"><i class="fas fa-file-word"></i> Schedule (Word)</button><button type="button" class="sh-btn" data-dl=\''+esc(JSON.stringify({doc:'vacation'}))+'\' data-kind="html"><i class="fas fa-file-pdf"></i> Schedule (PDF)</button></div>'+
       '<a class="sh-btn wide" href="docs/Winter_Vacation_Circular_2026.pdf" target="_blank" rel="noopener" style="margin-top:8px"><i class="fas fa-file-alt"></i> Open the circular</a>'+
-      '<p class="sh-foot">Applying changes only December 13–21 and 23–31: faculty on vacation are taken off their unit days, and the unit\'s remaining faculty cover. Cells you edited by hand are not touched. The schedule form is filled from this plan; addresses, phone numbers and signatures are left blank for each faculty member to complete.</p><div class="sh-msg" role="status"></div>';
-    return {title:'Winter vacation 2026',body:body};
+      '<p class="sh-foot">Saving updates the December roster straight away, for 13–21 and 23–31 Dec only: faculty on vacation are taken off their unit days, and the unit\'s remaining faculty cover. Cells you edited by hand are not touched. The schedule form is filled from this plan, with each faculty member\'s vacation address and phone numbers from the preference form; signatures stay blank.</p><div class="sh-msg" role="status"></div>';
+    return {title:'Winter vacation 2026',body:body,after:function(){if(!VP.loaded&&!VP.busy)vacPrefsLoad(function(){if(stack.length&&stack[stack.length-1].screen==='vacation')rerender();});}};
   };
   function vacApply(m){
     var M=R().months[m];
@@ -6054,11 +6092,18 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
       if(!onDuty('v1',P.inc1))P.inc1=(fa.filter(function(p){return onDuty('v1',p.name);})[0]||{}).name||'';
       if(!onDuty('v2',P.inc2))P.inc2=(fa.filter(function(p){return onDuty('v2',p.name);})[0]||{}).name||'';
       top.arg.dirty=1;rerender();return;}
+    if(b.dataset.vacpref){var np=planFromPrefs(top.arg.plan);top.arg.plan={h1:np.h1,h2:np.h2,inc1:np.inc1,inc2:np.inc2};top.arg.moved=np.moved;top.arg.stuck=np.stuck;top.arg.dirty=1;
+      var fa2=vacFaculty(),od=function(h,n){return n&&!vacMatch(h==='v1'?np.h1:np.h2,{name:n});};
+      if(!od('v1',top.arg.plan.inc1))top.arg.plan.inc1=(fa2.filter(function(p){return od('v1',p.name);})[0]||{}).name||'';
+      if(!od('v2',top.arg.plan.inc2))top.arg.plan.inc2=(fa2.filter(function(p){return od('v2',p.name);})[0]||{}).name||'';
+      rerender();msg('Preferences applied to the plan. Check it, then press Save.',true);return;}
+    if(b.dataset.vacreload){VP.loaded=0;vacPrefsLoad(function(){if(stack.length&&stack[stack.length-1].screen==='vacation')rerender();});rerender();return;}
+    if(b.dataset.copy){var cv=b.dataset.copy;(navigator.clipboard?navigator.clipboard.writeText(cv):Promise.reject()).then(function(){msg('Link copied.',true);}).catch(function(){var ip=b.parentNode.querySelector('input');if(ip){ip.select();}msg('Select the link and copy it.');});return;}
     if(b.dataset.vacsave){var P2=top.arg.plan;P2.inc1=(document.getElementById('vacInc1')||{}).value||P2.inc1;P2.inc2=(document.getElementById('vacInc2')||{}).value||P2.inc2;
       if(vacCheck(P2).some(function(x){return x.k==='bad';})){msg('Fix the warnings first.');return;}
       R().setup.vacation={h1:P2.h1.slice(),h2:P2.h2.slice(),inc1:P2.inc1,inc2:P2.inc2,saved:new Date().toISOString(),by:currentUser()};R().setup.updated=new Date().toISOString();
       save();rosterPush('setup');logChange('Duty roster','Winter vacation plan','','','I half: '+P2.h1.length+', II half: '+P2.h2.length,'');
-      top.arg.plan=JSON.parse(JSON.stringify(R().setup.vacation));top.arg.dirty=0;refreshDrafts();rerender();msg('Plan saved. Now press “Apply to December roster”.',true);return;}
+      top.arg.plan=JSON.parse(JSON.stringify(R().setup.vacation));top.arg.dirty=0;refreshDrafts();vacApply('2026-12');top.arg.moved=null;top.arg.stuck=null;rerender();msg('Plan saved and the December duty roster updated.',true);return;}
     if(b.dataset.vacapply){vacApply(b.dataset.vacapply);msg('December roster updated for the vacation. Open Duty roster to check it.',true);return;}
     if(b.dataset.wafile){var wf=b.dataset.wafile.split('|'),url=new URL(wf[0],location.href).href,ttl=wf[1].replace(/&amp;/g,'&');
       fetch(wf[0]).then(function(r){return r.blob();}).then(function(bl){var f=new File([bl],wf[0].split('/').pop(),{type:'application/pdf'});
