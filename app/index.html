@@ -4755,6 +4755,10 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   html.sh-open body::after{content:"";position:fixed;inset:0;background:rgba(11,34,48,.45);z-index:190;pointer-events:none}
   #maSheet{left:auto!important;width:min(980px,100%);box-shadow:-18px 0 40px rgba(11,34,48,.25);border-radius:18px 0 0 18px}
 }
+
+#mApp .ma-cal button.vac{background:rgba(14,124,134,.13)}
+#mApp .ma-cal button.cw{box-shadow:inset 0 0 0 2px rgba(14,124,134,.5)}
+#mApp .ma-cal-lg b.vac{background:rgba(14,124,134,.35)}
 </style>
 <style id="admin-app">/* ==== Admin sheets + new home/menu widgets (phone) ==== */
 #maSheet{display:none}
@@ -5041,6 +5045,24 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
   #maSheet .nfc-url{font-family:var(--tb-mono);font-size:12.5px;background:var(--tb-paper);border-radius:9px;padding:9px 10px;margin:10px 0 4px;word-break:break-all;user-select:all}
   #maSheet .nfc-steps{margin:0;padding-left:20px;font-size:13.5px;line-height:1.55}
   #maSheet .rd-dl a.sh-btn{text-decoration:none;flex:1 1 0;justify-content:center}
+  #maSheet .ro-note{background:#fff8e6;border:1px solid #f0d9a0;border-radius:10px;padding:9px 12px;font-size:13px;margin:10px 0}
+  #maSheet .ro-vac{font-size:12px;margin-top:8px;border:1px solid var(--tb-line);border-radius:8px;padding:7px 9px;background:var(--tb-card)}
+  #maSheet .vac-sum{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+  #maSheet .vac-sum>div{background:var(--tb-card);border:1px solid var(--tb-line);border-radius:10px;padding:8px 10px}
+  #maSheet .vac-sum b{display:block;font-size:12.5px}#maSheet .vac-sum small{font-size:11.5px;color:var(--tb-ink-3)}
+  #maSheet .vac-iss{margin:0 0 10px;font-size:12.5px}#maSheet .vac-iss>div{padding:5px 2px}
+  #maSheet .vac-iss .bad{color:#a01818;font-weight:600}#maSheet .vac-iss .ok{color:#0d6b4a;font-weight:600}#maSheet .vac-iss .info{color:var(--tb-ink-3)}
+  #maSheet .vac-list{border:1px solid var(--tb-line);border-radius:12px;background:var(--tb-card);margin-bottom:12px}
+  #maSheet .vac-row{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--tb-line);flex-wrap:wrap}
+  #maSheet .vac-row:last-child{border-bottom:0}
+  #maSheet .vac-n{min-width:0;flex:1 1 170px}#maSheet .vac-n b{display:block;font-size:13.5px}#maSheet .vac-n small{font-size:11.5px;color:var(--tb-ink-3)}
+  #maSheet .vac-seg{display:inline-flex;border:1px solid var(--tb-line);border-radius:9px;overflow:hidden;flex:0 0 auto}
+  #maSheet .vac-seg button{font:inherit;font-size:12px;padding:6px 9px;border:0;background:transparent;color:inherit;cursor:pointer}
+  #maSheet .vac-seg button+button{border-left:1px solid var(--tb-line)}
+  #maSheet .vac-seg button.on{background:var(--tb-ink);color:#fff!important;font-weight:700}
+  #maSheet .sh-btn[disabled]{opacity:.5;cursor:not-allowed}
+  #maSheet .dc.vac-d{background:rgba(14,124,134,.12)}
+  #maSheet .dc.vac-cw{box-shadow:inset 0 0 0 2px rgba(14,124,134,.5)}
 </style>
 <script>/* Theatre Board layout tweaks: move KPI strip under the title, add an IST date block. */
 (function(){
@@ -5416,14 +5438,14 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     var grid='<div class="sh-cal-head"><button type="button" class="sh-btn small" data-go="calendar" data-replace="1" data-arg=\''+esc(JSON.stringify({m:prev.getFullYear()+'-'+pad(prev.getMonth()+1)}))+'\' aria-label="Previous month"><i class="fas fa-chevron-left"></i></button><b>'+cur.toLocaleDateString('en-IN',{month:'long',year:'numeric'})+'</b><button type="button" class="sh-btn small" data-go="calendar" data-replace="1" data-arg=\''+esc(JSON.stringify({m:next.getFullYear()+'-'+pad(next.getMonth()+1)}))+'\' aria-label="Next month"><i class="fas fa-chevron-right"></i></button></div><div class="sh-cal">'+
       ['S','M','T','W','T','F','S'].map(function(x){return '<span class="dn">'+x+'</span>';}).join('');
     for(var i=0;i<first;i++)grid+='<span></span>';
-    for(var dd=1;dd<=days;dd++){var ds=ms+'-'+pad(dd),ev=on(ds),ac=acad(ds),hl=hol(ds),hc=hl.some(function(h){return h.type==='PH';})?' hol-ph':hl.length?' hol-rh':'';
+    for(var dd=1;dd<=days;dd++){var ds=ms+'-'+pad(dd),ev=on(ds),ac=acad(ds),hl=hol(ds),hc=hl.some(function(h){return h.type==='PH';})?' hol-ph':hl.length?' hol-rh':'';var vk=window.IGMCRI_VAC_ON&&IGMCRI_VAC_ON(ds);if(vk)hc+=vk.kind==='cw'?' vac-cw':' vac-d';
       var dots=ev.slice(0,3).map(function(e){return '<i class="c-'+CAL_CATS[e.category].toLowerCase()+'"></i>';}).join('')+(ac.length?'<i class="c-academic"></i>':'');
       grid+='<button type="button" class="dc'+hc+(ds===t?' today':'')+(ds===sel?' sel':'')+'" data-go="calendar" data-replace="1" data-arg=\''+esc(JSON.stringify({m:ms,d:ds}))+'\'><span>'+dd+'</span><em>'+dots+'</em></button>';}
     grid+='</div><div class="sh-legend"><span><i class="sq hol-ph"></i>Public holiday</span><span><i class="sq hol-rh"></i>Restricted holiday (RH)</span>'+['Leave','Academic','Department','Important','Events'].map(function(c){return '<span><i class="c-'+c.toLowerCase()+'"></i>'+c+'</span>';}).join('')+'</div>';
     var leaveToday=on(t).filter(function(e){return CAL_CATS[e.category]==='Leave';});
     var focus=sel||t,list=on(focus),acl=acad(focus),hll=hol(focus);
     var body=grid+'<h4 class="sh-h">'+(focus===t?'Today':fmtDate(focus))+' <span><button type="button" class="sh-btn small" data-go="recEdit" data-arg=\''+esc(JSON.stringify({kind:'ent',ent:'calendar',date:focus}))+'\'><i class="fas fa-plus"></i> Add on this date</button></span></h4>'+
-      '<div class="sh-list">'+(hll.map(function(h){return '<div class="sh-row static"><span class="sh-ic"><i class="fas fa-umbrella-beach"></i></span><span class="sh-main"><strong>'+esc(h.name)+'</strong><small>'+(h.type==='PH'?'Public holiday · Govt. of Puducherry':'Restricted holiday · any 2 per year')+'</small></span>'+pill(h.type==='PH'?'Holiday':'RH',h.type==='PH'?'hol-ph':'hol-rh')+'</div>';}).join('')+list.map(function(e){return row({attrs:'data-go="recEdit" data-arg=\''+esc(JSON.stringify({kind:'ent',ent:'calendar',id:e.id}))+'\'',ic:'<i class="fas '+(CAL_CATS[e.category]==='Leave'?'fa-plane-departure':'fa-calendar-check')+'"></i>',t:esc(e.title),s:esc([e.category,pname(e.personId),e.endDate&&e.endDate!==e.date?fmtDate(e.date)+' → '+fmtDate(e.endDate):''].filter(Boolean).join(' · ')),r:pill(CAL_CATS[e.category],'c-'+CAL_CATS[e.category].toLowerCase())});}).join('')+
+      '<div class="sh-list">'+((function(){var vk=window.IGMCRI_VAC_ON&&IGMCRI_VAC_ON(focus);if(!vk)return '';var vo=vacOff(focus);return '<div class="sh-row static"><span class="sh-ic"><i class="fas fa-umbrella-beach"></i></span><span class="sh-main"><strong>'+esc(vk.name)+'</strong><small>'+(vk.kind==='cw'?'All faculty on duty':vo.length?'On vacation: '+esc(vo.join(', ')):'Faculty vacation · plan in Winter vacation')+'</small></span></div>';})())+(hll.map(function(h){return '<div class="sh-row static"><span class="sh-ic"><i class="fas fa-umbrella-beach"></i></span><span class="sh-main"><strong>'+esc(h.name)+'</strong><small>'+(h.type==='PH'?'Public holiday · Govt. of Puducherry':'Restricted holiday · any 2 per year')+'</small></span>'+pill(h.type==='PH'?'Holiday':'RH',h.type==='PH'?'hol-ph':'hol-rh')+'</div>';}).join('')+list.map(function(e){return row({attrs:'data-go="recEdit" data-arg=\''+esc(JSON.stringify({kind:'ent',ent:'calendar',id:e.id}))+'\'',ic:'<i class="fas '+(CAL_CATS[e.category]==='Leave'?'fa-plane-departure':'fa-calendar-check')+'"></i>',t:esc(e.title),s:esc([e.category,pname(e.personId),e.endDate&&e.endDate!==e.date?fmtDate(e.date)+' → '+fmtDate(e.endDate):''].filter(Boolean).join(' · ')),r:pill(CAL_CATS[e.category],'c-'+CAL_CATS[e.category].toLowerCase())});}).join('')+
         acl.map(function(e){return '<div class="sh-row static"><span class="sh-ic"><i class="fas fa-graduation-cap"></i></span><span class="sh-main"><strong>'+esc(e.title)+'</strong><small>'+esc([e.audience,e.time,'from Academic schedule'].filter(Boolean).join(' · '))+'</small></span></div>';}).join('')||empty('Nothing on this date. Tap “Add on this date”.'))+'</div>'+
       '<h4 class="sh-h">Today’s leave <span>'+leaveToday.length+'</span></h4><div class="sh-list">'+(leaveToday.map(function(e){return '<div class="sh-row static"><span class="sh-ic"><i class="fas fa-plane-departure"></i></span><span class="sh-main"><strong>'+esc(pname(e.personId)||e.title)+'</strong><small>'+esc(e.category+' · until '+fmtDate(e.endDate||e.date))+'</small></span></div>';}).join('')||empty('No one is on leave today.'))+'</div>'+
       '<p class="sh-foot">PG and UG teaching sessions come from the existing Academic schedule and are shown here, not entered twice.</p>';
@@ -5505,7 +5527,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     }
     return c;
   }
-  var DOCS={coa:'University inspection report (Pondicherry University COA)',nmc:'NMC Form B – Staff section',annual:'Annual department report',holidays:'Holiday list 2027'};
+  var DOCS={coa:'University inspection report (Pondicherry University COA)',nmc:'NMC Form B – Staff section',annual:'Annual department report',holidays:'Holiday list 2027',vacation:'Schedule for availing vacation – Winter 2026'};
   SCREENS.downloads=function(){
     var Y=new Date().getFullYear();
     var st=function(doc,yr){var c=check(doc,yr),bad=c.filter(function(x){return !x.ok;}).length;return bad?pill(bad+' to update','c-leave'):pill('Complete','c-academic');};
@@ -5515,6 +5537,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
       '<h4 class="sh-h">University inspection</h4>'+item('fa-university','Pondicherry University COA','Continuation of affiliation · faculty, publications, attendance',st('coa',Y),{doc:'coa',yr:Y})+
       item('fa-file-medical','NMC Form B – Staff','Faculty and residents for NMC inspection',st('nmc',Y),{doc:'nmc',yr:Y})+
       '<h4 class="sh-h">Department</h4>'+item('fa-umbrella-beach','Holiday list 2027','Public and restricted holidays, Puducherry','',{doc:'holidays'})+
+      '<h4 class="sh-h">Circulars</h4><div class="dl-it"><div class="dl-h"><span class="sh-ic"><i class="fas fa-file-alt"></i></span><span class="sh-main"><strong>Winter vacation 2026 – faculty</strong><small>Circular dated 13-11-2026 · I half 13–21 Dec, II half 23–31 Dec</small></span></div><div class="dl-b"><a class="sh-btn small" href="docs/Winter_Vacation_Circular_2026.pdf" target="_blank" rel="noopener"><i class="fas fa-file-pdf"></i> Open PDF</a><button type="button" class="sh-btn small wa" data-wafile="docs/Winter_Vacation_Circular_2026.pdf|Winter vacation circular 2026 – IGMC&amp;RI"><i class="fab fa-whatsapp"></i> WhatsApp</button></div></div>'+
+      (window.IGMCRI_USER?item('fa-umbrella-beach','Schedule for availing vacation','Filled from the winter vacation plan (Admin → Winter vacation)','<button type="button" class="sh-btn small" data-go="vacation">Plan</button>',{doc:'vacation'}):'')+
       '<p class="sh-foot">WhatsApp opens the phone share menu with the report attached — pick WhatsApp and the chat. Word downloads a .doc file. PDF opens the report ready to print — choose “Save as PDF”. Reports are built from the personnel and academic records in this app; anything missing is marked “INCOMPLETE DRAFT”. Tap Check to see what is missing.</p>';
     return {title:'Downloads',body:body};
   };
@@ -5560,8 +5584,19 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
       '<h4>9. Equipment and infrastructure</h4>'+tbl(['Item','Model','Status','Location'],d.equipment.map(function(r){return [r.name,r.model||'',r.status||'',r.location||''];}).concat(d.facility.map(function(r){return [r.name,r.kind,'',r.details||''];})))+
       '<h4>10. Achievements and awards</h4>'+tbl(['Recipient','Award','Body','Date'],A('award').map(function(r){return [pname(r.personId),r.title,r.body||'',fmtDate(r.date)];}));
   }
-  var DOC_CSS='body{font-family:"Times New Roman",serif;color:#000}.doc-head{text-align:center;border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:12px}.doc-head .i1{font-weight:bold;font-size:15pt}.doc-head .i3{font-weight:bold;font-size:13pt;margin-top:4px}.doc-title{text-align:center;font-size:13pt;text-decoration:underline}h4{font-size:11.5pt;margin:14px 0 6px}.doc-t{width:100%;border-collapse:collapse;font-size:10pt}.doc-t th,.doc-t td{border:1px solid #000;padding:4px 6px;text-align:left;vertical-align:top}.doc-sign{display:flex;justify-content:space-between;margin-top:36px;font-size:11pt}.doc-draft{color:#b00;font-weight:bold;text-align:center;border:2px solid #b00;padding:4px;margin-bottom:10px}';
-  function docHtml(a){if(a.doc==='holidays')return HEAD+docBody('holidays');return (a.draft?'<div class="doc-draft">INCOMPLETE DRAFT – required information is missing</div>':'')+HEAD+docBody(a.doc,a.yr)+SIGN;}
+  var DOC_CSS='body{font-family:"Times New Roman",serif;color:#000}.doc-head{text-align:center;border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:12px}.doc-head .i1{font-weight:bold;font-size:15pt}.doc-head .i3{font-weight:bold;font-size:13pt;margin-top:4px}.doc-title{text-align:center;font-size:13pt;text-decoration:underline}h4{font-size:11.5pt;margin:14px 0 6px}.doc-t{width:100%;border-collapse:collapse;font-size:10pt}.doc-t th,.doc-t td{border:1px solid #000;padding:4px 6px;text-align:left;vertical-align:top}.doc-sign{display:flex;justify-content:space-between;margin-top:36px;font-size:11pt}.doc-kv{width:100%;border-collapse:collapse;font-size:11pt;margin:6px 0 14px}.doc-kv td{padding:5px 4px;vertical-align:top}.doc-kv td:first-child{width:52%}.doc-kv td:nth-child(2){width:12px}.doc-draft{color:#b00;font-weight:bold;text-align:center;border:2px solid #b00;padding:4px;margin-bottom:10px}';
+  function vacDoc(){var P=vacPlan(),F=vacFaculty(),V=window.IGMCRI_VACATION||{periods:[]},dd=function(d){return d.slice(8)+'.'+d.slice(5,7)+'.'+d.slice(0,4);};
+    var per=function(k){var x=V.periods.filter(function(p){return p.kind===k;})[0];return x?dd(x.from)+' to '+dd(x.to):'';};
+    var who=function(n){var p=F.filter(function(q){return q.name===n;})[0];return n?esc(n)+(p?', '+esc(desigOf(p)):''):'';};
+    var rows=[];F.forEach(function(p){var h=vacMatch(P.h1,p)?'v1':vacMatch(P.h2,p)?'v2':'';if(h)rows.push([p.name,desigOf(p),h==='v1'?'I half<br>'+per('v1'):'II half<br>'+per('v2'),h]);});
+    rows.sort(function(a,b){return a[3]===b[3]?0:a[3]<b[3]?-1:1;});
+    return '<div class="doc-head"><div class="i1">INDIRA GANDHI MEDICAL COLLEGE &amp; RESEARCH INSTITUTE</div><div class="i3" style="text-decoration:underline">PUDUCHERRY</div></div>'+
+      '<h3 class="doc-title">SCHEDULE FOR AVAILING VACATION</h3><p style="text-align:center;font-size:10pt">Winter vacation 2026 · '+esc(V.ref||'')+'</p>'+
+      '<table class="doc-kv"><tr><td><b>Name of Department</b></td><td>:</td><td>General Surgery</td></tr><tr><td>Name and details of HOD/In-charge of Department during I half of vacation period</td><td>:</td><td>'+who(P.inc1)+'</td></tr><tr><td>Name and details of HOD/In-charge of Department during II half of vacation period</td><td>:</td><td>'+who(P.inc2)+'</td></tr></table>'+
+      '<table class="doc-t"><thead><tr><th>Sl. No.</th><th>Name of Faculty</th><th>Designation</th><th>Period of vacation</th><th style="width:30%">Vacation address including e-mail, phone/Alternative phone number</th><th style="width:14%">Signature</th></tr></thead><tbody>'+
+      rows.map(function(r,i){return '<tr style="height:44px"><td>'+(i+1)+'</td><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td>'+r[2]+'</td><td></td><td></td></tr>';}).join('')+'</tbody></table>'+
+      '<div class="doc-sign"><div>Date:</div><div style="text-align:right">Sign &amp; Seal<br><br>Professor &amp; Head<br>Department of General Surgery</div></div>';}
+  function docHtml(a){if(a.doc==='holidays')return HEAD+docBody('holidays');if(a.doc==='vacation')return vacDoc();return (a.draft?'<div class="doc-draft">INCOMPLETE DRAFT – required information is missing</div>':'')+HEAD+docBody(a.doc,a.yr)+SIGN;}
   SCREENS.docPreview=function(a){
     return {title:'Preview',body:'<div class="sh-actions"><button type="button" class="sh-btn" data-export="doc"><i class="fas fa-file-word"></i> Word</button><button type="button" class="sh-btn" data-export="html"><i class="fas fa-file-pdf"></i> Print / PDF</button></div><div class="sh-doc">'+docHtml(a)+'</div><p class="sh-foot">Word and PDF downloads work when the app is opened from your own website. Inside the Claude preview, downloads are blocked.</p>'};
   };
@@ -5601,7 +5636,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
       turns[u]=(turns[u]||0);var r={date:ds,unit:u,ed:{}};
       RCOLS.forEach(function(c){var k=c[0];if(keepEdits&&prev&&prev.ed&&prev.ed[k]){r[k]=prev[k];r.ed[k]=1;}else r[k]=fill(u,k,turns[u]);});
       if(keepEdits&&prev&&prev.ed&&prev.ed.unit)r.ed.unit=1;
-      turns[u]++;rows.push(r);
+      applyVac(r);turns[u]++;rows.push(r);
     }
     R().months[m]={rows:rows,status:old&&keepEdits?old.status:'draft',updated:new Date().toISOString(),by:currentUser()};
     save();rosterPush('M'+m);
@@ -5626,10 +5661,14 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     return '<div class="ro-head"><div class="ro-i">Indira Gandhi Medical College &amp; Research Institute</div><div class="ro-d">Department of Surgery: '+MONTHS[mo-1]+' -'+y+'</div></div>'+
       '<table class="ro-t"><thead><tr><th>DATE</th><th>DAY</th><th>DUTY</th><th>JR/PG</th><th>SR/ FACULTY ON DUTY</th><th>SENIOR FACULTY ON CALL</th></tr></thead><tbody>'+
       rows.map(function(r,i){var wd=new Date(r.date+'T12:00:00').getDay(),h=(window.IGMCRI_HOLIDAYS||[]).some(function(x){return x.date===r.date;});
-        return '<tr class="'+(wd===0?'sun':'')+(h&&editable?' hol':'')+'"><td>'+ddmmyy(r.date)+'</td><td>'+WD[wd]+'</td>'+c(r,'unit',i)+c(r,'jr',i)+c(r,'duty',i)+c(r,'senior',i)+'</tr>';}).join('')+'</tbody></table>';
+        return '<tr class="'+(wd===0?'sun':'')+(h&&editable?' hol':'')+'"><td>'+ddmmyy(r.date)+'</td><td>'+WD[wd]+'</td>'+c(r,'unit',i)+c(r,'jr',i)+c(r,'duty',i)+c(r,'senior',i)+'</tr>';}).join('')+'</tbody></table>'+vacNote(rows);
   }
+  function vacNote(rows){var g={v1:[],v2:[]};(rows||[]).forEach(function(r){var h=vacHalf(r.date);if(h&&r.vac)String(r.vac).split(',').forEach(function(n){n=n.trim();if(n&&g[h].indexOf(n)<0)g[h].push(n);});});
+    if(!g.v1.length&&!g.v2.length)return '';
+    var V=window.IGMCRI_VACATION||{periods:[]},per=function(k){var x=V.periods.filter(function(p){return p.kind===k;})[0];return x?ddmmyy(x.from)+' – '+ddmmyy(x.to):'';};
+    return '<div class="ro-vac"><b>Faculty on winter vacation</b> (not on the unit days above): '+(g.v1.length?'I half '+per('v1')+': '+esc(g.v1.join(', '))+'. ':'')+(g.v2.length?'II half '+per('v2')+': '+esc(g.v2.join(', '))+'. ':'')+'22.12.26 is a common working day for all faculty.</div>';}
   var RSIGN='<div class="ro-sign"><b>Dr. Simon Dasiah</b><br>Professor &amp; Head<br>Department of Surgery<br>Indira Gandhi Medical College &amp; Research Institute<br>Pondicherry</div>';
-  var RO_CSS='.ro-head{border:1px solid #000;border-bottom:0;text-align:center}.ro-i{font-weight:bold;font-size:12pt;padding:5px;border-bottom:1px solid #000}.ro-d{font-size:11pt;padding:5px}.ro-t{width:100%;border-collapse:collapse;font-size:10.5pt}.ro-t th,.ro-t td{border:1px solid #000;padding:4px 6px;text-align:left}.ro-t th{font-weight:normal;text-align:center;font-size:9.5pt;letter-spacing:.03em}.ro-t td:nth-child(1),.ro-t td:nth-child(3){text-align:center;white-space:nowrap}.ro-sign{margin:40px 0 0 auto;width:300px;font-size:10.5pt;line-height:1.35}';
+  var RO_CSS='.ro-vac{font-size:9.5pt;margin-top:6px;border:1px solid #000;padding:5px}.ro-head{border:1px solid #000;border-bottom:0;text-align:center}.ro-i{font-weight:bold;font-size:12pt;padding:5px;border-bottom:1px solid #000}.ro-d{font-size:11pt;padding:5px}.ro-t{width:100%;border-collapse:collapse;font-size:10.5pt}.ro-t th,.ro-t td{border:1px solid #000;padding:4px 6px;text-align:left}.ro-t th{font-weight:normal;text-align:center;font-size:9.5pt;letter-spacing:.03em}.ro-t td:nth-child(1),.ro-t td:nth-child(3){text-align:center;white-space:nowrap}.ro-sign{margin:40px 0 0 auto;width:300px;font-size:10.5pt;line-height:1.35}';
   var PUB={};
   function pubFetch(m,cb){var api=(window.IGMCRI_CONFIG&&window.IGMCRI_CONFIG.api)||'';if(!api||m in PUB||PUB['_'+m]){return;}PUB['_'+m]=1;
     fetch(api+'?action=roster&m='+m).then(function(r){return r.json();}).then(function(j){PUB[m]=j&&j.ok?(j.rows||null):false;cb&&cb();}).catch(function(){PUB[m]=false;cb&&cb();});}
@@ -5643,6 +5682,80 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     else body+='<div class="ro-wrap">'+rosterTable(m,false,rows)+'</div><div class="sh-actions" style="margin-top:12px"><button type="button" class="sh-btn" data-roexp="html" data-m="'+m+'" data-pub="1"><i class="fas fa-print"></i> Print / PDF</button><button type="button" class="sh-btn wa" data-roexp="wa" data-m="'+m+'" data-pub="1"><i class="fab fa-whatsapp"></i> WhatsApp</button></div>';
     body+='<button type="button" class="sh-btn primary wide" data-rosignin="1" style="margin-top:14px"><i class="fas fa-sign-in-alt"></i> Sign in to make or edit the roster</button>';
     return {title:'Duty roster',body:body};
+  }
+
+  /* ---------- Faculty winter vacation (circular 13-11-2026) ----------
+     Plan lives in the roster setup (synced to the sheet): {h1:[full names], h2:[...], inc1, inc2}.
+     Draft roster months drop faculty on vacation for their half; an empty column is covered by the unit's
+     remaining faculty. Hand-edited cells are never changed. */
+  var VDEF={h1:['Mima','Basavanandswami','Ganesan','Kapil','Ray','Indrajit','Keerthi','Ramchandar'],h2:['Simon','Ashley','Selvakumaran','Sri Vengadesh','Jawahar','Govardhanan','Viswanathan'],inc1:'Simon',inc2:'Basavanandswami'};
+  var VDES=['Professor & Head','Professor','Associate Professor','Assistant Professor'];
+  function vacFaculty(){return load().personnel.filter(function(p){return isActive(p)&&(VDES.indexOf(p.designation)>=0||/head/i.test(p.designation||''));})
+    .sort(function(a,b){var r=function(p){if(/head/i.test(p.role||''))return -1;var i=VDES.indexOf(p.designation);return i<0?(/head/i.test(p.designation)?0:9):i;};return r(a)-r(b);});}
+  function desigOf(p){return /head of department/i.test(p.role||'')?p.designation+' & Head':p.designation;}
+  function vacMatch(list,p){return (list||[]).some(function(n){return rosterIs(n,p.name)||norm(n)===norm(p.name);});}
+  function vacPlan(){var S=R().setup;if(S.vacation&&S.vacation.h1)return S.vacation;
+    var F=vacFaculty(),pick=function(L){return F.filter(function(p){return vacMatch(L,p);}).map(function(p){return p.name;});};
+    var one=function(n){var p=F.filter(function(q){return vacMatch([n],q);})[0];return p?p.name:'';};
+    return {h1:pick(VDEF.h1),h2:pick(VDEF.h2),inc1:one(VDEF.inc1),inc2:one(VDEF.inc2),proposed:1};}
+  function vacHalf(ds){var v=window.IGMCRI_VAC_ON&&IGMCRI_VAC_ON(ds);return v&&(v.kind==='v1'||v.kind==='v2')?v.kind:'';}
+  function vacOff(ds){var h=vacHalf(ds);if(!h)return [];var P=vacPlan();if(P.proposed)return [];return (h==='v1'?P.h1:P.h2)||[];}
+  function isFacultyName(nm){var p=matchPerson(nm);return !!(p&&(VDES.indexOf(p.designation)>=0||/head/i.test(p.designation||'')));}
+  function applyVac(r){
+    var off=vacOff(r.date);if(!off.length)return r;
+    var gone=[],split=function(v){return String(v||'').split('/').map(function(x){return x.trim();}).filter(Boolean);};
+    var keep=function(k){if(r.ed&&r.ed[k])return split(r[k]);var L=split(r[k]),out=L.filter(function(x){var n=x.replace(/^dr\.?\s*/i,'');var o=off.some(function(f){return rosterIs(n,f);});if(o)gone.push(x);return !o;});r[k]=out.join(' / ');return out;};
+    var sen=keep('senior'),du=keep('duty');
+    if(!sen.length&&!(r.ed&&r.ed.senior)){var f=du.filter(function(x){return isFacultyName(x.replace(/^dr\.?\s*/i,''));});if(f.length){r.senior=f[0];if(!(r.ed&&r.ed.duty)){du=du.filter(function(x){return x!==f[0];});r.duty=du.join(' / ');}}}
+    if(!split(r.duty).length&&!(r.ed&&r.ed.duty)&&r.senior)r.duty=r.senior;
+    if(gone.length)r.vac=gone.join(', ');
+    return r;
+  }
+  function vacCheck(P){
+    var F=vacFaculty(),on=function(h){return F.filter(function(p){return !vacMatch(h==='v1'?P.h1:P.h2,p);});},out=[];
+    ['v1','v2'].forEach(function(h){var O=on(h),lab=h==='v1'?'I half':'II half';
+      UNITS.forEach(function(u){var U=R().setup.units[u]||{},fac=[].concat(U.senior||[],U.duty||[]).filter(function(n){return isFacultyName(n);});
+        if(fac.length&&!fac.some(function(n){return O.some(function(p){return rosterIs(n,p.name);});}))out.push({k:'bad',t:lab+': no faculty of Unit '+u+' on duty'});});});
+    F.forEach(function(p){if(vacMatch(P.h1,p)&&vacMatch(P.h2,p))out.push({k:'bad',t:p.name+' is in both halves — only one half is allowed'});
+      if(p.doj&&p.doj>'2025-12-13'&&(vacMatch(P.h1,p)||vacMatch(P.h2,p)))out.push({k:'bad',t:p.name+' joined '+fmtDate(p.doj)+' — less than one year of service by 13-12-2026'});});
+    var nodoj=F.filter(function(p){return !p.doj&&(vacMatch(P.h1,p)||vacMatch(P.h2,p));});
+    if(nodoj.length)out.push({k:'info',t:'Date of joining not recorded for '+nodoj.length+' faculty — check each has one year of regular service.'});
+    if(P.inc1&&vacMatch(P.h1,{name:P.inc1}))out.push({k:'bad',t:'In-charge for I half ('+P.inc1+') is on vacation in I half'});
+    if(P.inc2&&vacMatch(P.h2,{name:P.inc2}))out.push({k:'bad',t:'In-charge for II half ('+P.inc2+') is on vacation in II half'});
+    return out;
+  }
+  SCREENS.vacation=function(a){
+    var V=window.IGMCRI_VACATION||{periods:[]},P=a.plan||(a.plan=JSON.parse(JSON.stringify(vacPlan()))),F=vacFaculty();
+    var per=function(k){var x=V.periods.filter(function(p){return p.kind===k;})[0];return x?fmtDate(x.from)+(x.to!==x.from?' – '+fmtDate(x.to):''):'';};
+    var half=function(p){return vacMatch(P.h1,p)?'v1':vacMatch(P.h2,p)?'v2':'';};
+    var cad=function(h){var c={};F.forEach(function(p){if(half(p)!==h&&!rosterExcluded(p.name)){var d=p.designation.replace(' & Head','');c[d]=(c[d]||0)+1;}});return ['Professor','Associate Professor','Assistant Professor'].map(function(d){return (c[d]||0)+' '+d.replace('Professor','Prof.').replace('Associate','Assoc.').replace('Assistant','Asst.');}).join(' · ');};
+    var unitOf=function(p){var h=rosterFind(p.name);return h?h.u:(p.unit?'S'+String(p.unit).replace(/\D/g,''):'');};
+    var iss=vacCheck(P),bad=iss.filter(function(x){return x.k==='bad';});
+    var body='<div class="sh-card"><b>'+esc(V.title||'Winter vacation')+'</b><div class="sh-foot" style="margin:4px 0 0">I half '+per('v1')+' · common working day '+per('cw')+' · II half '+per('v2')+'<br>'+esc(V.ref||'')+'</div></div>'+
+      (P.proposed?'<p class="ro-note">This is a suggested split: every unit keeps a faculty member on duty in both halves, and each cadre stays nearly equal. Change anyone below, then press <b>Save plan</b>.</p>':'')+
+      '<div class="vac-sum"><div><b>On duty · I half</b><small>'+cad('v1')+'</small></div><div><b>On duty · II half</b><small>'+cad('v2')+'</small></div></div>'+
+      (iss.length?'<div class="vac-iss">'+iss.map(function(x){return '<div class="'+x.k+'"><i class="fas '+(x.k==='bad'?'fa-exclamation-triangle':'fa-info-circle')+'"></i> '+esc(x.t)+'</div>';}).join('')+'</div>':'<div class="vac-iss"><div class="ok"><i class="fas fa-check"></i> Every unit has faculty on duty in both halves.</div></div>')+
+      '<div class="vac-list">'+F.map(function(p){var h=half(p),ex=rosterExcluded(p.name);
+        return '<div class="vac-row"><span class="vac-n"><b>'+esc(p.name)+'</b><small>'+esc(desigOf(p))+(unitOf(p)?' · Unit '+esc(unitOf(p)):'')+(ex?' · kept off roster':'')+'</small></span>'+
+          '<span class="vac-seg" role="group" aria-label="Vacation half for '+esc(p.name)+'">'+[['v1','I half'],['v2','II half'],['','Not availing']].map(function(o){return '<button type="button" class="'+(h===o[0]?'on':'')+'" data-vacset="'+esc(p.name)+'|'+o[0]+'">'+o[1]+'</button>';}).join('')+'</span></div>';}).join('')+'</div>';
+    var incOpt=function(h,cur){return F.filter(function(p){return half(p)!==h;}).map(function(p){return '<option'+(p.name===cur?' selected':'')+'>'+esc(p.name)+'</option>';}).join('');};
+    body+='<div class="sh-f"><label for="vacInc1">HOD / in-charge during I half</label><select id="vacInc1">'+incOpt('v1',P.inc1)+'</select></div><div class="sh-f"><label for="vacInc2">HOD / in-charge during II half</label><select id="vacInc2">'+incOpt('v2',P.inc2)+'</select></div>'+
+      '<button type="button" class="sh-btn primary wide" data-vacsave="1"'+(bad.length?' disabled':'')+'><i class="fas fa-save"></i> Save plan'+(bad.length?' (fix the warnings first)':'')+'</button>'+
+      '<button type="button" class="sh-btn wide" data-vacapply="2026-12"'+(P.proposed||a.dirty?' disabled':'')+'><i class="fas fa-clipboard-list"></i> Apply to December roster</button>'+
+      '<div class="sh-actions" style="margin-top:8px"><button type="button" class="sh-btn" data-dl=\''+esc(JSON.stringify({doc:'vacation'}))+'\' data-kind="doc"><i class="fas fa-file-word"></i> Schedule (Word)</button><button type="button" class="sh-btn" data-dl=\''+esc(JSON.stringify({doc:'vacation'}))+'\' data-kind="html"><i class="fas fa-file-pdf"></i> Schedule (PDF)</button></div>'+
+      '<a class="sh-btn wide" href="docs/Winter_Vacation_Circular_2026.pdf" target="_blank" rel="noopener" style="margin-top:8px"><i class="fas fa-file-alt"></i> Open the circular</a>'+
+      '<p class="sh-foot">Applying changes only December 13–21 and 23–31: faculty on vacation are taken off their unit days, and the unit\'s remaining faculty cover. Cells you edited by hand are not touched. The schedule form is filled from this plan; addresses, phone numbers and signatures are left blank for each faculty member to complete.</p><div class="sh-msg" role="status"></div>';
+    return {title:'Winter vacation 2026',body:body};
+  };
+  function vacApply(m){
+    var M=R().months[m];
+    if(M&&M.rows){M.rows=M.rows.map(function(r){
+      if(!vacHalf(r.date))return r;
+      var u=r.unit,t=0;M.rows.forEach(function(x){if(x.date<r.date&&x.unit===u)t++;});
+      var n={date:r.date,unit:u,ed:r.ed||{}};RCOLS.forEach(function(c){var k=c[0];n[k]=n.ed[k]?r[k]:fill(u,k,t);});
+      return applyVac(n);});
+      M.updated=new Date().toISOString();M.by=currentUser();save();rosterPush('M'+m);}
+    else genMonth(m,true);
   }
   SCREENS.roster=function(a){
     if(!window.IGMCRI_USER&&!window.IGMCRI_PREVIEW)return rosterView(a);
@@ -5663,6 +5776,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
         '<button type="button" class="sh-btn wide subtle" data-askdel="rofresh"><i class="fas fa-redo"></i> Start again (discard edits)</button>';
     }
     body+=diffBanner();
+    if(m==='2026-12')body+='<button type="button" class="sh-btn wide" data-go="vacation" style="margin-top:14px"><i class="fas fa-umbrella-beach"></i> Winter vacation plan'+(R().setup.vacation?' · saved':' · not set yet')+'</button>';
     body+='<button type="button" class="sh-btn wide" data-go="rosterUnits" style="margin-top:14px"><i class="fas fa-people-arrows"></i> Units &amp; who is in them</button><div class="sh-msg" role="status"></div>';
     return {title:'Duty roster',body:body,after:function(){if(!a.pulled){a.pulled=1;rosterPull(function(){if(stack.length&&stack[stack.length-1].screen==='roster')rerender();});}}};
   };
@@ -5933,6 +6047,23 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     if(b.dataset.copy){var tx=(document.getElementById(b.dataset.copy)||{}).textContent||'';var ok=function(){msg('Link copied. Paste it into NFC Tools.',true);};
       if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(tx).then(ok,function(){var r=document.createRange();r.selectNodeContents(document.getElementById(b.dataset.copy));var se=getSelection();se.removeAllRanges();se.addRange(r);msg('Link selected — copy it.',true);});else{var r2=document.createRange();r2.selectNodeContents(document.getElementById(b.dataset.copy));var s2=getSelection();s2.removeAllRanges();s2.addRange(r2);msg('Link selected — copy it.',true);}return;}
     if(b.dataset.rvr){var vr=pickRange(b.dataset.rvr);if(vr==null){msg('The From date is after the To date.');return;}replace('regview',{k:b.dataset.rvr,r:vr});return;}
+    if(b.dataset.vacset!=null){var vs=b.dataset.vacset.split('|'),vn=vs[0],vh=vs[1],P=top.arg.plan;
+      P.h1=P.h1.filter(function(x){return x!==vn&&!rosterIs(x,vn);});P.h2=P.h2.filter(function(x){return x!==vn&&!rosterIs(x,vn);});
+      if(vh)P[vh==='v1'?'h1':'h2'].push(vn);
+      var fa=vacFaculty(),onDuty=function(h,n){return n&&!vacMatch(h==='v1'?P.h1:P.h2,{name:n});};
+      if(!onDuty('v1',P.inc1))P.inc1=(fa.filter(function(p){return onDuty('v1',p.name);})[0]||{}).name||'';
+      if(!onDuty('v2',P.inc2))P.inc2=(fa.filter(function(p){return onDuty('v2',p.name);})[0]||{}).name||'';
+      top.arg.dirty=1;rerender();return;}
+    if(b.dataset.vacsave){var P2=top.arg.plan;P2.inc1=(document.getElementById('vacInc1')||{}).value||P2.inc1;P2.inc2=(document.getElementById('vacInc2')||{}).value||P2.inc2;
+      if(vacCheck(P2).some(function(x){return x.k==='bad';})){msg('Fix the warnings first.');return;}
+      R().setup.vacation={h1:P2.h1.slice(),h2:P2.h2.slice(),inc1:P2.inc1,inc2:P2.inc2,saved:new Date().toISOString(),by:currentUser()};R().setup.updated=new Date().toISOString();
+      save();rosterPush('setup');logChange('Duty roster','Winter vacation plan','','','I half: '+P2.h1.length+', II half: '+P2.h2.length,'');
+      top.arg.plan=JSON.parse(JSON.stringify(R().setup.vacation));top.arg.dirty=0;refreshDrafts();rerender();msg('Plan saved. Now press “Apply to December roster”.',true);return;}
+    if(b.dataset.vacapply){vacApply(b.dataset.vacapply);msg('December roster updated for the vacation. Open Duty roster to check it.',true);return;}
+    if(b.dataset.wafile){var wf=b.dataset.wafile.split('|'),url=new URL(wf[0],location.href).href,ttl=wf[1].replace(/&amp;/g,'&');
+      fetch(wf[0]).then(function(r){return r.blob();}).then(function(bl){var f=new File([bl],wf[0].split('/').pop(),{type:'application/pdf'});
+        if(navigator.canShare&&navigator.canShare({files:[f]}))return navigator.share({files:[f],title:ttl,text:ttl});throw 0;})
+        .catch(function(){window.open('https://wa.me/?text='+encodeURIComponent(ttl+'\n'+url),'_blank');});return;}
     if(b.dataset.rdp){
       if(!window.IGMCRI_USER){msg('Sign in to download — the files contain patient details.');if(window.IGMCRI_SIGNIN){close();IGMCRI_SIGNIN();}return;}
       var pk2=pickRange(b.dataset.rdp);if(pk2==null){msg('The From date is after the To date.');return;}
@@ -5954,7 +6085,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     if(b.dataset.cancel){document.getElementById('cf_'+b.dataset.cancel).hidden=true;return;}
     if(b.dataset.confirm==='rec'){delRec(top.arg);return;}
     if(b.dataset.export){exportDoc(b.dataset.export);return;}
-    if(b.dataset.dl){var da={};try{da=JSON.parse(b.dataset.dl);}catch(x){}if(da.doc!=='holidays'){var cc=check(da.doc,da.yr||new Date().getFullYear());da.draft=cc.some(function(x){return !x.ok;});}exportDoc(b.dataset.kind,da);return;}
+    if(b.dataset.dl){var da={};try{da=JSON.parse(b.dataset.dl);}catch(x){}if(da.doc!=='holidays'&&da.doc!=='vacation'){var cc=check(da.doc,da.yr||new Date().getFullYear());da.draft=cc.some(function(x){return !x.ok;});}exportDoc(b.dataset.kind,da);return;}
     if(b.dataset.backup){var blob=new Blob([JSON.stringify(load(),null,1)],{type:'application/json'});var l=document.createElement('a');l.href=URL.createObjectURL(blob);l.download='IGMCRI_Surgery_Admin_Backup_'+today()+'.json';document.body.appendChild(l);l.click();l.remove();msg('Backup file prepared.',true);return;}
   }
   function onSheetInput(e){
@@ -5964,6 +6095,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     if(t.id==='logMod'&&e.type==='change'){top.arg.mod=t.value;rerender();return;}
     if(t.id==='docYear'&&e.type==='change'){top.arg.yr=+t.value;rerender();return;}
     if(t.id==='roMonth'&&e.type==='change'){top.arg.m=t.value;rerender();return;}
+    if((t.id==='vacInc1'||t.id==='vacInc2')&&e.type==='change'&&top.arg.plan){top.arg.plan[t.id==='vacInc1'?'inc1':'inc2']=t.value;top.arg.dirty=1;rerender();return;}
     if(t.dataset&&t.dataset.rc!=null&&e.type==='input'){var mm=top.arg.m||(document.getElementById('roMonth')||{}).value,row=R().months[mm].rows[+t.dataset.rc],k=t.dataset.rk;row[k]=t.textContent.trim();(row.ed=row.ed||{})[k]=1;t.classList.add('ed');R().months[mm].updated=new Date().toISOString();R().months[mm].by=currentUser();save();rosterPush('M'+mm);return;}
     if(t.dataset&&t.dataset.romv&&e.type==='change'&&t.value){rosterMove(t.dataset.romv,t.value);rerender();msg('Moved. Draft rosters updated.',true);return;}
     if((t.id==='roSunDate'||t.id==='roSunUnit')&&e.type==='change'){var sd=document.getElementById('roSunDate').value;if(!sd||new Date(sd+'T12:00:00').getDay()!==0){msg('Pick a Sunday.');return;}R().setup.anchor={date:sd,unit:document.getElementById('roSunUnit').value};R().setup.updated=new Date().toISOString();logChange('Duty roster','Sunday rotation',sd,'',R().setup.anchor.unit,'');save();rosterPush('setup');refreshDrafts();msg('Sunday rotation updated in draft rosters.',true);return;}
@@ -6045,7 +6177,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     dutyFor:function(ds){var d=window.MAdmin.dutyOn(ds);if(d)return d;if(!window.IGMCRI_USER&&!window.IGMCRI_PREVIEW)return null;var u=unitFor(ds);return {unit:u,jr:fill(u,'jr',0),duty:fill(u,'duty',0),senior:fill(u,'senior',0),planned:true};},
     unitFor:function(ds){return unitFor(ds);},
     dutyOn:function(ds){var m=ds.slice(0,7),mo=load().roster&&load().roster.months&&load().roster.months[m],i=+ds.slice(8,10)-1,r;if(mo&&window.IGMCRI_USER)r=mo.rows[i];else{if(!(m in PUB))pubFetch(m,function(){if(window.MApp&&MApp.refresh)MApp.refresh();});r=PUB[m]&&PUB[m][i];}return r?{unit:r.unit,jr:r.jr,duty:r.duty,senior:r.senior}:null;},
-    leaveToday:function(){var t=today();return load().calendar.filter(function(e){return CAL_CATS[e.category]==='Leave'&&e.date<=t&&(e.endDate||e.date)>=t;}).map(function(e){return {name:pname(e.personId)||e.title,until:fmtDate(e.endDate||e.date),cat:e.category};});},
+    vacationOn:function(ds){return vacOff(ds);},
+    leaveToday:function(){var t=today();return vacOff(t).map(function(n){return {name:n,until:'vacation',vac:1};}).concat(load().calendar.filter(function(e){return CAL_CATS[e.category]==='Leave'&&e.date<=t&&(e.endDate||e.date)>=t;}).map(function(e){return {name:pname(e.personId)||e.title,until:fmtDate(e.endDate||e.date),cat:e.category};}));},
     counts:function(){var d=load();return {personnel:d.personnel.filter(isActive).length,past:d.personnel.filter(function(p){return !isActive(p);}).length,interns:d.interns.filter(function(i){return i.status!=='Completed';}).length,pubs:d.academic.filter(function(r){return r.type==='publication';}).length,log:d.log.length};},
     renderDirectoryInto:function(el){var o=SCREENS.personnel({cat:'faculty'});el.innerHTML=o.body;}
   };
@@ -6159,10 +6292,10 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
     var g='<div class="ma-cal">'+['S','M','T','W','T','F','S'].map(function(x){return '<span class="dn">'+x+'</span>';}).join('');
     for(var i=0;i<first;i++)g+='<span></span>';
     for(var d=1;d<=days;d++){var k=ms+'-'+pad(d),h=H.filter(function(x){return x.date===k;}),ev=E.some(function(x){return x.date===k;}),lv=L?L(k).length:0;
-      g+='<button type="button" data-cal="'+k+'" class="'+(h.some(function(x){return x.type==='PH';})?'ph':h.length?'rh':'')+(k===t?' td':'')+'" title="'+esc(h.map(function(x){return x.name;}).join(', '))+'"><span>'+d+'</span><em>'+(ev?'<i class="s"></i>':'')+(lv?'<i class="l"></i>':'')+'</em></button>';}
+      g+='<button type="button" data-cal="'+k+'" class="'+(h.some(function(x){return x.type==='PH';})?'ph':h.length?'rh':'')+(k===t?' td':'')+((window.IGMCRI_VAC_ON&&IGMCRI_VAC_ON(k))?(IGMCRI_VAC_ON(k).kind==='cw'?' cw':' vac'):'')+'" title="'+esc(h.map(function(x){return x.name;}).concat(window.IGMCRI_VAC_ON&&IGMCRI_VAC_ON(k)?[IGMCRI_VAC_ON(k).name]:[]).join(', '))+'"><span>'+d+'</span><em>'+(ev?'<i class="s"></i>':'')+(lv?'<i class="l"></i>':'')+'</em></button>';}
     g+='</div>';
     var up=H.filter(function(x){return x.date>=t;}).slice(0,3);
-    g+='<div class="ma-cal-lg"><span><b class="ph"></b>Public holiday</span><span><b class="rh"></b>RH</span><span><i class="s"></i>Session</span><span><i class="l"></i>Leave/event</span></div>';
+    g+='<div class="ma-cal-lg"><span><b class="ph"></b>Public holiday</span><span><b class="rh"></b>RH</span>'+((window.IGMCRI_VACATION&&ms>='2026-12'&&ms<='2026-12')?'<span><b class="vac"></b>Vacation</span>':'')+'<span><i class="s"></i>Session</span><span><i class="l"></i>Leave/event</span></div>';
     if(up.length)g+='<div class="ma-cal-next">'+up.map(function(x){return '<button type="button" data-cal="'+x.date+'" class="'+x.type.toLowerCase()+'"><b>'+esc(new Date(x.date+'T12:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'}))+'</b><span>'+esc(x.name)+'</span><small>'+(x.type==='PH'?'Holiday':'RH')+'</small></button>';}).join('')+'</div>';
     el.innerHTML=g;
   }
@@ -6197,7 +6330,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 
   var MENU=[
     {t:'Downloads',ic:'fa-download',items:[['a','downloads','fa-download','All downloads'],['a','docCheck','fa-book-open','Annual department report',{doc:'annual'}],['a','docCheck','fa-university','University inspection (COA)',{doc:'coa'}]]},
-    {t:'Clinical management',ic:'fa-procedures',items:[['a','regdash','fa-chart-bar','Register dashboard (live counts & downloads)'],['a','nfc','fa-wifi','NFC tags · Dressing register'],['a','roster','fa-clipboard-list','Duty roster'],['m','inventory','fa-box-open','Supplies & stock'],['m','outwardLetterRegister','fa-envelope-open-text','Outward letter register']]},
+    {t:'Clinical management',ic:'fa-procedures',items:[['a','regdash','fa-chart-bar','Register dashboard (live counts & downloads)'],['a','nfc','fa-wifi','NFC tags · Dressing register'],['a','roster','fa-clipboard-list','Duty roster'],['a','vacation','fa-umbrella-beach','Winter vacation 2026 (faculty)'],['m','inventory','fa-box-open','Supplies & stock'],['m','outwardLetterRegister','fa-envelope-open-text','Outward letter register']]},
     {t:'Department administration',ic:'fa-sitemap',items:[['a','personnel','fa-address-book','Personnel directory'],['a','personEdit','fa-user-plus','Add personnel'],['a','units','fa-th','Unit allocation (S1–S6)'],['a','cadre','fa-layer-group','Cadre strength'],['a','calendar','fa-calendar-check','Department calendar & leave'],['a','entList','fa-user-nurse','Interns',{ent:'interns'}],['a','entList','fa-tools','Equipment inventory',{ent:'equipment'}],['a','entList','fa-clinic-medical','Special clinics',{ent:'clinics'}],['a','entList','fa-hospital','Department facilities',{ent:'facility'}]]},
     {t:'Academics',ic:'fa-graduation-cap',items:[['a','myRecord','fa-id-badge','My record'],['a','personnel','fa-user-md','Faculty profiles',{cat:'faculty'}],['a','acadList','fa-book','Publications',{type:'publication'}],['a','acadList','fa-users','Conferences',{type:'conference'}],['a','acadList','fa-chalkboard-teacher','CME & workshops',{type:'cme'}],['a','acadList','fa-flask','Research projects',{type:'research'}],['a','acadList','fa-vial','ICMR projects',{type:'research',icmr:1}],['a','acadList','fa-award','Awards',{type:'award'}],['a','acadList','fa-chalkboard','Academic activities',{type:'activity'}],['m','academicSchedule','fa-calendar-alt','PG activities & teaching schedule'],['m','universityExams','fa-file-signature','Examination documents'],['m','faculty','fa-folder-open','Faculty files'],['m','postgraduates','fa-folder','PG files']]},
     {t:'Document generation',ic:'fa-file-alt',items:[['a','downloads','fa-download','Downloads (all reports)'],['a','docCheck','fa-university','Pondicherry University COA',{doc:'coa'}],['a','docCheck','fa-file-medical','NMC Form B – staff',{doc:'nmc'}],['a','docCheck','fa-book-open','Annual department report',{doc:'annual'}]]},
@@ -6440,6 +6573,14 @@ html.dk-on #maSheet{z-index:200}
 @keyframes dkstripes{from{background-position:0 0}to{background-position:40px 0}}
 @keyframes dkticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @media (prefers-reduced-motion:reduce){.dk-heart,.dk-ecg path,.dk-dot,.dk-bar i,.dk-track{animation:none!important}}
+
+#dDesk .dk-day.vac{background:linear-gradient(180deg,rgba(14,124,134,.10),rgba(14,124,134,.04))!important}
+#dDesk .dk-day.cwd{box-shadow:inset 0 0 0 2px rgba(14,124,134,.45)}
+#dDesk .dk-day .vl{display:block;font-size:10.5px;font-weight:700;color:#0b6670;background:rgba(14,124,134,.14);border-radius:5px;padding:1px 5px;margin:2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#dDesk .dk-day.cwd .vl{background:#fff3d6;color:#7a5600}
+#dDesk .dk-hol.vac{background:rgba(14,124,134,.12);color:#0b5960;border-radius:8px;padding:6px 8px;margin:6px 0;font-size:12.5px;font-weight:600}
+#dDesk .dk-hol.vac small{font-weight:500}
+#dDesk b.vac{background:rgba(14,124,134,.35)!important}
 </style>
 <script>/* ==== IGMCRI desktop dashboard (≥ 761px): Navy live layout ====
    Same data and functions as the phone app; different layout. */
@@ -6480,7 +6621,7 @@ html.dk-on #maSheet{z-index:200}
         '<section class="dk-card dk-att" id="dkAtt" aria-label="UG attendance"></section>'+
         '<div class="dk-links"><button type="button" data-dk="regdash">Register dashboard ›</button><button type="button" data-dk="downloads">Downloads ›</button></div>'+
       '</div><section class="dk-cal" aria-label="Department calendar"><div class="dk-calhead"><h2 id="dkMonth"></h2><div class="dk-calbtn"><button type="button" data-dk="prev" aria-label="Previous">‹</button><button type="button" data-dk="today">Today</button><button type="button" data-dk="next" aria-label="Next">›</button><button type="button" data-dk="view:month" id="dkVm">Month</button><button type="button" data-dk="view:week" id="dkVw">Week</button></div></div>'+
-        '<div class="dk-legend"><span><b class="ug"></b>UG session</span><span><b class="pg"></b>PG session</span><span><b class="ph"></b>Public holiday</span><span><b class="rh"></b>Restricted holiday</span><span><b class="un"></b>Duty unit</span><span class="hint">Hover or click a date for faculty on duty</span></div>'+
+        '<div class="dk-legend"><span><b class="ug"></b>UG session</span><span><b class="pg"></b>PG session</span><span><b class="ph"></b>Public holiday</span><span><b class="rh"></b>Restricted holiday</span><span><b class="un"></b>Duty unit</span><span><b class="vac"></b>Faculty vacation</span><span class="hint">Hover or click a date for faculty on duty</span></div>'+
         '<div class="dk-grid" id="dkGrid"></div></section></main>'+
       '<div class="dk-pop" id="dkPop" role="tooltip" hidden></div>';
     document.body.appendChild(d);
@@ -6547,6 +6688,8 @@ html.dk-on #maSheet{z-index:200}
     var dt=new Date(ds+'T12:00:00');
     var html='<div class="dk-ph"><b>'+esc(dt.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'}))+'</b>'+(du?'<span class="dk-unit">'+esc(du.unit)+'</span>':'')+'</div>';
     h.forEach(function(x){html+='<div class="dk-hol '+x.type.toLowerCase()+'">'+esc(x.name)+' · '+(x.type==='PH'?'Public holiday':'Restricted holiday')+'</div>';});
+    var vk2=window.IGMCRI_VAC_ON&&IGMCRI_VAC_ON(ds),vo=window.MAdmin&&MAdmin.vacationOn?MAdmin.vacationOn(ds):[];
+    if(vk2)html+='<div class="dk-hol vac">'+esc(vk2.name)+(vo.length?'<br><small>On vacation: '+esc(vo.join(', '))+'</small>':'')+'</div>';
     if(!du)html+='<div class="dk-note">Duty roster for this month is not published yet.</div>';
     if(du)html+='<dl class="dk-fac"><dt>JR / PG</dt><dd>'+esc(du.jr||'—')+'</dd><dt>SR / faculty on duty</dt><dd>'+esc(du.duty||'—')+'</dd><dt>Senior faculty on call</dt><dd>'+esc(du.senior||'—')+'</dd></dl>'+(du.planned?'<div class="dk-note">From the unit rota · roster not published for this month</div>':'');
     if(E.length)html+='<div class="dk-psec">Sessions</div>'+E.map(function(x){return '<div class="dk-pev"><span class="tag '+(x.audience==='PG'?'pg':'ug')+'">'+esc(x.audience)+' '+esc(x.time)+'</span><span><b>'+esc(short(x.title,70))+'</b>'+(x.meta?'<small>'+esc(x.meta)+'</small>':'')+'</span></div>';}).join('');
@@ -6611,9 +6754,11 @@ html.dk-on #maSheet{z-index:200}
   function dayCell(dt,inMonth,week){
     var ds=iso(dt),t=iso(new Date()),h=holidays(ds),E=evs().filter(function(x){return x.date===ds;}),u=window.MAdmin&&MAdmin.unitFor?MAdmin.unitFor(ds):'';
     var lim=week?8:3,cls='dk-day'+(inMonth?'':' out')+(ds===t?' today':'')+(dt.getDay()===0?' sun':'')+(h.some(function(x){return x.type==='PH';})?' ph':h.length?' rh':'');
+    var vk=window.IGMCRI_VAC_ON&&IGMCRI_VAC_ON(ds);if(vk)cls+=' '+(vk.kind==='cw'?'cwd':'vac');
     return '<button type="button" class="'+cls+'" data-day="'+ds+'" aria-label="'+esc(dt.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})+(h.length?', '+h[0].name:'')+', '+E.length+' sessions, duty '+u)+'">'+
       '<span class="dh"><b>'+(week?esc(dt.toLocaleDateString('en-IN',{weekday:'short'}))+' ':'')+dt.getDate()+'</b><i>'+esc(u)+'</i></span>'+
       h.map(function(x){return '<span class="hl">'+esc(short(x.name,22))+'</span>';}).join('')+
+      (vk?'<span class="vl">'+esc(vk.kind==='cw'?'Common working day':vk.kind==='v1'?'Vacation · I half':'Vacation · II half')+'</span>':'')+
       E.slice(0,lim).map(function(x){return '<span class="ev '+(x.audience==='PG'?'pg':'ug')+'">'+esc(x.audience)+' '+esc(x.time)+' · '+esc(short(x.title,week?60:24))+'</span>';}).join('')+
       (E.length>lim?'<span class="more">+'+(E.length-lim)+' more</span>':'')+'</button>';
   }

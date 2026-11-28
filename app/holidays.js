@@ -40,3 +40,21 @@ window.IGMCRI_HOLIDAYS = [
   {date:'2027-12-24',type:'RH',name:'Christmas Eve'},
   {date:'2027-12-25',type:'PH',name:'Christmas'}
 ];
+
+/* Faculty winter vacation 2026 — Circular No. 148/IGMC&RI/Estt.II/Vacation/2026/3697 dated 13-11-2026.
+   kind v1 = first half, cw = common working day (all faculty on duty), v2 = second half.
+   Who goes in which half is set in the app (Admin → Winter vacation). */
+window.IGMCRI_VACATION = {
+  title: 'Winter vacation 2026 (faculty)',
+  ref: 'No. 148/IGMC&RI/Estt.II/Vacation/2026/3697, dated 13-11-2026',
+  periods: [
+    {from:'2026-12-13', to:'2026-12-21', kind:'v1', name:'Winter vacation – I half'},
+    {from:'2026-12-22', to:'2026-12-22', kind:'cw', name:'Common working day – all faculty'},
+    {from:'2026-12-23', to:'2026-12-31', kind:'v2', name:'Winter vacation – II half'}
+  ]
+};
+window.IGMCRI_VAC_ON = function(ds){
+  var P = (window.IGMCRI_VACATION || {}).periods || [];
+  for (var i = 0; i < P.length; i++) if (ds >= P[i].from && ds <= P[i].to) return P[i];
+  return null;
+};
